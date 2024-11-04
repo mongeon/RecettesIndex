@@ -1,4 +1,3 @@
-using RecettesIndex.Client.Pages;
 using RecettesIndex.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +5,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
+
+RecettesIndex.Client.Program.ConfigureCommonServices(builder.Services, builder.Configuration);
 
 var app = builder.Build();
 

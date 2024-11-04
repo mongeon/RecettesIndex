@@ -10,10 +10,17 @@
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
 @code {
+    [Inject]
+    public Data.IRecetteRepository recetteRepository { get; set; }
     private int currentCount = 0;
 
-    private void IncrementCount()
+    private async void IncrementCount()
     {
-        currentCount++;
+        //var recette = await recetteRepository.Insert(); 
+
+        var recettes =  await recetteRepository.GetRecettes();
+
+        currentCount = recettes.Count();
+
     }
 }
