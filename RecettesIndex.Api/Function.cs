@@ -1,24 +1,24 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using RecettesIndex.Api.Data;
 
-namespace RecettesIndex.Api
+namespace RecettesIndex.Api;
+
+public class Function(ILogger<Function> logger, IRecetteRepository recetteRepository)
 {
-    public class Function
+    private readonly ILogger<Function> _logger = logger;
+
+    [Function("GetAllRecettes")]
+    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes")] HttpRequestData req)
     {
-        private readonly ILogger<Function> _logger;
+        _logger.LogInformation("C# HTTP trigger function processed a request.");
+        var recettes = await recetteRepository.GetRecettes();
 
-        public Function(ILogger<Function> logger)
-        {
-            _logger = logger;
-        }
+        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 
-        [Function("Function")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "products")] HttpRequestData req)
-        {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
-            var reponse = req.CreateResponse(System.Net.HttpStatusCode.OK);
-            return reponse;
-        }
+        await response.WriteAsJsonAsync(recettes);
+
+        return response;
     }
 }
