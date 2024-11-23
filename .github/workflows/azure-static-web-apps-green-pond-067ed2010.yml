@@ -33,8 +33,8 @@ jobs:
           output_location: "wwwroot" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
         env:
-            supabase_Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyZXRjZWl4YnJ6bHVycXJ0anNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1NzkzNjQsImV4cCI6MjA0NjE1NTM2NH0.x-xCLjeXVv1C0f2RhHB3fdA12_H8dD-ftqQ4uM5vwjQ
-            supabase_Url: https://fretceixbrzlurqrtjsb.supabase.co
+            supabase_Key: ${{ secrets.SUPABASE_KEY }}
+            supabase_Url: ${{ secrets.SUPABASE_URL }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
