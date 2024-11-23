@@ -1,7 +1,10 @@
-﻿namespace RecettesIndex.Client.Data;
+﻿using RecettesIndex.Shared;
 
-public interface IRecetteRepository
+namespace RecettesIndex.Data
 {
-    Task<IEnumerable<Recette>> GetRecettes();
-    Task<Recette?> Insert(Recette recette);
+    public interface IRecetteRepository
+    {
+        Task<IEnumerable<Recette>> GetRecettes();
+        // Task<Recette?> Insert(Recette recette);
+    }
 }
