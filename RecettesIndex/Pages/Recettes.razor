@@ -1,0 +1,47 @@
+﻿@page "/recettes"
+@using RecettesIndex.Data
+@inject HttpClient Http
+
+<PageTitle>Recettes</PageTitle>
+
+<h1>Recettes</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+
+@if (recettes == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var recette in recettes)
+            {
+                <tr>
+                    <td>@recette.Id</td>
+                    <td>@recette.Name</td>
+                    <td>@recette.CreatedAt.ToShortDateString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Inject]
+    public required IRecetteRepository recetteRepository { get; set; }
+    private Recette[]? recettes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        recettes = await recetteRepository.GetRecettes();
+    }
+}
