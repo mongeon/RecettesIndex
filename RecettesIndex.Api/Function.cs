@@ -1,12 +1,11 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RecettesIndex.Api.Data;
 
 namespace RecettesIndex.Api;
 
-public class Function(ILogger<Function> logger, IRecetteRepository recetteRepository, IConfiguration config)
+public class Function(ILogger<Function> logger, IRecetteRepository recetteRepository)
 {
     private readonly ILogger<Function> _logger = logger;
 
@@ -15,7 +14,6 @@ public class Function(ILogger<Function> logger, IRecetteRepository recetteReposi
     {
         _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-        var configValue = config.AsEnumerable();
         var recettes = await recetteRepository.GetRecettes();
 
         Shared.Recette[] recettesDTO = recettes.Select(r => new Shared.Recette

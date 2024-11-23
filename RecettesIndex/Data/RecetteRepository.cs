@@ -1,19 +1,17 @@
-﻿namespace RecettesIndex.Client.Data;
+﻿using RecettesIndex.Shared;
+using System.Net.Http.Json;
 
-public class RecetteRepository(Supabase.Client client) : IRecetteRepository
+namespace RecettesIndex.Data;
+
+public class RecetteRepository(HttpClient client) : BaseRepository(client), IRecetteRepository
 {
     public async Task<IEnumerable<Recette>> GetRecettes()
     {
-        var result = await client.From<Recette­­>().Get();
+        using var response = await client.GetAsync("api/recettes");
+        response.EnsureSuccessStatusCode();
 
-        return result.Models;
-    }
+        var recettes = await response.Content.ReadFromJsonAsync<IEnumerable<Recette>>(_options);
 
-    public async Task<Recette?> Insert(Recette recette)
-    {
-        var result = await client.From<Recette>().Insert(recette);
-
-        return result.Model;
+        return recettes;
     }
 }
-//txJdjTAIB1qBemkK
