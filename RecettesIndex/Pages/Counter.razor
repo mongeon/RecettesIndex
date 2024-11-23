@@ -1,5 +1,4 @@
 ﻿@page "/counter"
-@rendermode InteractiveWebAssembly
 
 <PageTitle>Counter</PageTitle>
 
@@ -11,16 +10,17 @@
 
 @code {
     [Inject]
-    public Data.IRecetteRepository recetteRepository { get; set; }
+    public Client.Data.IRecetteRepository recetteRepository { get; set; }
     private int currentCount = 0;
 
     private async void IncrementCount()
     {
-        //var recette = await recetteRepository.Insert(); 
+        //var recette = await recetteRepository.Insert();
 
-        var recettes =  await recetteRepository.GetRecettes();
+        var recettes = await recetteRepository.GetRecettes();
 
         currentCount = recettes.Count();
 
     }
 }
+
