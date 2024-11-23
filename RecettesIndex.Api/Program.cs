@@ -17,7 +17,14 @@ var builder = new HostBuilder()
     {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
-        services.AddSingleton(provider => new Supabase.Client(Environment.GetEnvironmentVariable("Supabase.Url") ?? string.Empty, Environment.GetEnvironmentVariable("Supabase.Key") ?? string.Empty, options));
+        var b = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.Process);
+        var supabaseConfig = new SupabaseConfiguration
+        {
+            Url = Environment.GetEnvironmentVariable("Supabase.Url", EnvironmentVariableTarget.Process) ?? string.Empty,
+            Key = Environment.GetEnvironmentVariable("Supabase.Key", EnvironmentVariableTarget.Process) ?? string.Empty
+        };
+
+        services.AddSingleton(provider => new Supabase.Client(supabaseConfig.Url ?? string.Empty, supabaseConfig.Key ?? string.Empty, options));
         services.AddSingleton<IRecetteRepository, RecetteRepository>();
     });
 
