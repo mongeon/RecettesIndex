@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "RecettesIndex.Api": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7045",
+      "launchBrowser": false
+    }
+  }
+}
