@@ -1,5 +1,5 @@
 ﻿using RecettesIndex.Shared;
-using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace RecettesIndex.Data;
 
@@ -10,7 +10,8 @@ public class RecetteRepository(HttpClient client) : BaseRepository(client), IRec
         using var response = await client.GetAsync("api/recettes");
         response.EnsureSuccessStatusCode();
 
-        var recettes = await response.Content.ReadFromJsonAsync<IEnumerable<Recette>>(_options);
+        var stream = await response.Content.ReadAsStreamAsync();
+        var recettes = await JsonSerializer.DeserializeAsync<IEnumerable<Recette>>(stream, _options);
 
         return recettes;
     }
