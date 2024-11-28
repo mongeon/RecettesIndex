@@ -1,14 +1,14 @@
-﻿@page "/recettes"
+﻿@page "/books"
 @using RecettesIndex.Data
 @inject HttpClient Http
 
-<PageTitle>Recettes</PageTitle>
+<PageTitle>Books</PageTitle>
 
-<h1>Recettes</h1>
+<h1>Books</h1>
 
 <p>This component demonstrates fetching data from the server.</p>
 
-@if (recettes == null)
+@if (books == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -20,17 +20,15 @@ else
                 <th>ID</th>
                 <th>Name</th>
                 <th>Date</th>
-                <th>Livre</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var recette in recettes)
+            @foreach (var book in books)
             {
                 <tr>
-                    <td>@recette.Id</td>
-                    <td>@recette.Name</td>
-                    <td>@recette.CreatedAt.ToShortDateString()</td>
-                    <td>@recette.BookId</td>
+                    <td>@book.Id</td>
+                    <td>@book.Name</td>
+                    <td>@book.CreatedAt.ToShortDateString()</td>
                 </tr>
             }
         </tbody>
@@ -39,11 +37,11 @@ else
 
 @code {
     [Inject]
-    public required IRecetteRepository recetteRepository { get; set; }
-    private Recette[]? recettes;
+    public required IBookRepository bookRepository { get; set; }
+    private Book[]? books;
 
     protected override async Task OnInitializedAsync()
     {
-        recettes = await recetteRepository.GetRecettes();
+        books = await bookRepository.GetBooks();
     }
 }

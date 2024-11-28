@@ -1,10 +1,15 @@
-﻿namespace RecettesIndex.Api.Data;
+﻿using RecettesIndex.Api.Data.Models;
+
+namespace RecettesIndex.Api.Data;
 
 public class RecetteRepository(Supabase.Client client) : IRecetteRepository
 {
     public async Task<IEnumerable<Recette>> GetRecettes()
     {
-        var result = await client.From<Recette­­>().Get();
+        var result = await client
+            .From<Recette­­>()
+            //.Select("*, book:")
+            .Get();
 
         return result.Models;
     }

@@ -25,6 +25,7 @@ var builder = new HostBuilder()
 
         services.AddSingleton(provider => new Supabase.Client(supabaseConfig.Url ?? string.Empty, supabaseConfig.Key ?? string.Empty, options));
         services.AddSingleton<IRecetteRepository, RecetteRepository>();
+        services.AddSingleton<IBookRepository, BookRepository>();
     });
 
 
