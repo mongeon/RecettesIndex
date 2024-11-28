@@ -1,11 +1,10 @@
 ﻿namespace RecettesIndex.Shared;
 
-public record Recette
+public record Book
 {
     public int Id { get; set; }
 
     public required string Name { get; set; }
-    public int BookId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 }

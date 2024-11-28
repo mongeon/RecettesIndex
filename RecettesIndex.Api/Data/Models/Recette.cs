@@ -1,7 +1,7 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace RecettesIndex.Api.Data;
+namespace RecettesIndex.Api.Data.Models;
 
 [Table("recettes")]
 public class Recette : BaseModel
@@ -14,4 +14,7 @@ public class Recette : BaseModel
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
+
+    [Column("book_id")]
+    public int Book_Id { get; set; }
 }

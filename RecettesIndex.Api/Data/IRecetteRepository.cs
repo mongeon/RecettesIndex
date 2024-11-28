@@ -1,4 +1,6 @@
-﻿namespace RecettesIndex.Api.Data;
+﻿using RecettesIndex.Api.Data.Models;
+
+namespace RecettesIndex.Api.Data;
 
 public interface IRecetteRepository
 {

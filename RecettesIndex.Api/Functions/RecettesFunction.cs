@@ -3,11 +3,11 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using RecettesIndex.Api.Data;
 
-namespace RecettesIndex.Api;
+namespace RecettesIndex.Api.Functions;
 
-public class Function(ILogger<Function> logger, IRecetteRepository recetteRepository)
+public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteRepository recetteRepository)
 {
-    private readonly ILogger<Function> _logger = logger;
+    private readonly ILogger<RecettesFunction> _logger = logger;
 
     [Function("GetAllRecettes")]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes")] HttpRequestData req)
@@ -20,7 +20,8 @@ public class Function(ILogger<Function> logger, IRecetteRepository recetteReposi
         {
             Id = r.Id,
             Name = r.Name,
-            CreatedAt = r.CreatedAt
+            CreatedAt = r.CreatedAt,
+            BookId = r.Book_Id
         }).ToArray();
 
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
