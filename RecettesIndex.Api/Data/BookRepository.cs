@@ -4,6 +4,16 @@ namespace RecettesIndex.Api.Data;
 
 public class BookRepository(Supabase.Client client) : IBookRepository
 {
+    public async Task<Book?> GetBook(int id)
+    {
+        var result = await client
+            .From<Book>()
+            .Where(b => b.Id == id)
+            .Get();
+
+        return result.Model;
+    }
+
     public async Task<IEnumerable<Book>> GetBooks()
     {
         var result = await client

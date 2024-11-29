@@ -8,7 +8,6 @@ public class RecetteRepository(Supabase.Client client) : IRecetteRepository
     {
         var result = await client
             .From<Recette­­>()
-            //.Select("*, book:")
             .Get();
 
         return result.Models;

@@ -1,0 +1,31 @@
+﻿@page "/bookDetails/{Id:int}"
+@using RecettesIndex.Data
+@inject HttpClient Http
+
+<h1>Book Details</h1>
+
+@if (book == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <dl>
+        <dt>ID</dt>
+        <dd>@book.Id</dd>
+        <dt>Name</dt>
+        <dd>@book.Name</dd>
+        <dt>Date</dt>
+        <dd>@book.CreatedAt.ToShortDateString()</dd>
+    </dl>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private Book? book;
+    protected override async Task OnInitializedAsync()
+    {
+        book = await Http.GetFromJsonAsync<Book>($"api/books/{Id}");
+    }
+}
