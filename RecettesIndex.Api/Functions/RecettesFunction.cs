@@ -2,6 +2,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using RecettesIndex.Api.Data;
+using RecettesIndex.Api.Data.Converter;
 
 namespace RecettesIndex.Api.Functions;
 
@@ -16,13 +17,9 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
 
         var recettes = await recetteRepository.GetRecettes();
 
-        Shared.Recette[] recettesDTO = recettes.Select(r => new Shared.Recette
-        {
-            Id = r.Id,
-            Name = r.Name,
-            CreatedAt = r.CreatedAt,
-            BookId = r.Book_Id
-        }).ToArray();
+        Shared.Recette[] recettesDTO = recettes
+            .Select(r => r.Convert())
+            .ToArray();
 
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 

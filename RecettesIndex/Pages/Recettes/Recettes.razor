@@ -18,8 +18,8 @@ else
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Name</th>
-                <th>Date</th>
+                <th>Nom</th>
+                <th>Date création</th>
                 <th>Livre</th>
             </tr>
         </thead>
@@ -30,7 +30,7 @@ else
                     <td>@recette.Id</td>
                     <td>@recette.Name</td>
                     <td>@recette.CreatedAt.ToShortDateString()</td>
-                    <td>@recette.BookId</td>
+                    <td><a href="/bookDetails/@recette.BookId">@recette.Book.Name</a> </td>
                 </tr>
             }
         </tbody>

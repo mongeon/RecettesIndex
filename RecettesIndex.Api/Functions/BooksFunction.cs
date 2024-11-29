@@ -2,6 +2,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using RecettesIndex.Api.Data;
+using RecettesIndex.Api.Data.Converter;
 
 namespace RecettesIndex.Api.Functions;
 
@@ -13,12 +14,7 @@ public class BooksFunction(ILogger<BooksFunction> logger, IBookRepository bookRe
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "books")] HttpRequestData req)
     {
         var books = await bookRepository.GetBooks();
-        Shared.Book[] booksDTO = books.Select(r => new Shared.Book
-        {
-            Id = r.Id,
-            Name = r.Name,
-            CreatedAt = r.CreatedAt,
-        }).ToArray();
+        Shared.Book[] booksDTO = books.Select(r => r.Convert()).ToArray();
 
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 
@@ -26,4 +22,20 @@ public class BooksFunction(ILogger<BooksFunction> logger, IBookRepository bookRe
 
         return response;
     }
+
+    [Function("GetBook")]
+    public async Task<HttpResponseData> RunGetBook([HttpTrigger(AuthorizationLevel.Function, "get", Route = "books/{id:int}")] HttpRequestData req,
+        int id)
+    {
+        var book = await bookRepository.GetBook(id);
+
+        Shared.Book bookDTO = book.Convert();
+
+        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+
+        await response.WriteAsJsonAsync(bookDTO);
+
+        return response;
+    }
+
 }

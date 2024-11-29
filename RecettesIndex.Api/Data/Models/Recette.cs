@@ -17,4 +17,7 @@ public class Recette : BaseModel
 
     [Column("book_id")]
     public int Book_Id { get; set; }
+
+    [Reference(typeof(Book), true)]
+    public Book Book { get; set; }
 }
