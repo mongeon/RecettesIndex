@@ -9,9 +9,9 @@ public class BookRepository(Supabase.Client client) : IBookRepository
         var result = await client
             .From<Book>()
             .Where(b => b.Id == id)
-            .Get();
+            .Single();
 
-        return result.Model;
+        return result;
     }
 
     public async Task<IEnumerable<Book>> GetBooks()
