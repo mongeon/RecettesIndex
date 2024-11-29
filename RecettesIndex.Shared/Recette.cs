@@ -10,4 +10,5 @@ public record Recette
     public DateTime CreatedAt { get; set; }
 
     public Book Book { get; set; }
+    public int Page { get; set; }
 }

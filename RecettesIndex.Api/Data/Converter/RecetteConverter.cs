@@ -9,8 +9,9 @@
                 Id = recette.Id,
                 Name = recette.Name,
                 CreatedAt = recette.CreatedAt,
-                Book_Id = recette.BookId,
-                Book = recette.Book.Convert()
+                BookId = recette.BookId,
+                Book = recette.Book.Convert(),
+                Page = recette.Page
             };
         }
         public static Shared.Recette Convert(this Models.Recette recette)
@@ -20,8 +21,9 @@
                 Id = recette.Id,
                 Name = recette.Name,
                 CreatedAt = recette.CreatedAt,
-                BookId = recette.Book_Id,
-                Book = recette.Book.Convert()
+                BookId = recette.BookId,
+                Book = recette.Book.Convert(),
+                Page = recette.Page
             };
         }
     }
