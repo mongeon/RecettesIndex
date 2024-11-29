@@ -18,7 +18,7 @@ public class Recette : BaseModel
     [Column("book_id")]
     public int? BookId { get; set; }
 
-    [Reference(typeof(Book), true)]
+    [Reference(typeof(Book), joinType: ReferenceAttribute.JoinType.Left, true)]
     public Book? Book { get; set; }
 
     [Column("page")]

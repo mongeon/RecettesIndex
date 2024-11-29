@@ -27,8 +27,14 @@ else
                 <tr>
                     <td>@recette.Name</td>
                     <td>@recette.CreatedAt.ToShortDateString()</td>
-                    <td><a href="/bookDetails/@recette.BookId">@recette.Book.Name</a> </td>
-                    <td>@if(recette.Page.HasValue)
+                    <td>
+                        @if (recette.Book != null)
+                        {
+                            <a href="/bookDetails/@recette.BookId">@recette.Book.Name</a>
+                        }
+                    </td>
+                    <td>
+                        @if (recette.Page.HasValue)
                         {
                             <div>p. @recette.Page</div>
                         }
