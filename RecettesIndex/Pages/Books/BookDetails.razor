@@ -2,17 +2,15 @@
 @using RecettesIndex.Data
 @inject HttpClient Http
 
-<h1>Book Details</h1>
+<h1>Livre</h1>
 
 @if (book == null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Chargement...</em></p>
 }
 else
 {
     <dl>
-        <dt>ID</dt>
-        <dd>@book.Id</dd>
         <dt>Name</dt>
         <dd>@book.Name</dd>
         <dt>Date</dt>

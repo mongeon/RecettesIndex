@@ -6,11 +6,9 @@
 
 <h1>Recettes</h1>
 
-<p>This component demonstrates fetching data from the server.</p>
-
 @if (recettes == null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Chargement...</em></p>
 }
 else
 {
@@ -30,7 +28,11 @@ else
                     <td>@recette.Name</td>
                     <td>@recette.CreatedAt.ToShortDateString()</td>
                     <td><a href="/bookDetails/@recette.BookId">@recette.Book.Name</a> </td>
-                    <td>p.@recette.Page</td>
+                    <td>@if(recette.Page.HasValue)
+                        {
+                            <div>p. @recette.Page</div>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
