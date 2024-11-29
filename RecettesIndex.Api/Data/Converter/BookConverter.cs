@@ -11,8 +11,13 @@ public static class BookConverter
             CreatedAt = book.CreatedAt
         };
     }
-    public static Shared.Book Convert(this Models.Book book)
+    public static Shared.Book? Convert(this Models.Book book)
     {
+        if (book == null)
+        {
+            return null;
+        }
+
         return new Shared.Book
         {
             Id = book.Id,
