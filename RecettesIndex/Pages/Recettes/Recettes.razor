@@ -17,20 +17,20 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Nom</th>
                 <th>Date création</th>
                 <th>Livre</th>
+                <th>Page</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var recette in recettes)
             {
                 <tr>
-                    <td>@recette.Id</td>
                     <td>@recette.Name</td>
                     <td>@recette.CreatedAt.ToShortDateString()</td>
                     <td><a href="/bookDetails/@recette.BookId">@recette.Book.Name</a> </td>
+                    <td>p.@recette.Page</td>
                 </tr>
             }
         </tbody>

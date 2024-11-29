@@ -16,8 +16,11 @@ public class Recette : BaseModel
     public DateTime CreatedAt { get; set; }
 
     [Column("book_id")]
-    public int Book_Id { get; set; }
+    public int BookId { get; set; }
 
     [Reference(typeof(Book), true)]
     public Book Book { get; set; }
+
+    [Column("page")]
+    public int Page { get; internal set; }
 }
