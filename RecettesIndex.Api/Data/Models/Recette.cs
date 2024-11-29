@@ -22,5 +22,5 @@ public class Recette : BaseModel
     public Book Book { get; set; }
 
     [Column("page")]
-    public int Page { get; internal set; }
+    public int? Page { get; set; }
 }
