@@ -7,12 +7,12 @@ public class RecetteRepository(HttpClient client) : BaseRepository(client), IRec
 {
     public async Task<Recette[]> GetRecettes()
     {
-        using var response = await client.GetAsync("api/recettes");
+        using var response = await _client.GetAsync("api/recettes");
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync();
         var recettes = await JsonSerializer.DeserializeAsync<Recette[]>(stream, _options);
 
-        return recettes;
+        return recettes ?? [];
     }
 }
