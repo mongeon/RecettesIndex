@@ -1,0 +1,37 @@
+﻿<table class="table">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Livre</th>
+            <th>Page</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var recette in Recettes)
+        {
+            <tr>
+                <td>
+                    <a href="/recetteDetails/@recette.Id">@recette.Name</a>
+                </td>
+                <td>
+                    @if (recette.Book != null)
+                    {
+                        <a href="/bookDetails/@recette.BookId">@recette.Book.Name</a>
+                    }
+                </td>
+                <td>
+                    @if (recette.Page.HasValue)
+                    {
+                        <div>p. @recette.Page</div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+
+    [Parameter]
+    public IEnumerable<Recette> Recettes { get; set; } = new List<Recette>();
+}

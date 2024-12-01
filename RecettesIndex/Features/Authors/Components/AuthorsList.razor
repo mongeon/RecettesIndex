@@ -1,0 +1,22 @@
+﻿<table class="table">
+    <thead>
+        <tr>
+            <th>Nom</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var author in Authors)
+        {
+            <tr>
+                <td>
+                    <a href="/authorDetails/@author.Id">@author.FullName</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public IEnumerable<Author> Authors { get; set; } = new List<Author>();
+}

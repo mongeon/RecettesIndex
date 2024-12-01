@@ -1,0 +1,27 @@
+﻿@page "/authors"
+@using RecettesIndex.Data
+@inject HttpClient Http
+
+<PageTitle>Auteurs</PageTitle>
+
+<h1>Auteurs</h1>
+
+@if (authors == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <RecettesIndex.Features.Authors.Components.AuthorsList Authors="authors" />
+}
+
+@code {
+    [Inject]
+    public required IAuthorRepository authorRepository { get; set; }
+    private Author[]? authors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        authors = await authorRepository.GetAuthors();
+    }
+}
