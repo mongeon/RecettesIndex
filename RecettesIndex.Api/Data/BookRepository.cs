@@ -34,7 +34,7 @@ public class BookRepository(Supabase.Client client) : IBookRepository
     {
         var result = await client
             .From<Book>()
-            .Where(b => b.Author.Id == authorId)
+            .Where(b => b.AuthorId == authorId)
             .Get();
         return result.Models;
     }
