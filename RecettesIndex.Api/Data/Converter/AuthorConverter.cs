@@ -7,7 +7,8 @@ public static class AuthorConverter
         return new Models.Author
         {
             Id = author.Id,
-            Name = author.Name,
+            FirstName = author.FirstName,
+            LastName = author.LastName,
             CreatedAt = author.CreatedAt
         };
     }
@@ -21,7 +22,8 @@ public static class AuthorConverter
         return new Shared.Author
         {
             Id = author.Id,
-            Name = author.Name,
+            FirstName = author.FirstName,
+            LastName = author.LastName,
             CreatedAt = author.CreatedAt
         };
     }

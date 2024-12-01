@@ -6,7 +6,7 @@ using RecettesIndex.Api.Data.Converter;
 
 namespace RecettesIndex.Api.Functions;
 
-public class AuthorsFunction(ILogger<AuthorsFunction> logger, IAuthorRepository kRepository)
+public class AuthorsFunction(ILogger<AuthorsFunction> logger, IAuthorRepository authorRepository)
 {
     private readonly ILogger<AuthorsFunction> _logger = logger;
 
