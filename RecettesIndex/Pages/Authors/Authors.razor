@@ -23,7 +23,9 @@ else
             @foreach (var author in authors)
             {
                 <tr>
-                    <td>@author.FullName</td>
+                    <td>                    
+                        <a href="/authorDetails/@author.Id">@author.FullName</a>
+                    </td>
                     <td>@author.CreatedAt.ToShortDateString()</td>
                 </tr>
             }
