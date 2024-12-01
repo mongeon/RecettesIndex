@@ -53,5 +53,4 @@ public class BooksFunction(ILogger<BooksFunction> logger, IBookRepository bookRe
         await response.WriteAsJsonAsync(booksDTO);
         return response;
     }
-
 }

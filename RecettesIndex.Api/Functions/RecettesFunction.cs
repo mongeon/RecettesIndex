@@ -74,4 +74,21 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
         await response.WriteAsJsonAsync(recettesDTO);
         return response;
     }
+
+    [Function("GetLatestRecettes")]
+    public async Task<HttpResponseData> RunGetLatestRecettes([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes/latest/{count:int}")] HttpRequestData req,
+        int count = 5)
+    {
+        _logger.LogInformation("Get Latest Recettes");
+        var recettes = await recetteRepository.GetRecettes();
+        Shared.Recette[] recettesDTO = recettes
+            .OrderByDescending(r => r.CreatedAt)
+            .Take(count)
+            .Select(r => r.Convert())
+            .ToArray();
+        _logger.LogInformation("Recettes found: {Count}", recettesDTO.Length);
+        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(recettesDTO);
+        return response;
+    }
 }
