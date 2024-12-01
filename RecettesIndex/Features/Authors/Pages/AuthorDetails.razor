@@ -19,6 +19,11 @@ else
 
     <h2>Recettes</h2>
     <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />
+
+    <h2>Livres</h2>
+    <RecettesIndex.Features.Books.Components.BooksList Books="@books" />
+
+    <a href="/authors">Retour à la liste des auteurs</a>
 }
 
 @code {
@@ -26,9 +31,11 @@ else
     public int Id { get; set; }
     private Author? author;
     private Recette[]? recettes;
+    private Book[]? books;
     protected override async Task OnInitializedAsync()
     {
         author = await Http.GetFromJsonAsync<Author>($"api/authors/{Id}");
         recettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/author/{Id}");
+        books = await Http.GetFromJsonAsync<Book[]>($"api/books/author/{Id}");
     }
 }
