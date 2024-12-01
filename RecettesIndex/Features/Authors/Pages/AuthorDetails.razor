@@ -16,14 +16,19 @@ else
         <dt>Date</dt>
         <dd>@author.CreatedAt.ToShortDateString()</dd>
     </dl>
+
+    <h2>Recettes</h2>
+    <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />
 }
 
 @code {
     [Parameter]
     public int Id { get; set; }
     private Author? author;
+    private Recette[]? recettes;
     protected override async Task OnInitializedAsync()
     {
         author = await Http.GetFromJsonAsync<Author>($"api/authors/{Id}");
+        recettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/author/{Id}");
     }
 }

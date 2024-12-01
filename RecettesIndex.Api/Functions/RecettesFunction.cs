@@ -59,4 +59,19 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
         await response.WriteAsJsonAsync(recettesDTO);
         return response;
     }
+
+    [Function("GetRecettesByAuthor")]
+    public async Task<HttpResponseData> RunGetRecettesByAuthor([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes/author/{authorId:int}")] HttpRequestData req,
+        int authorId)
+    {
+        _logger.LogInformation("Get Recettes by Author {AuthorId}", authorId);
+        var recettes = await recetteRepository.GetRecettesByAuthor(authorId);
+        Shared.Recette[] recettesDTO = recettes
+            .Select(r => r.Convert())
+            .ToArray();
+        _logger.LogInformation("Recettes found: {Count}", recettesDTO.Length);
+        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(recettesDTO);
+        return response;
+    }
 }
