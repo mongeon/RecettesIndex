@@ -12,6 +12,9 @@ public class Book : BaseModel
     [Column("name")]
     public string Name { get; set; } = "";
 
+    [Reference(typeof(Author), true)]
+    public Author Author { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 }
