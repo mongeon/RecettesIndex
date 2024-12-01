@@ -11,7 +11,7 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
     private readonly ILogger<RecettesFunction> _logger = logger;
 
     [Function("GetAllRecettes")]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes")] HttpRequestData req)
+    public async Task<HttpResponseData> RunGetAllRecettes([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes")] HttpRequestData req)
     {
         _logger.LogInformation("Get All Recettes");
 
@@ -42,6 +42,21 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
 
         await response.WriteAsJsonAsync(recetteDTO);
 
+        return response;
+    }
+
+    [Function("GetRecettesByBook")]
+    public async Task<HttpResponseData> RunGetRecettesByBook([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes/book/{bookId:int}")] HttpRequestData req,
+        int bookId)
+    {
+        _logger.LogInformation("Get Recettes by Book {BookId}", bookId);
+        var recettes = await recetteRepository.GetRecettesByBook(bookId);
+        Shared.Recette[] recettesDTO = recettes
+            .Select(r => r.Convert())
+            .ToArray();
+        _logger.LogInformation("Recettes found: {Count}", recettesDTO.Length);
+        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(recettesDTO);
         return response;
     }
 }
