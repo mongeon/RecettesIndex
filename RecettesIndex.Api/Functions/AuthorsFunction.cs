@@ -8,7 +8,7 @@ namespace RecettesIndex.Api.Functions;
 
 public class AuthorsFunction(ILogger<AuthorsFunction> logger, IAuthorRepository kRepository)
 {
-    private readonly ILogger<authorsFunction> _logger = logger;
+    private readonly ILogger<AuthorsFunction> _logger = logger;
 
     [Function("GetAllAuthors")]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "authors")] HttpRequestData req)
