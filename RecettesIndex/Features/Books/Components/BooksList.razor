@@ -1,0 +1,28 @@
+﻿<table class="table">
+    <thead>
+        <tr>
+            <th>Titre</th>
+            <th>Auteur</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var book in Books)
+        {
+            <tr>
+                <td>
+                    <a href="/bookDetails/@book.Id">@book.Name</a>
+                </td>
+                <td>
+                    @if (book.Author != null)
+                    {
+                        <a href="/authorDetails/@book.Author.Id">@book.Author.FullName</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+@code {
+    [Parameter]
+    public IEnumerable<Book> Books { get; set; } = new List<Book>();
+}
