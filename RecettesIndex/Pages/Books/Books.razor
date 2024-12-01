@@ -16,6 +16,7 @@ else
         <thead>
             <tr>
                 <th>Titre</th>
+                <th>Auteur</th>
                 <th>Date</th>
             </tr>
         </thead>
@@ -24,6 +25,12 @@ else
             {
                 <tr>
                     <td>@book.Name</td>
+                    <td>
+                    @if (book.Author != null)
+                        {
+                            <a href="/authorDetails/@book.AuthorId">@book.Author.FullName</a>
+                        }
+                    </td>
                     <td>@book.CreatedAt.ToShortDateString()</td>
                 </tr>
             }
