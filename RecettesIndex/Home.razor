@@ -1,0 +1,23 @@
+﻿@page "/"
+@inject HttpClient Http
+
+<PageTitle>Recettes</PageTitle>
+
+<h1>Derniers ajouts</h1>
+@if (recettes == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="recettes" />
+}
+@code {
+    Recette[]? recettes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        recettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/latest/5");
+    }
+
+}
