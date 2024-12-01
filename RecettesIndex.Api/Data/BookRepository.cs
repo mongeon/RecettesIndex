@@ -29,4 +29,13 @@ public class BookRepository(Supabase.Client client) : IBookRepository
 
         return result.Model;
     }
+
+    public async Task<IEnumerable<Book>> GetBooksByAuthor(int authorId)
+    {
+        var result = await client
+            .From<Book>()
+            .Where(b => b.Author.Id == authorId)
+            .Get();
+        return result.Models;
+    }
 }

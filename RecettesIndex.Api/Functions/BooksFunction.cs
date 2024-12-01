@@ -41,4 +41,17 @@ public class BooksFunction(ILogger<BooksFunction> logger, IBookRepository bookRe
         return response;
     }
 
+    [Function("GetBooksByAuthor")]
+    public async Task<HttpResponseData> RunGetBooksByAuthor([HttpTrigger(AuthorizationLevel.Function, "get", Route = "books/author/{id:int}")] HttpRequestData req,
+        int id)
+    {
+        _logger.LogInformation("Get Books by Author {AuthorId}", id);
+        var books = await bookRepository.GetBooksByAuthor(id);
+        Shared.Book[] booksDTO = books.Select(r => r.Convert()!).ToArray();
+        _logger.LogInformation("Books found: {Count}", booksDTO.Length);
+        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(booksDTO);
+        return response;
+    }
+
 }
