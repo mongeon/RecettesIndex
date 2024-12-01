@@ -24,9 +24,11 @@ else
             @foreach (var book in books)
             {
                 <tr>
-                    <td>@book.Name</td>
                     <td>
-                    @if (book.Author != null)
+                        <a href="/bookDetails/@book.Id">@book.Name</a>
+                    </td>
+                    <td>
+                        @if (book.Author != null)
                         {
                             <a href="/authorDetails/@book.Author.Id">@book.Author.FullName</a>
                         }
