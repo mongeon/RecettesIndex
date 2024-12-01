@@ -38,5 +38,16 @@ public class RecetteRepository(Supabase.Client client) : IRecetteRepository
             .Get();
         return result.Models;
     }
+
+    public async Task<IEnumerable<Recette>> GetRecettesByAuthor(int authorId)
+    {
+        //var result = await client
+        //    .From<Recette>()
+        //    .Where(r => r.Book != null && r.Book.Author.Id == authorId);
+        //    .Get();
+        //return result.Models;
+
+        return new List<Recette>();
+    }
 }
 //txJdjTAIB1qBemkK

@@ -8,4 +8,5 @@ public interface IRecetteRepository
     Task<Recette?> GetRecette(int id);
     Task<Recette?> Insert(Recette recette);
     Task<IEnumerable<Recette>> GetRecettesByBook(int bookId);
+    Task<IEnumerable<Recette>> GetRecettesByAuthor(int authorId);
 }
