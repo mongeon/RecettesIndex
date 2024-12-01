@@ -15,8 +15,7 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Name</th>
+                <th>Titre</th>
                 <th>Date</th>
             </tr>
         </thead>
@@ -24,7 +23,6 @@ else
             @foreach (var book in books)
             {
                 <tr>
-                    <td>@book.Id</td>
                     <td>@book.Name</td>
                     <td>@book.CreatedAt.ToShortDateString()</td>
                 </tr>
