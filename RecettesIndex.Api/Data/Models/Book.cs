@@ -12,6 +12,9 @@ public class Book : BaseModel
     [Column("name")]
     public string Name { get; set; } = "";
 
+    [Column("author")]
+    public int? AuthorId { get; set; }
+
     [Reference(typeof(Author), true)]
     public Author Author { get; set; } = default!;
 
