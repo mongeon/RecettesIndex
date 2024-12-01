@@ -13,9 +13,11 @@ public class AuthorsFunction(ILogger<AuthorsFunction> logger, IAuthorRepository 
     [Function("GetAllAuthors")]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "authors")] HttpRequestData req)
     {
+        _logger.LogInformation("Get All Authors");
         var authors = await authorRepository.GetAuthors();
-        Shared.Author[] authorsDTO = authors.Select(r => r.Convert()).ToArray();
+        Shared.Author[] authorsDTO = authors?.Select(r => r.Convert()!).ToArray() ?? [];
 
+        _logger.LogInformation("Authors found: {Count}", authorsDTO.Length);
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 
         await response.WriteAsJsonAsync(authorsDTO);
@@ -27,9 +29,10 @@ public class AuthorsFunction(ILogger<AuthorsFunction> logger, IAuthorRepository 
     public async Task<HttpResponseData> RunGetAuthor([HttpTrigger(AuthorizationLevel.Function, "get", Route = "authors/{id:int}")] HttpRequestData req,
         int id)
     {
+        _logger.LogInformation("Get Author {Id}", id);
         var author = await authorRepository.GetAuthor(id);
 
-        Shared.Author authorDTO = author.Convert();
+        Shared.Author? authorDTO = author?.Convert();
 
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 

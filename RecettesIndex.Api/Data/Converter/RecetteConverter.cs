@@ -10,7 +10,7 @@
                 Name = recette.Name,
                 CreatedAt = recette.CreatedAt,
                 BookId = recette.BookId,
-                Book = recette.Book.Convert(),
+                Book = recette.Book?.Convert(),
                 Page = recette.Page
             };
         }
@@ -22,7 +22,7 @@
                 Name = recette.Name,
                 CreatedAt = recette.CreatedAt,
                 BookId = recette.BookId,
-                Book = recette.Book.Convert(),
+                Book = recette.Book?.Convert(),
                 Page = recette.Page
             };
         }

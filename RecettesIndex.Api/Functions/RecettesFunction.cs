@@ -13,7 +13,7 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
     [Function("GetAllRecettes")]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes")] HttpRequestData req)
     {
-        _logger.LogInformation("C# HTTP trigger function processed a request.");
+        _logger.LogInformation("Get All Recettes");
 
         var recettes = await recetteRepository.GetRecettes();
 
@@ -21,19 +21,22 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
             .Select(r => r.Convert())
             .ToArray();
 
+        _logger.LogInformation("Recettes found: {Count}", recettesDTO.Length);
+
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 
         await response.WriteAsJsonAsync(recettesDTO);
 
         return response;
     }
-        [Function("GetRecette")]
+    [Function("GetRecette")]
     public async Task<HttpResponseData> RunGetRecette([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes/{id:int}")] HttpRequestData req,
-        int id)
+    int id)
     {
+        _logger.LogInformation("Get Recette {Id}", id);
         var recette = await recetteRepository.GetRecette(id);
 
-        Shared.Recette recetteDTO = recette.Convert();
+        Shared.Recette? recetteDTO = recette?.Convert();
 
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 

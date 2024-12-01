@@ -7,12 +7,12 @@ public class BookRepository(HttpClient client) : BaseRepository(client), IBookRe
 {
     public async Task<Book[]> GetBooks()
     {
-        using var response = await client.GetAsync("api/books");
+        using var response = await _client.GetAsync("api/books");
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync();
         var books = await JsonSerializer.DeserializeAsync<Book[]>(stream, _options);
 
-        return books;
+        return books ?? [];
     }
 }

@@ -12,13 +12,8 @@ public static class AuthorConverter
             CreatedAt = author.CreatedAt
         };
     }
-    public static Shared.Author? Convert(this Models.Author author)
+    public static Shared.Author Convert(this Models.Author author)
     {
-        if (author == null)
-        {
-            return null;
-        }
-
         return new Shared.Author
         {
             Id = author.Id,
