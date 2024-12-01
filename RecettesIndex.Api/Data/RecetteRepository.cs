@@ -41,13 +41,12 @@ public class RecetteRepository(Supabase.Client client) : IRecetteRepository
 
     public async Task<IEnumerable<Recette>> GetRecettesByAuthor(int authorId)
     {
-        //var result = await client
-        //    .From<Recette>()
-        //    .Where(r => r.Book != null && r.Book.Author.Id == authorId);
-        //    .Get();
-        //return result.Models;
-
-        return new List<Recette>();
+        var result = await client
+            .From<Recette>()
+            .Select("*, book:book_id(*, author(*))")
+            .Filter("book.author.id", Supabase.Postgrest.Constants.Operator.Equals, authorId)
+            .Get();
+        return result.Models.Where(x => x.Book?.Author.Id == authorId);
     }
 }
 //txJdjTAIB1qBemkK
