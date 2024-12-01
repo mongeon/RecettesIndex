@@ -1,0 +1,36 @@
+﻿@page "/recetteDetails/{Id:int}"
+@using RecettesIndex.Data
+@inject HttpClient Http
+
+<h1>Livre</h1>
+
+@if (recette == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <dl>
+        <dt>Recette</dt>
+        <dd>@recette.Name</dd>
+        <dt>Livre</dt>
+        <dd>
+            @if (recette.Book != null)
+                {
+                    <a href="/bookDetails/@recette.Book.Id">@recette.Book.Name</a>
+                }
+        </dd>
+        <dt>Date</dt>
+        <dd>@recette.CreatedAt.ToShortDateString()</dd>
+    </dl>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private Recette? recette;
+    protected override async Task OnInitializedAsync()
+    {
+        recette = await Http.GetFromJsonAsync<Recette>($"api/recettes/{Id}");
+    }
+}
