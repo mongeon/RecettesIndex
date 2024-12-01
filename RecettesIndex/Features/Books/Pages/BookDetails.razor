@@ -23,14 +23,21 @@ else
         <dt>Date</dt>
         <dd>@book.CreatedAt.ToShortDateString()</dd>
     </dl>
+
+    <h2>Recettes</h2>
+    <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />
+
+    <a href="/books">Retour à la liste des livres</a>
 }
 
 @code {
     [Parameter]
     public int Id { get; set; }
     private Book? book;
+    private Recette[]? recettes;
     protected override async Task OnInitializedAsync()
     {
         book = await Http.GetFromJsonAsync<Book>($"api/books/{Id}");
+        recettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/book/{Id}");
     }
 }
