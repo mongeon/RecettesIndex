@@ -13,8 +13,10 @@ public class BooksFunction(ILogger<BooksFunction> logger, IBookRepository bookRe
     [Function("GetAllBooks")]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "books")] HttpRequestData req)
     {
+        _logger.LogInformation("Get All Books");
         var books = await bookRepository.GetBooks();
-        Shared.Book[] booksDTO = books.Select(r => r.Convert()).ToArray();
+        Shared.Book[] booksDTO = books.Select(r => r.Convert()!).ToArray();
+        _logger.LogInformation("Books found: {Count}", booksDTO.Length);
 
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 
@@ -27,9 +29,10 @@ public class BooksFunction(ILogger<BooksFunction> logger, IBookRepository bookRe
     public async Task<HttpResponseData> RunGetBook([HttpTrigger(AuthorizationLevel.Function, "get", Route = "books/{id:int}")] HttpRequestData req,
         int id)
     {
+        _logger.LogInformation("Get Book {Id}", id);
         var book = await bookRepository.GetBook(id);
 
-        Shared.Book bookDTO = book.Convert();
+        Shared.Book? bookDTO = book?.Convert();
 
         var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 

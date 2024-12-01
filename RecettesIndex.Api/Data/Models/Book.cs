@@ -13,7 +13,7 @@ public class Book : BaseModel
     public string Name { get; set; } = "";
 
     [Reference(typeof(Author), true)]
-    public Author Author { get; set; }
+    public Author Author { get; set; } = default!;
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
