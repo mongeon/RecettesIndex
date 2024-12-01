@@ -27,4 +27,18 @@ public class RecettesFunction(ILogger<RecettesFunction> logger, IRecetteReposito
 
         return response;
     }
+        [Function("GetRecette")]
+    public async Task<HttpResponseData> RunGetRecette([HttpTrigger(AuthorizationLevel.Function, "get", Route = "recettes/{id:int}")] HttpRequestData req,
+        int id)
+    {
+        var recette = await recetteRepository.GetRecette(id);
+
+        Shared.Recette recetteDTO = recette.Convert();
+
+        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+
+        await response.WriteAsJsonAsync(recetteDTO);
+
+        return response;
+    }
 }

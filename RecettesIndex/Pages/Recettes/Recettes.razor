@@ -25,7 +25,9 @@ else
             @foreach (var recette in recettes)
             {
                 <tr>
-                    <td>@recette.Name</td>
+                    <td>
+                        <a href="/recetteDetails/@recette.Id">@recette.Name</a>
+                    </td>
                     <td>@recette.CreatedAt.ToShortDateString()</td>
                     <td>
                         @if (recette.Book != null)
