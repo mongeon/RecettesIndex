@@ -11,7 +11,8 @@
                 CreatedAt = recette.CreatedAt,
                 BookId = recette.BookId,
                 Book = recette.Book?.Convert(),
-                Page = recette.Page
+                Page = recette.Page,
+                Rating = recette.Rating
             };
         }
         public static Shared.Recette Convert(this Models.Recette recette)
@@ -23,7 +24,8 @@
                 CreatedAt = recette.CreatedAt,
                 BookId = recette.BookId,
                 Book = recette.Book?.Convert(),
-                Page = recette.Page
+                Page = recette.Page,
+                Rating = recette.Rating
             };
         }
     }
