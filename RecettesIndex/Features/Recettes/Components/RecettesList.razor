@@ -4,6 +4,7 @@
             <th>Nom</th>
             <th>Livre</th>
             <th>Page</th>
+            <th>Note</th>
         </tr>
     </thead>
     <tbody>
@@ -23,6 +24,12 @@
                     @if (recette.Page.HasValue)
                     {
                         <div>p. @recette.Page</div>
+                    }
+                </td>
+                <td>
+                    @if (recette.Rating.HasValue)
+                    {
+                        <div>@recette.Rating.Value.ToString("0.0")</div>
                     }
                 </td>
             </tr>

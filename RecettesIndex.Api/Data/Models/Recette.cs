@@ -23,4 +23,7 @@ public class Recette : BaseModel
 
     [Column("page")]
     public int? Page { get; set; }
+
+    [Column("rating")]
+    public double? Rating { get; set; }
 }
