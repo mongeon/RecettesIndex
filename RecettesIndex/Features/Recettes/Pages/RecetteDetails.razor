@@ -2,7 +2,7 @@
 @using RecettesIndex.Data
 @inject HttpClient Http
 
-<Heading>Recette</Heading>
+<DisplayHeading>Recette</DisplayHeading>
 
 @if (recette == null)
 {
@@ -24,10 +24,7 @@ else
         <dd>@recette.CreatedAt.ToShortDateString()</dd>
         <dt>Note</dt>
         <dd>
-            @if (recette.Rating.HasValue)
-            {
-                <div>@recette.Rating.Value.ToString("0.0")</div>
-            }
+            <Rating Color="Color.Primary" @bind-SelectedValue="@recette.Rating" MaxValue="5" ReadOnly />            
         </dd>
     </dl>
 

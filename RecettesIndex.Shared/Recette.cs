@@ -11,5 +11,5 @@ public record Recette
 
     public Book? Book { get; set; }
     public int? Page { get; set; }
-    public double? Rating { get; set; }
+    public int Rating { get; set; }
 }
