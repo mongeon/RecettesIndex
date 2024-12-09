@@ -13,77 +13,44 @@
             </LayoutView>
         </NotFound>
     </Router>
-        <MessageProvider />
+    <MessageProvider />
     <PageProgressProvider />
     <ModalProvider UseModalStructure Animated Size="ModalSize.ExtraLarge" />
     <ApplicationLoadingIndicator />
 </Blazorise.ThemeProvider>
+
 @code {
     private Theme theme = new()
         {
-            //Enabled = false,
-            // BarOptions = new()
-            // {
-            //     HorizontalHeight = "72px"
-            // },
-            // BreakpointOptions = new()
-            // {
-            // },
-            // //SpacingOptions = new()
-            // //{
-            // //},
-            // ColorOptions = new()
-            // {
-            //     Primary = "#3b82f6",
-            //     Secondary = "#6B7280",
-            //     Success = "#0E9F6E",
-            //     Danger = "#F05252",
-            //     Warning = "#C27803",
-            //     Info = "#03A9F4",
-            //     Light = "#F3F4F6",
-            //     Dark = "#1F2937",
-            // },
-            // BackgroundOptions = new()
-            // {
-            //     Primary = "#3b82f6",
-            //     Secondary = "#6B7280",
-            //     Success = "#0E9F6E",
-            //     Danger = "#F05252",
-            //     Warning = "#C27803",
-            //     Info = "#03A9F4",
-            //     Light = "#F3F4F6",
-            //     Dark = "#1F2937",
-            // },
-            // TextColorOptions = new()
-            // {
-            //     Primary = "#3b82f6",
-            //     Secondary = "#6B7280",
-            //     Success = "#0E9F6E",
-            //     Danger = "#F05252",
-            //     Warning = "#C27803",
-            //     Info = "#03A9F4",
-            //     Light = "#F3F4F6",
-            //     Dark = "#1F2937",
-            // },
-            // //ButtonOptions = new ThemeButtonOptions { },
-            // //DropdownOptions = new ThemeDropdownOptions { },
-            // InputOptions = new()
-            // {
-            //     CheckColor = "#0288D1",
-            // },
-            // //CardOptions = new ThemeCardOptions { },
-            // //ModalOptions = new ThemeModalOptions { },
-            // //TabsOptions = new ThemeTabsOptions { },
-            // //ProgressOptions = new ThemeProgressOptions { },
-            // //AlertOptions = new ThemeAlertOptions { },
-            // //BreadcrumbOptions = new ThemeBreadcrumbOptions { },
-            // //BadgeOptions = new ThemeBadgeOptions { },
-            // //PaginationOptions = new ThemePaginationOptions { },
-            // //TooltipOptions = new ThemeTooltipOptions
-            // //{
-            // //    BackgroundColor = "#22c8ce",
-            // //    BackgroundOpacity = .7f,
-            // //    Color = "#ff0000",
-            // //},
+            BarOptions = new()
+            {
+                HorizontalHeight = "72px"
+            },
+            ColorOptions = new()
+            {
+                Primary = "#0288D1",
+                Secondary = "#A65529",
+                Success = "#23C02E",
+                Info = "#9BD8FE",
+                Warning = "#F8B86C",
+                Danger = "#F95741",
+                Light = "#F0F0F0",
+                Dark = "#535353",
+            },
+            BackgroundOptions = new()
+            {
+                Primary = "#0288D1",
+                Secondary = "#A65529",
+                Success = "#23C02E",
+                Info = "#9BD8FE",
+                Warning = "#F8B86C",
+                Danger = "#F95741",
+                Light = "#F0F0F0",
+                Dark = "#535353",
+            },
+            InputOptions = new()
+            {
+                CheckColor = "#0288D1",
+            }
         };
 }
