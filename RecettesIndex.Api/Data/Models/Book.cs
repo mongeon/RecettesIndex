@@ -9,8 +9,8 @@ public class Book : BaseModel
     [PrimaryKey("id")]
     public int Id { get; set; }
 
-    [Column("name")]
-    public string Name { get; set; } = "";
+    [Column("title")]
+    public string Title { get; set; } = "";
 
     [Column("author")]
     public int? AuthorId { get; set; }
