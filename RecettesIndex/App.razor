@@ -4,7 +4,7 @@
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-            <FocusOnNavigate RouteData="@routeData" Selector="DisplayHeading" />
+            <FocusOnNavigate RouteData="@routeData" Selector="Heading " />
         </Found>
         <NotFound>
             <PageTitle>Not found</PageTitle>
@@ -51,6 +51,7 @@
             InputOptions = new()
             {
                 CheckColor = "#0288D1",
-            }
+            }            
+
         };
 }
