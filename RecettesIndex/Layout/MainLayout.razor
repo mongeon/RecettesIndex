@@ -1,16 +1,19 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+﻿@using RecettesIndex.Components
+@inherits LayoutComponentBase
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+ <Layout Sider>
+        <LayoutSider>
+            <LayoutSiderContent>
+                <SideMenu />
+            </LayoutSiderContent>
+        </LayoutSider>
+        <Layout>
+            <LayoutContent Padding="Padding.Is4.OnX">
+                @Body
+            </LayoutContent>
+        </Layout>
+    </Layout>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+   @code {
+        [CascadingParameter] protected Theme Theme { get; set; }
+   }

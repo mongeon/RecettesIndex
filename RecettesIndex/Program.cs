@@ -1,3 +1,7 @@
+using Blazorise;
+using Blazorise.Icons.FontAwesome;
+using Blazorise.LoadingIndicator;
+using Blazorise.Tailwind;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using RecettesIndex;
@@ -12,5 +16,12 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<IRecetteRepository, RecetteRepository>();
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
+
+builder.Services
+    .AddBlazorise()
+    .AddTailwindProviders()
+    .AddFontAwesomeIcons();
+
+builder.Services.AddLoadingIndicator();
 
 await builder.Build().RunAsync();

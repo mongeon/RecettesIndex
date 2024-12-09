@@ -25,7 +25,7 @@
                 BookId = recette.BookId,
                 Book = recette.Book?.Convert(),
                 Page = recette.Page,
-                Rating = recette.Rating
+                Rating = recette.Rating.HasValue ? (int)recette.Rating : 0
             };
         }
     }

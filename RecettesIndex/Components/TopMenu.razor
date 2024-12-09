@@ -1,0 +1,14 @@
+﻿<Bar Breakpoint="Breakpoint.Desktop" Background="Background.White" Shadow="Shadow.Default" ThemeContrast="ThemeContrast.Light">
+    <BarBrand>
+        <BarItem>
+            <BarLink To="">
+                <BarIcon IconName="IconName.Dashboard" />
+                Recettes
+            </BarLink>
+        </BarItem>
+    </BarBrand>
+    <BarToggler />
+</Bar>
+@code {
+    [CascadingParameter] protected Theme Theme { get; set; }
+}
