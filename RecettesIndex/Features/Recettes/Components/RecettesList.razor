@@ -1,41 +1,40 @@
-﻿<table class="table">
-    <thead>
-        <tr>
-            <th>Nom</th>
-            <th>Livre</th>
-            <th>Page</th>
-            <th>Note</th>
-        </tr>
-    </thead>
-    <tbody>
+﻿<Table class="table" Style="style">
+    <TableHeader ThemeContrast="ThemeContrast.Light">
+        <TableRow>
+            <TableHeaderCell>Nom</TableHeaderCell>
+            <TableHeaderCell>Livre</TableHeaderCell>
+            <TableHeaderCell>Page</TableHeaderCell>
+            <TableHeaderCell>Note</TableHeaderCell>
+        </TableRow>
+    </TableHeader>
+    <TableBody>
         @foreach (var recette in Recettes)
         {
-            <tr>
-                <td>
-                    <a href="/recetteDetails/@recette.Id">@recette.Name</a>
-                </td>
-                <td>
+            <TableRow>
+                <TableRowHeader>
+                    <a href="/recettes/Details/@recette.Id">@recette.Name</a>
+                </TableRowHeader>
+                <TableRowCell>
                     @if (recette.Book != null)
                     {
-                        <a href="/bookDetails/@recette.BookId">@recette.Book.Name</a>
+                        <a href="/books/Details/@recette.BookId">@recette.Book.Name</a>
                     }
-                </td>
-                <td>
+                </TableRowCell>
+                <TableRowCell>
                     @if (recette.Page.HasValue)
                     {
                         <div>p. @recette.Page</div>
                     }
-                </td>
-                <td>
+                </TableRowCell>
+                <TableRowCell>
                     <div>
                         <Rating Color="Color.Primary" @bind-SelectedValue="@recette.Rating" MaxValue="5" ReadOnly />
                     </div>
-
-                </td>
-            </tr>
+                </TableRowCell>
+            </TableRow>
         }
-    </tbody>
-</table>
+    </TableBody>
+</Table>
 
 @code {
 

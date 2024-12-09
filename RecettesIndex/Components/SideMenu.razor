@@ -11,23 +11,29 @@
     </BarBrand>
     <BarMenu>
         <BarStart>
-        <BarItem>
-            <BarLink To="recettes">
-                <BarIcon IconName="IconName.PizzaSlice" />
-                Recettes
-            </BarLink>
-        </BarItem>
-        <BarItem>
-            <BarLink To="books">
-                <BarIcon IconName="IconName.Book" />
-                Livres
-            </BarLink>
-        </BarItem>
-        <BarItem>
-            <BarLink To="authors">
-                <BarIcon IconName="IconName.Users" />
-                Auteurs
-            </BarLink>
+            <BarItem>
+                <BarLink To="">
+                    <BarIcon IconName="IconName.Home" />
+                    Accueil
+                </BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="recettes" Match="Match.Prefix" >
+                    <BarIcon IconName="IconName.PizzaSlice" />
+                    Recettes
+                </BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="books" Match="Match.Prefix">
+                    <BarIcon IconName="IconName.Book" />
+                    Livres
+                </BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="authors" Match="Match.Prefix">
+                    <BarIcon IconName="IconName.Users" />
+                    Auteurs
+                </BarLink>
             </BarItem>
         </BarStart>
     </BarMenu>

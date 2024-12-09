@@ -1,8 +1,7 @@
-﻿@page "/recetteDetails/{Id:int}"
+﻿@page "/recettes/Details/{Id:int}"
 @using RecettesIndex.Data
 @inject HttpClient Http
 
-<DisplayHeading>Recette</DisplayHeading>
 
 @if (recette == null)
 {
@@ -10,25 +9,29 @@
 }
 else
 {
+    <PageTitle>@recette.Name</PageTitle>
+    <DisplayHeading>@recette.Name</DisplayHeading>
     <dl>
         <dt>Recette</dt>
         <dd>@recette.Name</dd>
         <dt>Livre</dt>
         <dd>
             @if (recette.Book != null)
-                {
-                    <a href="/bookDetails/@recette.Book.Id">@recette.Book.Name</a>
-                }
+            {
+                <a href="/books/Details/@recette.Book.Id">@recette.Book.Name</a>
+            }
         </dd>
         <dt>Date</dt>
         <dd>@recette.CreatedAt.ToShortDateString()</dd>
         <dt>Note</dt>
         <dd>
-            <Rating Color="Color.Primary" @bind-SelectedValue="@recette.Rating" MaxValue="5" ReadOnly />            
+            <Rating Color="Color.Primary" @bind-SelectedValue="@recette.Rating" MaxValue="5" ReadOnly />
         </dd>
     </dl>
 
-    <a href="/recettes">Retour à la liste des recettes</a>
+    <Blazorise.Link To="/recettes">
+        Retour à la liste des recettes
+    </Blazorise.Link>
 }
 
 @code {

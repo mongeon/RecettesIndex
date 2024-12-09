@@ -1,8 +1,6 @@
-﻿@page "/authorDetails/{Id:int}"
+﻿@page "/authors/Details/{Id:int}"
 @using RecettesIndex.Data
 @inject HttpClient Http
-
-<DisplayHeading>Auteur</DisplayHeading>
 
 @if (author == null)
 {
@@ -10,6 +8,9 @@
 }
 else
 {
+    <PageTitle>@author.FullName</PageTitle>
+
+    <DisplayHeading>@author.FullName</DisplayHeading>
     <dl>
         <dt>Nom</dt>
         <dd>@author.FullName</dd>
@@ -23,7 +24,7 @@ else
     <h2>Livres</h2>
     <RecettesIndex.Features.Books.Components.BooksList Books="@books" />
 
-    <a href="/authors">Retour à la liste des auteurs</a>
+    <Blazorise.Link To="/authors">Retour à la liste des auteurs</Blazorise.Link>
 }
 
 @code {
