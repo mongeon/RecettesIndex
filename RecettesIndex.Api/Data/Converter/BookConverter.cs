@@ -7,7 +7,7 @@ public static class BookConverter
         return new Models.Book
         {
             Id = book.Id,
-            Name = book.Name,
+            Title = book.Title,
             Author = book.Author.Convert(),
             CreatedAt = book.CreatedAt
         };
@@ -22,7 +22,7 @@ public static class BookConverter
         return new Shared.Book
         {
             Id = book.Id,
-            Name = book.Name,
+            Title = book.Title,
             Author = book.Author.Convert(),
             CreatedAt = book.CreatedAt
         };
