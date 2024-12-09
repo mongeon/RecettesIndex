@@ -1,0 +1,39 @@
+﻿﻿<Bar Breakpoint="Breakpoint.Desktop" NavigationBreakpoint="Breakpoint.Tablet" ThemeContrast="ThemeContrast.Dark"
+      Mode="BarMode.VerticalInline" CollapseMode="BarCollapseMode.Small" MenuToggleBehavior=BarMenuToggleBehavior.AllowSingleMenu>
+    <BarToggler />
+    <BarBrand>
+        <BarItem>
+            <BarLink To="">
+                <BarIcon IconName="customIcon" />
+                Recettes
+            </BarLink>
+        </BarItem>
+    </BarBrand>
+    <BarMenu>
+        <BarStart>
+        <BarItem>
+            <BarLink To="recettes">
+                <BarIcon IconName="IconName.Cocktail" />
+                Recettes
+            </BarLink>
+        </BarItem>
+        <BarItem>
+            <BarLink To="books">
+                <BarIcon IconName="IconName.Book" />
+                Livres
+            </BarLink>
+        </BarItem>
+        <BarItem>
+            <BarLink To="authors">
+                <BarIcon IconName="IconName.Grin" />
+                Auteurs
+            </BarLink>
+            </BarItem>
+        </BarStart>
+    </BarMenu>
+    <BarEnd />
+</Bar>
+
+@code {
+    RenderFragment customIcon =@<img src="/icon-192.png" style="width:32px; height: 32px" />;
+}

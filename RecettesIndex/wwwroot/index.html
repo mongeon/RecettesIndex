@@ -6,26 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Recettes</title>
     <base href="/" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="RecettesIndex.styles.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/flowbite@1.5.4/dist/flowbite.min.css" />
+    <link href="_content/Blazorise.Icons.FontAwesome/v6/css/all.min.css" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="_content/Blazorise.Tailwind/blazorise.tailwind.config.js?v=1.7.0.0"></script>
+
+    <link href="_content/Blazorise/blazorise.css" rel="stylesheet" />
+    <link href="_content/Blazorise.Tailwind/blazorise.tailwind.css" rel="stylesheet" />
 </head>
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div style="position:fixed; height:100%; width:100%; margin:0;">
+            <div style="display: flex; justify-content: center; align-items:center; height:100%; width:100%;">
+                <img src="icon-192.png" class="b-demo-loading" style="height: 250px;" />
+            </div>
+        </div>
     </div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
-    </div>
+    <script src="https://unpkg.com/flowbite@1.5.4/dist/flowbite.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 

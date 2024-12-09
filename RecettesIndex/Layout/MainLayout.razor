@@ -1,5 +1,7 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
+﻿@using RecettesIndex.Components
+@layout RootLayout
+@inherits LayoutComponentBase
+@* <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
@@ -13,4 +15,23 @@
             @Body
         </article>
     </main>
-</div>
+</div> *@
+ <Layout Sider>
+        <LayoutSider>
+            <LayoutSiderContent>
+                <SideMenu />
+            </LayoutSiderContent>
+        </LayoutSider>
+        <Layout>
+            <LayoutHeader Fixed>
+                <TopMenu />
+            </LayoutHeader>
+            <LayoutContent Padding="Padding.Is4.OnX">
+                @Body
+            </LayoutContent>
+        </Layout>
+    </Layout>
+
+   @code {
+        [CascadingParameter] protected Theme Theme { get; set; }
+   }
