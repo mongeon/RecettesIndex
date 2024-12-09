@@ -11,23 +11,22 @@ else
 {
     <PageTitle>@recette.Name</PageTitle>
     <Heading Size="HeadingSize.Is1" TextColor="TextColor.Light">@recette.Name</Heading>
-    <dl>
-        <dt>Recette</dt>
-        <dd>@recette.Name</dd>
-        <dt>Livre</dt>
-        <dd>
-            @if (recette.Book != null)
-            {
-                <a href="/books/Details/@recette.Book.Id">@recette.Book.Name</a>
-            }
-        </dd>
-        <dt>Date</dt>
-        <dd>@recette.CreatedAt.ToShortDateString()</dd>
-        <dt>Note</dt>
-        <dd>
-            <Rating Color="Color.Primary" @bind-SelectedValue="@recette.Rating" MaxValue="5" ReadOnly />
-        </dd>
-    </dl>
+
+    <LabelValue Label="Nom">
+        @recette.Name
+    </LabelValue>
+    <LabelValue Label="Livre">
+        @if (recette.Book != null)
+        {
+            <a href="/books/Details/@recette.Book.Id">@recette.Book.Name</a>
+        }
+    </LabelValue>
+    <LabelValue Label="Date">
+            @recette.CreatedAt.ToShortDateString()    
+    </LabelValue>
+    <LabelValue Label="Note">
+        <Rating Color="Color.Primary" @bind-SelectedValue="@recette.Rating" MaxValue="5" ReadOnly />
+    </LabelValue>
 
     <Blazorise.Link To="/recettes">
         Retour à la liste des recettes

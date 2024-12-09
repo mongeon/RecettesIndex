@@ -11,12 +11,12 @@ else
     <PageTitle>@author.FullName</PageTitle>
 
     <Heading Size="HeadingSize.Is1" TextColor="TextColor.Light">@author.FullName</Heading>
-    <dl>
-        <dt>Nom</dt>
-        <dd>@author.FullName</dd>
-        <dt>Date</dt>
-        <dd>@author.CreatedAt.ToShortDateString()</dd>
-    </dl>
+    <LabelValue Label="Nom">
+        @author.FullName
+    </LabelValue>
+    <LabelValue Label="Date">
+        @author.CreatedAt.ToShortDateString()
+    </LabelValue>
 
     <h2>Recettes</h2>
     <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />

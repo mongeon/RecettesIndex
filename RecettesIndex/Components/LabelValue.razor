@@ -1,0 +1,13 @@
+﻿<Field>
+    <FieldLabel TextColor="TextColor.Muted">@Label</FieldLabel>
+    <Text>
+        @ChildContent
+    </Text>
+</Field>
+@code {
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+}
