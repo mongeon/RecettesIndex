@@ -10,12 +10,12 @@
         {
             <tr>
                 <td>
-                    <a href="/bookDetails/@book.Id">@book.Title</a>
+                    <a href="/books/Details/@book.Id">@book.Title</a>
                 </td>
                 <td>
                     @if (book.Author != null)
                     {
-                        <a href="/authorDetails/@book.Author.Id">@book.Author.FullName</a>
+                        <a href="/authors/Details/@book.Author.Id">@book.Author.FullName</a>
                     }
                 </td>
             </tr>

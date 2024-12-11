@@ -1,4 +1,4 @@
-﻿@page "/bookDetails/{Id:int}"
+﻿@page "/books/Details/{Id:int}"
 @using RecettesIndex.Data
 @inject HttpClient Http
 
@@ -17,7 +17,7 @@ else
         <dd>
             @if (book.Author != null)
                 {
-                    <a href="/authorDetails/@book.Author.Id">@book.Author.FullName</a>
+                    <a href="/authors/Details/@book.Author.Id">@book.Author.FullName</a>
                 }
         </dd>
         <dt>Date</dt>
