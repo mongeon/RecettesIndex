@@ -10,13 +10,9 @@
 }
 else
 {
-    <dl>
-        <dt>Nom</dt>
-        <dd>@author.FullName</dd>
-        <dt>Date</dt>
-        <dd>@author.CreatedAt.ToShortDateString()</dd>
-    </dl>
-
+    <MudField Label="Nom" Variant="Variant.Text">@author.FullName</MudField>
+    <MudField Label="Date">@author.CreatedAt.ToShortDateString()</MudField>
+    
     <h2>Recettes</h2>
     <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />
 
