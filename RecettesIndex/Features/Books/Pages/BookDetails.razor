@@ -10,19 +10,14 @@
 }
 else
 {
-    <dl>
-        <dt>Titre</dt>
-        <dd>@book.Title</dd>
-        <dt>Auteur</dt>
-        <dd>
-            @if (book.Author != null)
-                {
-                    <a href="/authors/Details/@book.Author.Id">@book.Author.FullName</a>
-                }
-        </dd>
-        <dt>Date</dt>
-        <dd>@book.CreatedAt.ToShortDateString()</dd>
-    </dl>
+    <MudField Label="Titre" Variant="Variant.Text">@book.Title</MudField>
+    <MudField Label="Auteur">
+        @if (book.Author != null)
+        {
+            <MudLink Href="@($"/authors/Details/{@book.Author.Id}")">@book.Author.FullName</MudLink>
+        }
+    </MudField>
+    <MudField Label="Date">@book.CreatedAt.ToShortDateString()</MudField>
 
     <h2>Recettes</h2>
     <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />

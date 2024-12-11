@@ -10,27 +10,20 @@
 }
 else
 {
-    <dl>
-        <dt>Recette</dt>
-        <dd>@recette.Name</dd>
-        <dt>Livre</dt>
-        <dd>
-            @if (recette.Book != null)
-                {
-                <a href="/books/Details/@recette.Book.Id">@recette.Book.Title</a>
-                }
-        </dd>
-        <dt>Date</dt>
-        <dd>@recette.CreatedAt.ToShortDateString()</dd>
-        <dt>Note</dt>
-        <dd>
-            @if (recette.Rating.HasValue)
-            {
-                <div>@recette.Rating.Value.ToString("0.0")</div>
-            }
-        </dd>
-    </dl>
-
+    <MudField Label="Recette" Variant="Variant.Text">@recette.Name</MudField>
+    <MudField Label="Livre">
+        @if (recette.Book != null)
+        {
+            <MudLink Href="@($"books/Details/{@recette.Book.Id}")">@recette.Book.Title</MudLink>
+        }
+    </MudField>
+    <MudField Label="Note">
+        @if (recette.Rating != null)
+        {
+            <MudRating Max="5" SelectedValue="@recette.Rating.Value" ReadOnly="true" FullIcon="@Icons.Material.Filled.LocalPizza" EmptyIcon="@Icons.Material.Outlined.LocalPizza" />
+        }
+    </MudField>
+    <MudField Label="Date">@recette.CreatedAt.ToShortDateString()</MudField>
     <MudLink Href="/recettes">Retour à la liste des recettes</MudLink>
 }
 
