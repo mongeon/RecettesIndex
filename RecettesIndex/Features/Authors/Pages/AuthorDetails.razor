@@ -1,4 +1,4 @@
-﻿@page "/authorDetails/{Id:int}"
+﻿@page "/authors/Details/{Id:int}"
 @using RecettesIndex.Data
 @inject HttpClient Http
 
@@ -10,20 +10,16 @@
 }
 else
 {
-    <dl>
-        <dt>Nom</dt>
-        <dd>@author.FullName</dd>
-        <dt>Date</dt>
-        <dd>@author.CreatedAt.ToShortDateString()</dd>
-    </dl>
-
+    <MudField Label="Nom" Variant="Variant.Text">@author.FullName</MudField>
+    <MudField Label="Date">@author.CreatedAt.ToShortDateString()</MudField>
+    
     <h2>Recettes</h2>
     <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />
 
     <h2>Livres</h2>
     <RecettesIndex.Features.Books.Components.BooksList Books="@books" />
 
-    <a href="/authors">Retour à la liste des auteurs</a>
+    <MudLink Href="/authors">Retour à la liste des auteurs</MudLink>
 }
 
 @code {
