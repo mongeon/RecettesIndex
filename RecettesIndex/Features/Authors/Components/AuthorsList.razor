@@ -1,20 +1,13 @@
-﻿<table class="table">
-    <thead>
-        <tr>
-            <th>Nom</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var author in Authors)
-        {
-            <tr>
-                <td>
-                    <a href="/authors/Details/@author.Id">@author.FullName</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+﻿<MudTable Items="@Authors">
+    <HeaderContent>
+        <MudTh>Nom</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nom">
+            <MudLink Href="@($"/authors/Details/{@context.Id}")">@context.FullName</MudLink>
+        </MudTd>
+    </RowTemplate>   
+</MudTable>
 
 @code {
     [Parameter]

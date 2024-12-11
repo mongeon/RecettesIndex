@@ -1,41 +1,34 @@
-﻿<table class="table">
-    <thead>
-        <tr>
-            <th>Nom</th>
-            <th>Livre</th>
-            <th>Page</th>
-            <th>Note</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var recette in Recettes)
-        {
-            <tr>
-                <td>
-                    <a href="/recettes/Details/@recette.Id">@recette.Name</a>
-                </td>
-                <td>
-                    @if (recette.Book != null)
-                    {
-                        <a href="/books/Details/@recette.BookId">@recette.Book.Title</a>
-                    }
-                </td>
-                <td>
-                    @if (recette.Page.HasValue)
-                    {
-                        <div>p. @recette.Page</div>
-                    }
-                </td>
-                <td>
-                    @if (recette.Rating.HasValue)
-                    {
-                        <div>@recette.Rating.Value.ToString("0.0")</div>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+﻿<MudTable Items="@Recettes">
+    <HeaderContent>
+        <MudTh>Nom</MudTh>
+        <MudTh>Livre</MudTh>
+        <MudTh>Page</MudTh>
+        <MudTh>Note</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nom">
+            <MudLink Href="@($"/recettes/Details/{@context.Id}")">@context.Name</MudLink>
+        </MudTd>
+        <MudTd DataLabel="Livre">
+            @if (context.Book != null)
+            {
+                <MudLink Href="@($"/books/Details/{@context.BookId}")">@context.Book.Title</MudLink>
+            }
+        </MudTd>
+        <MudTd DataLabel="Page">
+            @if (context.Page.HasValue)
+            {
+                <div>p. @context.Page</div>
+            }
+        </MudTd>
+        <MudTd DataLabel="Page">
+            @if (context.Rating.HasValue)
+            {
+                <MudRating Max="5" SelectedValue="@context.Rating.Value" ReadOnly="true" FullIcon="@Icons.Material.Filled.LocalPizza" EmptyIcon="@Icons.Material.Outlined.LocalPizza" />
+            }
+        </MudTd>
+    </RowTemplate>
+</MudTable>
 
 @code {
 
