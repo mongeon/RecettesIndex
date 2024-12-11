@@ -1,28 +1,21 @@
-﻿<table class="table">
-    <thead>
-        <tr>
-            <th>Titre</th>
-            <th>Auteur</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var book in Books)
-        {
-            <tr>
-                <td>
-                    <a href="/books/Details/@book.Id">@book.Title</a>
-                </td>
-                <td>
-                    @if (book.Author != null)
-                    {
-                        <a href="/authors/Details/@book.Author.Id">@book.Author.FullName</a>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+﻿<MudTable Items="@Books">
+    <HeaderContent>
+        <MudTh>Titre</MudTh>
+        <MudTh>Auteur</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Titre">
+            <MudLink Href="@($"/books/Details/{@context.Id}")">@context.Title</MudLink>
+        </MudTd>
+        <MudTd DataLabel="Auteur">
+            @if (context.Author != null)
+            {
+                <MudLink Href="@($"/authors/Details/{@context.Author.Id}")">@context.Author.FullName</MudLink>
+            }
+        </MudTd>
+    </RowTemplate>
+</MudTable>
 @code {
     [Parameter]
     public IEnumerable<Book> Books { get; set; } = new List<Book>();
-}
+        }
