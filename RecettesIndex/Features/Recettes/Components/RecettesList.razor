@@ -15,7 +15,7 @@
                 <MudLink Href="@($"/books/Details/{@context.BookId}")">@context.Book.Title</MudLink>
             }
         </MudTd>
-        <MudTd DataLabel="Page">
+        <MudTd DataLabel="Note">
             @if (context.Page.HasValue)
             {
                 <div>p. @context.Page</div>
