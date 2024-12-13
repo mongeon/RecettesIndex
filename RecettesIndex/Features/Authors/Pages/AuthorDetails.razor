@@ -2,21 +2,24 @@
 @using RecettesIndex.Data
 @inject HttpClient Http
 
-<h1>Auteur</h1>
 
 @if (author == null)
 {
+    <RecettesPageTitle>Chargement...</RecettesPageTitle>
     <p><em>Chargement...</em></p>
 }
 else
 {
-    <MudField Label="Nom" Variant="Variant.Text">@author.FullName</MudField>
+
+    <RecettesPageTitle>@author.FullName</RecettesPageTitle>
+    <MudText Typo="Typo.h1">@author.FullName</MudText>
+@*     <MudField Label="Nom" Variant="Variant.Text">@author.FullName</MudField> *@
     <MudField Label="Date">@author.CreatedAt.ToShortDateString()</MudField>
-    
-    <h2>Recettes</h2>
+
+    <MudText Typo="Typo.h2">Recettes</MudText>
     <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="@recettes" />
 
-    <h2>Livres</h2>
+    <MudText Typo="Typo.h2">Livres</MudText>
     <RecettesIndex.Features.Books.Components.BooksList Books="@books" />
 
     <MudLink Href="/authors">Retour à la liste des auteurs</MudLink>

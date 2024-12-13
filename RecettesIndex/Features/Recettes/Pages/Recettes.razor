@@ -2,12 +2,13 @@
 @using RecettesIndex.Data
 @inject HttpClient Http
 
-<PageTitle>Recettes</PageTitle>
+<RecettesPageTitle>Recettes</RecettesPageTitle>
 
-<h1>Recettes</h1>
+<MudText Typo="Typo.h1">Recettes</MudText>
 
 @if (recettes == null)
 {
+    <RecettesPageTitle>Chargement...</RecettesPageTitle>
     <p><em>Chargement...</em></p>
 }
 else
