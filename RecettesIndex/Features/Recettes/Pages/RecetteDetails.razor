@@ -2,15 +2,16 @@
 @using RecettesIndex.Data
 @inject HttpClient Http
 
-<h1>Recette</h1>
 
 @if (recette == null)
 {
+    <RecettesPageTitle>Chargement...</RecettesPageTitle>
     <p><em>Chargement...</em></p>
 }
 else
 {
-    <MudField Label="Recette" Variant="Variant.Text">@recette.Name</MudField>
+    <RecettesPageTitle>@recette.Name</RecettesPageTitle>
+    <MudText Typo="Typo.h1">@recette.Name</MudText>
     <MudField Label="Livre">
         @if (recette.Book != null)
         {

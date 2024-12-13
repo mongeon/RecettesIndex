@@ -1,11 +1,12 @@
 ﻿@page "/"
 @inject HttpClient Http
 
-<PageTitle>Recettes</PageTitle>
+<RecettesPageTitle>Accueil</RecettesPageTitle>
 
-<h1>Derniers ajouts</h1>
+<MudText Typo="Typo.h1">Derniers ajouts</MudText>
 @if (recettes == null)
 {
+    <RecettesPageTitle>Chargement...</RecettesPageTitle>
     <p><em>Chargement...</em></p>
 }
 else
