@@ -15,13 +15,13 @@
                 <MudLink Href="@($"/books/Details/{@context.BookId}")">@context.Book.Title</MudLink>
             }
         </MudTd>
-        <MudTd DataLabel="Note">
+        <MudTd DataLabel="Page">
             @if (context.Page.HasValue)
             {
                 <div>p. @context.Page</div>
             }
         </MudTd>
-        <MudTd DataLabel="Page">
+        <MudTd DataLabel="Note">
             @if (context.Rating.HasValue)
             {
                 <MudRating Max="5" SelectedValue="@context.Rating.Value" ReadOnly="true" FullIcon="@Icons.Material.Filled.LocalPizza" EmptyIcon="@Icons.Material.Outlined.LocalPizza" />
