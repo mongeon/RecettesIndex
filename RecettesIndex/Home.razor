@@ -2,23 +2,29 @@
 @inject HttpClient Http
 
 <RecettesPageTitle>Accueil</RecettesPageTitle>
+<MudText Typo="Typo.h1">Bienvenue sur Recettes</MudText>
 
-<MudText Typo="Typo.h1">Derniers ajouts</MudText>
-@if (recettes == null)
+@if (latestRecettes == null || randomRecettes == null)
 {
     <RecettesPageTitle>Chargement...</RecettesPageTitle>
     <p><em>Chargement...</em></p>
 }
 else
 {
-    <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="recettes" />
+    <MudText Typo="Typo.h2">Derniers ajouts</MudText>
+    <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="latestRecettes" />
+
+    <MudText Typo="Typo.h2">Recettes aléatoires</MudText>
+    <RecettesIndex.Features.Recettes.Components.RecettesList Recettes="randomRecettes" />
 }
 @code {
-    Recette[]? recettes;
+    Recette[]? latestRecettes;
+    Recette[]? randomRecettes;
 
     protected override async Task OnInitializedAsync()
     {
-        recettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/latest/5");
+        latestRecettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/latest/5");
+        randomRecettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/random/5");
     }
 
 }
