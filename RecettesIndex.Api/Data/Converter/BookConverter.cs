@@ -8,7 +8,7 @@ public static class BookConverter
         {
             Id = book.Id,
             Title = book.Title,
-            Author = book.Author.Convert(),
+            Authors = book.Authors.Select(x => x.Convert()).ToList(),
             CreatedAt = book.CreatedAt
         };
     }
@@ -23,7 +23,7 @@ public static class BookConverter
         {
             Id = book.Id,
             Title = book.Title,
-            Author = book.Author.Convert(),
+            Authors = book.Authors.Select(x => x.Convert()).ToList(),
             CreatedAt = book.CreatedAt
         };
     }
