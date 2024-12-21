@@ -13,9 +13,9 @@ else
     <RecettesPageTitle>@book.Title</RecettesPageTitle>
     <MudText Typo="Typo.h1">@book.Title</MudText>
     <MudField Label="Auteur">
-        @if (book.Author != null)
+        @if (book.Authors != null)
         {
-            <MudLink Href="@($"/authors/Details/{@book.Author.Id}")">@book.Author.FullName</MudLink>
+            <RecettesIndex.Features.Authors.Components.AuthorsList Authors="book.Authors" />
         }
     </MudField>
     <MudField Label="Date">@book.CreatedAt.ToShortDateString()</MudField>

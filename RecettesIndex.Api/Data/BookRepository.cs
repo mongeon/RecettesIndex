@@ -32,9 +32,22 @@ public class BookRepository(Supabase.Client client) : IBookRepository
 
     public async Task<IEnumerable<Book>> GetBooksByAuthor(int authorId)
     {
-        var result = await client
-            .From<Book>()
-            .Where(b => b.AuthorId == authorId)
+        //List<IPostgrestQueryFilter> andFilter = new List<IPostgrestQueryFilter>()
+        //{
+        //    new QueryFilter<Book,List<string>>(x=>x.Title, Operator.Contains, new List<string>() { "-" }),
+        //};
+
+        //var result = await client
+        //    .From<Book>()
+        //    .Where(b => b.Authors.Any())
+        //    .Get();
+
+        //var result = await client
+        //    .From<Book>()
+        //    .And(andFilter)
+        //    .Get();
+
+        var result = await client.From<Book>()
             .Get();
         return result.Models;
     }

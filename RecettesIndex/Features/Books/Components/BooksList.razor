@@ -8,9 +8,9 @@
             <MudLink Href="@($"/books/Details/{@context.Id}")">@context.Title</MudLink>
         </MudTd>
         <MudTd DataLabel="Auteur">
-            @if (context.Author != null)
+            @if (context.Authors != null)
             {
-                <MudLink Href="@($"/authors/Details/{@context.Author.Id}")">@context.Author.FullName</MudLink>
+                <RecettesIndex.Features.Authors.Components.AuthorsList Authors="context.Authors" />
             }
         </MudTd>
     </RowTemplate>
@@ -18,4 +18,4 @@
 @code {
     [Parameter]
     public IEnumerable<Book> Books { get; set; } = new List<Book>();
-        }
+}
