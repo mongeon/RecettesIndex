@@ -6,7 +6,7 @@ public record Book
 
     public required string Title { get; set; }
 
-    public required Author Author { get; set; }
+    public required List<Author> Authors { get; set; }
 
     public DateTime CreatedAt { get; set; }
 }

@@ -12,11 +12,8 @@ public class Book : BaseModel
     [Column("title")]
     public string Title { get; set; } = "";
 
-    [Column("author")]
-    public int? AuthorId { get; set; }
-
-    [Reference(typeof(Author), true)]
-    public Author Author { get; set; } = default!;
+    [Reference(typeof(Author), includeInQuery: true, useInnerJoin: false)]
+    public List<Author> Authors { get; set; } = default!;
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
