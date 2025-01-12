@@ -1,4 +1,5 @@
 ﻿using RecettesIndex.Api.Data.Models;
+using Supabase.Postgrest;
 
 namespace RecettesIndex.Api.Data;
 
@@ -32,22 +33,9 @@ public class BookRepository(Supabase.Client client) : IBookRepository
 
     public async Task<IEnumerable<Book>> GetBooksByAuthor(int authorId)
     {
-        //List<IPostgrestQueryFilter> andFilter = new List<IPostgrestQueryFilter>()
-        //{
-        //    new QueryFilter<Book,List<string>>(x=>x.Title, Operator.Contains, new List<string>() { "-" }),
-        //};
-
-        //var result = await client
-        //    .From<Book>()
-        //    .Where(b => b.Authors.Any())
-        //    .Get();
-
-        //var result = await client
-        //    .From<Book>()
-        //    .And(andFilter)
-        //    .Get();
-
         var result = await client.From<Book>()
+            .Select("*,  Author_info:authors!inner(*)")
+            .Filter("authors.id", Constants.Operator.Equals, authorId)
             .Get();
         return result.Models;
     }

@@ -1,4 +1,5 @@
 ﻿using RecettesIndex.Api.Data.Models;
+using Supabase.Postgrest;
 
 namespace RecettesIndex.Api.Data;
 
@@ -47,7 +48,11 @@ public class RecetteRepository(Supabase.Client client) : IRecetteRepository
         //    .Filter("book.author.id", Supabase.Postgrest.Constants.Operator.Equals, authorId)
         //    .Get();
         //return result.Models.Where(x => x.Book?.Authors.Any(a => a.Id == authorId) ?? false);
-        return new List<Recette>();
+
+        var result = await client.From<Recette>()
+            .Select("*,  Author_info:authors!inner(*)")
+            .Filter("authors.id", Constants.Operator.Equals, authorId)
+            .Get();
+        return result.Models;
     }
 }
-//txJdjTAIB1qBemkK
