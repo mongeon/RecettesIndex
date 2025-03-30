@@ -26,4 +26,7 @@ public class Recette : BaseModel
 
     [Column("rating")]
     public double? Rating { get; set; }
+
+    [Column("notes")]
+    public string? Notes { get; set; }
 }
