@@ -1,6 +1,6 @@
 ﻿<MudTable Items="@Authors">
     <HeaderContent>
-        <MudTh>Nom</MudTh>
+        <MudTh ><MudTableSortLabel SortBy="new Func<Author, object>(x=>x.FullName)">Nom</MudTableSortLabel></MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Nom">
