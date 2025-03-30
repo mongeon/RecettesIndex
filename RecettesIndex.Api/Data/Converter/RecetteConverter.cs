@@ -12,7 +12,8 @@
                 BookId = recette.BookId,
                 Book = recette.Book?.Convert(),
                 Page = recette.Page,
-                Rating = recette.Rating
+                Rating = recette.Rating,
+                Notes = recette.Notes
             };
         }
         public static Shared.Recette Convert(this Models.Recette recette)
@@ -25,7 +26,8 @@
                 BookId = recette.BookId,
                 Book = recette.Book?.Convert(),
                 Page = recette.Page,
-                Rating = recette.Rating.HasValue ? (int)recette.Rating.Value : null
+                Rating = recette.Rating.HasValue ? (int)recette.Rating.Value : null,
+                Notes = recette.Notes
             };
         }
     }

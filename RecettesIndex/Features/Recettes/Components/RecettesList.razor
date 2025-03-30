@@ -4,6 +4,7 @@
         <MudTh>Livre</MudTh>
         <MudTh>Page</MudTh>
         <MudTh>Note</MudTh>
+        <MudTh>Notes</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Nom" >
@@ -26,6 +27,14 @@
             {
                 <MudRating Max="5" SelectedValue="@context.Rating.Value" ReadOnly="true" FullIcon="@Icons.Material.Filled.LocalPizza" EmptyIcon="@Icons.Material.Outlined.LocalPizza" />
             }
+        </MudTd>
+        <MudTd DataLabel="Notes">
+         @if (!string.IsNullOrEmpty(context.Notes))
+        {
+            <MudTooltip Text="@context.Notes">
+                <MudIconButton Icon="@Icons.Material.Filled.Notes" />
+            </MudTooltip>
+        }
         </MudTd>
     </RowTemplate>
 </MudTable>

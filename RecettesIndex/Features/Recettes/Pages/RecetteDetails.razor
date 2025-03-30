@@ -24,6 +24,7 @@ else
             <MudRating Max="5" SelectedValue="@recette.Rating.Value" ReadOnly="true" FullIcon="@Icons.Material.Filled.LocalPizza" EmptyIcon="@Icons.Material.Outlined.LocalPizza" />
         }
     </MudField>
+    <MudField Label="Notes">@recette.Notes</MudField>
     <MudField Label="Date">@recette.CreatedAt.ToShortDateString()</MudField>
     <MudLink Href="/recettes">Retour à la liste des recettes</MudLink>
 }
