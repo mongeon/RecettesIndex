@@ -1,6 +1,6 @@
 ﻿@page "/recettes"
 @using RecettesIndex.Data
-@inject HttpClient Http
+@using RecettesIndex.Services
 
 <RecettesPageTitle>Recettes</RecettesPageTitle>
 
@@ -18,7 +18,7 @@ else
 
 @code {
     [Inject]
-    public required IRecetteRepository recetteRepository { get; set; }
+    public required RecetteService recetteRepository { get; set; }
     private Recette[]? recettes;
 
     protected override async Task OnInitializedAsync()

@@ -1,7 +1,6 @@
 ﻿@page "/recettes/Details/{Id:int}"
 @using RecettesIndex.Data
-@inject HttpClient Http
-
+@using RecettesIndex.Services
 
 @if (recette == null)
 {
@@ -33,8 +32,11 @@ else
     [Parameter]
     public int Id { get; set; }
     private Recette? recette;
+
+    [Inject]
+    public required RecetteService recetteService { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        recette = await Http.GetFromJsonAsync<Recette>($"api/recettes/{Id}");
+        recette = await recetteService.GetRecette(Id);
     }
 }

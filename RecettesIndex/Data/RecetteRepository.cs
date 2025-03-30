@@ -1,18 +1,54 @@
-﻿using RecettesIndex.Shared;
-using System.Text.Json;
+﻿using RecettesIndex.Api.Data.Models;
+using Supabase.Postgrest;
 
 namespace RecettesIndex.Data;
 
-public class RecetteRepository(HttpClient client) : BaseRepository(client), IRecetteRepository
+public class RecetteRepository(Supabase.Client client) : IRecetteRepository
 {
-    public async Task<Recette[]> GetRecettes()
+    public async Task<IEnumerable<Recette>> GetRecettes()
     {
-        using var response = await _client.GetAsync("api/recettes");
-        response.EnsureSuccessStatusCode();
+        var result = await client
+            .From<Recette­­>()
+            .Get();
 
-        var stream = await response.Content.ReadAsStreamAsync();
-        var recettes = await JsonSerializer.DeserializeAsync<Recette[]>(stream, _options);
+        return result.Models;
+    }
 
-        return recettes ?? [];
+    public async Task<Recette?> GetRecette(int id)
+    {
+        var result = await client
+            .From<Recette>()
+            .Where(b => b.Id == id)
+            .Single();
+
+        return result;
+    }
+
+    public async Task<Recette?> Insert(Recette recette)
+    {
+        var result = await client.From<Recette>().Insert(recette);
+
+        return result.Model;
+    }
+
+    public async Task<IEnumerable<Recette>> GetRecettesByBook(int bookId)
+    {
+        var result = await client
+            .From<Recette>()
+            .Where(b => b.BookId == bookId)
+            .Get();
+        return result.Models;
+    }
+
+    public async Task<IEnumerable<Recette>> GetRecettesByAuthor(int authorId)
+    {
+
+        var result = await client.From<Recette>()
+            .Select("*, book_id_info:books(authors!inner(id))")
+            .Filter("book_id_info.authors.id", Constants.Operator.Equals, authorId)
+            .Get();
+        return result
+            .Models
+            .Where(x => x.Book != null && x.Book.Authors.Any(a => a.Id == authorId));
     }
 }

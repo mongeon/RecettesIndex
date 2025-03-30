@@ -1,10 +1,12 @@
-﻿using RecettesIndex.Shared;
+﻿using RecettesIndex.Api.Data.Models;
 
-namespace RecettesIndex.Data
+namespace RecettesIndex.Data;
+
+public interface IRecetteRepository
 {
-    public interface IRecetteRepository
-    {
-        Task<Recette[]> GetRecettes();
-        // Task<Recette?> Insert(Recette recette);
-    }
+    Task<IEnumerable<Recette>> GetRecettes();
+    Task<Recette?> GetRecette(int id);
+    Task<Recette?> Insert(Recette recette);
+    Task<IEnumerable<Recette>> GetRecettesByBook(int bookId);
+    Task<IEnumerable<Recette>> GetRecettesByAuthor(int authorId);
 }

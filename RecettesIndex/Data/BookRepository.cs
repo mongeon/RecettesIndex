@@ -1,18 +1,42 @@
-﻿using RecettesIndex.Shared;
-using System.Text.Json;
+﻿using RecettesIndex.Api.Data.Models;
+using Supabase.Postgrest;
 
 namespace RecettesIndex.Data;
 
-public class BookRepository(HttpClient client) : BaseRepository(client), IBookRepository
+public class BookRepository(Supabase.Client client) : IBookRepository
 {
-    public async Task<Book[]> GetBooks()
+    public async Task<Book?> GetBook(int id)
     {
-        using var response = await _client.GetAsync("api/books");
-        response.EnsureSuccessStatusCode();
+        var result = await client
+            .From<Book>()
+            .Where(b => b.Id == id)
+            .Single();
 
-        var stream = await response.Content.ReadAsStreamAsync();
-        var books = await JsonSerializer.DeserializeAsync<Book[]>(stream, _options);
+        return result;
+    }
 
-        return books ?? [];
+    public async Task<IEnumerable<Book>> GetBooks()
+    {
+        var result = await client
+            .From<Book>()
+            .Get();
+
+        return result.Models;
+    }
+
+    public async Task<Book?> Insert(Book book)
+    {
+        var result = await client.From<Book>().Insert(book);
+
+        return result.Model;
+    }
+
+    public async Task<IEnumerable<Book>> GetBooksByAuthor(int authorId)
+    {
+        var result = await client.From<Book>()
+            .Select("*,  Author_info:authors!inner(*)")
+            .Filter("authors.id", Constants.Operator.Equals, authorId)
+            .Get();
+        return result.Models;
     }
 }

@@ -1,18 +1,32 @@
-﻿using RecettesIndex.Shared;
-using System.Text.Json;
+﻿using RecettesIndex.Api.Data.Models;
 
 namespace RecettesIndex.Data;
 
-public class AuthorRepository(HttpClient client) : BaseRepository(client), IAuthorRepository
+public class AuthorRepository(Supabase.Client client) : IAuthorRepository
 {
-    public async Task<Author[]> GetAuthors()
+    public async Task<Author?> GetAuthor(int id)
     {
-        using var response = await _client.GetAsync("api/authors");
-        response.EnsureSuccessStatusCode();
+        var result = await client
+            .From<Author>()
+            .Where(b => b.Id == id)
+            .Single();
 
-        var stream = await response.Content.ReadAsStreamAsync();
-        var authors = await JsonSerializer.DeserializeAsync<Author[]>(stream, _options);
+        return result;
+    }
 
-        return authors ?? [];
+    public async Task<IEnumerable<Author>> GetAuthors()
+    {
+        var result = await client
+            .From<Author>()
+            .Get();
+
+        return result.Models;
+    }
+
+    public async Task<Author?> Insert(Author author)
+    {
+        var result = await client.From<Author>().Insert(author);
+
+        return result.Model;
     }
 }

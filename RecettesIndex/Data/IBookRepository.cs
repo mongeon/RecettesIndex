@@ -1,9 +1,11 @@
-﻿using RecettesIndex.Shared;
+﻿using RecettesIndex.Api.Data.Models;
 
 namespace RecettesIndex.Data;
 
 public interface IBookRepository
 {
-    Task<Book[]> GetBooks();
-    // Task<Book?> Insert(Book book);
+    Task<Book?> GetBook(int id);
+    Task<IEnumerable<Book>> GetBooks();
+    Task<IEnumerable<Book>> GetBooksByAuthor(int authorId);
+    Task<Book?> Insert(Book book);
 }

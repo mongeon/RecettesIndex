@@ -1,6 +1,6 @@
 ﻿@page "/authors"
 @using RecettesIndex.Data
-@inject HttpClient Http
+@using RecettesIndex.Services
 
 <RecettesPageTitle>Auteurs</RecettesPageTitle>
 
@@ -18,7 +18,7 @@ else
 
 @code {
     [Inject]
-    public required IAuthorRepository authorRepository { get; set; }
+    public required AuthorService authorRepository { get; set; }
     private Author[]? authors;
 
     protected override async Task OnInitializedAsync()

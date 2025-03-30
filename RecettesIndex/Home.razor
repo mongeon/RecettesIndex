@@ -1,5 +1,5 @@
 ﻿@page "/"
-@inject HttpClient Http
+@using RecettesIndex.Services
 
 <RecettesPageTitle>Accueil</RecettesPageTitle>
 <MudText Typo="Typo.h1">Bienvenue sur Recettes</MudText>
@@ -21,10 +21,11 @@ else
     Recette[]? latestRecettes;
     Recette[]? randomRecettes;
 
+    [Inject]
+    public required RecetteService recetteRepository { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        latestRecettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/latest/5");
-        randomRecettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/random/5");
+        latestRecettes = await recetteRepository.GetLatestRecettes();
+        randomRecettes = await recetteRepository.GetRandomRecettes();
     }
-
 }

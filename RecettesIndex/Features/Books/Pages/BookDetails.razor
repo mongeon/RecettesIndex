@@ -1,6 +1,6 @@
 ﻿@page "/books/Details/{Id:int}"
 @using RecettesIndex.Data
-@inject HttpClient Http
+@using RecettesIndex.Services
 
 
 @if (book == null)
@@ -31,9 +31,14 @@ else
     public int Id { get; set; }
     private Book? book;
     private Recette[]? recettes;
+
+    [Inject]
+    public required RecetteService recetteService { get; set; }
+    [Inject]
+    public required BookService bookService { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        book = await Http.GetFromJsonAsync<Book>($"api/books/{Id}");
-        recettes = await Http.GetFromJsonAsync<Recette[]>($"api/recettes/book/{Id}");
+        book = await bookService.GetBook(Id);
+        recettes = await recetteService.GetRecettesByBook(Id);
     }
 }
