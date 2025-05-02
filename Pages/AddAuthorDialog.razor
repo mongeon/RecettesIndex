@@ -1,0 +1,46 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">Add Author</MudText>
+        <MudTextField @bind-Value="author.Name" Label="First Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <MudTextField @bind-Value="author.LastName" Label="Last Name (optional)" Variant="Variant.Outlined" Class="mb-2" />
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="AddAuthor" Color="Color.Primary" Variant="Variant.Filled">Add</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudBlazor.MudDialog MudDialog { get; set; }
+    private Author author = new();
+    private string? errorMessage;
+
+    private async Task AddAuthor()
+    {
+        errorMessage = null;
+        try
+        {
+            var response = await SupabaseClient.From<Author>().Insert(author);
+            if (response.Models?.Count > 0)
+                await MudDialog.CloseAsync(DialogResult.Ok(response.Models[0]));
+            else
+                errorMessage = "Failed to add author.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+    private void Cancel()
+    {
+        MudDialog.CloseAsync(DialogResult.Cancel());
+    }
+}

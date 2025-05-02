@@ -1,0 +1,145 @@
+@page "/recipes"
+@using RecettesIndex.Models
+@using MudBlazor
+@inject RecettesIndex.Services.AuthService AuthService
+@inject Supabase.Client SupabaseClient
+@inject MudBlazor.IDialogService DialogService
+
+<PageTitle>Recipes</PageTitle>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5">Recipes</MudText>
+    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (recipes.Count == 0)
+    {
+        <MudText>No recipes found.</MudText>
+    }
+    else
+    {
+        <MudTextField @bind-Value="searchTerm" Placeholder="Search recipes..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+        <MudTable Items="filteredRecipes" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Name)">Nom</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Rating)">Note</MudTableSortLabel></MudTh>
+                <MudTh>Created</MudTh>
+                <MudTh>Notes</MudTh>
+                <MudTh>Book</MudTh>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTh>Actions</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
+                </MudTd>
+                <MudTd DataLabel="Rating">
+                    <PizzaRating Value="@context.Rating" />
+                </MudTd>
+                <MudTd DataLabel="Created">@context.CreationDate.ToShortDateString()</MudTd>
+                <MudTd DataLabel="Notes">@context.Notes</MudTd>
+                <MudTd DataLabel="Book">
+                    @if (context.BookId != null)
+                    {
+                        var book = books.FirstOrDefault(b => b.Id == context.BookId);
+                        if (book != null)
+                        {
+                            <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
+                        }
+                    }
+                </MudTd>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTd>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Edit</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Delete</MudButton>
+                    </MudTd>
+                }
+            </RowTemplate>
+        </MudTable>
+    }
+    @if (AuthService.IsAuthenticated)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Add Recipe</MudButton>
+    }
+</MudPaper>
+
+@code {
+    private List<Recipe> recipes = new();
+    private List<Book> books = new();
+    private bool loading = true;
+    private List<BreadcrumbItem> breadcrumbs = new()
+    {
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("Recipes", href: "/recipes", disabled: true)
+    };
+    private string searchTerm = string.Empty;
+    private MudTable<Recipe> table;
+    private IEnumerable<Recipe> filteredRecipes => string.IsNullOrWhiteSpace(searchTerm)
+        ? recipes
+        : recipes.Where(r => r.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (r.Notes != null && r.Notes.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecipes();
+    }
+
+    private async Task LoadRecipes()
+    {
+        loading = true;
+        try
+        {
+            var bookResponse = await SupabaseClient.From<Book>().Get();
+            books = bookResponse.Models ?? new List<Book>();
+            var response = await SupabaseClient.From<Recipe>().Get();
+            recipes = response.Models ?? new List<Recipe>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading recipes: {ex.Message}");
+            recipes = new List<Recipe>();
+            books = new List<Book>();
+        }
+        loading = false;
+    }
+
+    private async Task ShowAddDialog()
+    {
+        var dialog = DialogService.Show<AddRecipeDialog>("Add Recipe");
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadRecipes();
+        }
+    }
+
+    private async Task ShowEditDialog(Recipe recipeToEdit)
+    {
+        var parameters = new MudBlazor.DialogParameters { ["RecipeToEdit"] = recipeToEdit };
+        var dialog = DialogService.Show<EditRecipeDialog>("Edit Recipe", parameters);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadRecipes();
+        }
+    }
+
+    private async Task DeleteRecipe(Recipe recipeToDelete)
+    {
+        await SupabaseClient.From<Recipe>().Where(x => x.Id == recipeToDelete.Id).Delete();
+        await LoadRecipes();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+    }
+}

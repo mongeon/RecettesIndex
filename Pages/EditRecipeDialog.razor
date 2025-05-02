@@ -1,0 +1,83 @@
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+@using System.Linq;
+@code {
+    [Parameter] public Recipe RecipeToEdit { get; set; } = new();
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+    private Recipe recipe = new();
+    private string? errorMessage;
+    private List<Book> books = new();
+    private Book? selectedBook;
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await SupabaseClient.From<Book>().Get();
+        books = response.Models ?? new List<Book>();
+        // Set the initial values for editing
+        recipe = new Recipe
+        {
+            Id = RecipeToEdit.Id,
+            Name = RecipeToEdit.Name,
+            Rating = RecipeToEdit.Rating,
+            Notes = RecipeToEdit.Notes,
+            BookId = RecipeToEdit.BookId,
+            BookPage = RecipeToEdit.BookPage
+        };
+        selectedBook = books.FirstOrDefault(b => b.Id == RecipeToEdit.BookId);
+    }
+    private async Task Save()
+    {
+        errorMessage = null;
+        try
+        {
+            if (selectedBook != null)
+            {
+                recipe.BookId = selectedBook.Id;
+            }
+            else
+            {
+                recipe.BookId = null;
+            }
+            var response = await SupabaseClient.From<Recipe>().Where(x => x.Id == recipe.Id).Update(recipe);
+            if (response.Models?.Count > 0)
+                MudDialog.Close(DialogResult.Ok(response.Models[0]));
+            else
+                errorMessage = "Failed to update recipe.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">Edit Recipe</MudText>
+        <MudTextField @bind-Value="recipe.Name" Label="Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <PizzaRating @bind-Value="recipe.Rating" ReadOnly="false" />
+        <MudTextField @bind-Value="recipe.Notes" Label="Notes" Variant="Variant.Outlined" Class="mb-2" />
+        <MudNumericField @bind-Value="recipe.BookPage" Label="Book Page (optional)" Variant="Variant.Outlined" Class="mb-2" />
+        <MudSelect T="Book" Label="Book (optional)" @bind-Value="selectedBook" Variant="Variant.Outlined" Class="mb-2">
+            <MudSelectItem T="Book" Value="null">None</MudSelectItem>
+            @foreach (var book in books)
+            {
+                <MudSelectItem T="Book" Value="book">@book.Name</MudSelectItem>
+            }
+        </MudSelect>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>

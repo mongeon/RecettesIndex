@@ -1,0 +1,63 @@
+@page "/recipes/{id:int}"
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+
+<PageTitle>Recipe Details</PageTitle>
+<MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (recipe == null)
+{
+    <MudText>Recipe not found.</MudText>
+}
+else
+{
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5">@recipe.Name</MudText>
+        <MudText>Rating: <PizzaRating Value="@recipe.Rating" /></MudText>
+        <MudText>Notes: @recipe.Notes</MudText>
+        <MudText>Created: @recipe.CreationDate.ToShortDateString()</MudText>
+        @if (book != null)
+        {
+            if (book != null)
+            {
+                <MudText>Book: <MudLink Href="@($"/books/{book.Id}")">@book.Name</MudLink></MudText>
+            }
+            else
+            {
+                <MudText>Book ID: @recipe.BookId</MudText>
+            }
+        }
+        <MudButton Href="/recipes" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Recipes</MudButton>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    private Recipe? recipe;
+    private Book? book;
+    private bool loading = true;
+    private List<BreadcrumbItem> breadcrumbs = new()
+    {
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("Recipes", href: "/recipes"),
+        new BreadcrumbItem("Details", href: null, disabled: true)
+    };
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        var response = await SupabaseClient.From<Recipe>().Where(x => x.Id == id).Get();
+        recipe = response.Models?.FirstOrDefault();
+        if (recipe.BookId != null)
+        {
+            var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
+            book = bookResponse.Models?.FirstOrDefault();
+        }
+        loading = false;
+    }
+
+}
