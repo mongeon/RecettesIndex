@@ -1,0 +1,120 @@
+@page "/authors"
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+@inject RecettesIndex.Services.AuthService AuthService
+@inject MudBlazor.IDialogService DialogService
+
+<PageTitle>Authors</PageTitle>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5">Authors</MudText>
+    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (authors.Count == 0)
+    {
+        <MudText>No authors found.</MudText>
+    }
+    else
+    {
+        <MudTextField @bind-Value="searchTerm" Placeholder="Search authors..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+        <MudTable Items="filteredAuthors" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<Author, object>(x=>x.FullName)">Nom</MudTableSortLabel></MudTh>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTh>Actions</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="First Name">
+                    <MudLink Href="@($"/authors/{context.Id}")" Style="cursor:pointer">@context.FullName</MudLink>
+                </MudTd>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTd>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Edit</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAuthor(context)">Delete</MudButton>
+                    </MudTd>
+                }
+            </RowTemplate>
+        </MudTable>
+    }
+    @if (AuthService.IsAuthenticated)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Add Author</MudButton>
+    }
+</MudPaper>
+
+@code {
+    private List<Author> authors = new();
+    private bool loading = true;
+    private List<BreadcrumbItem> breadcrumbs = new()
+    {
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("Authors", href: "/authors", disabled: true)
+    };
+    private string searchTerm = string.Empty;
+    private MudTable<Author> table;
+    private IEnumerable<Author> filteredAuthors => string.IsNullOrWhiteSpace(searchTerm)
+        ? authors
+        : authors.Where(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (a.LastName != null && a.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAuthors();
+    }
+
+    private async Task LoadAuthors()
+    {
+        loading = true;
+        try
+        {
+            var response = await SupabaseClient.From<Author>().Get();
+            authors = response.Models ?? new List<Author>();
+        }
+        catch
+        {
+            authors = new List<Author>();
+        }
+        loading = false;
+    }
+
+    private async Task ShowAddDialog()
+    {
+        var dialog = DialogService.Show<AddAuthorDialog>("Add Author");
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadAuthors();
+        }
+    }
+
+    private async Task ShowEditDialog(Author authorToEdit)
+    {
+        var parameters = new MudBlazor.DialogParameters { ["AuthorToEdit"] = authorToEdit };
+        var dialog = DialogService.Show<EditAuthorDialog>("Edit Author", parameters);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadAuthors();
+        }
+    }
+
+    private async Task DeleteAuthor(Author authorToDelete)
+    {
+        await SupabaseClient.From<Author>().Where(x => x.Id == authorToDelete.Id).Delete();
+        await LoadAuthors();
+    }
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+    }
+}

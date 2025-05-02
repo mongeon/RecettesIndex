@@ -1,0 +1,84 @@
+@page "/authors/{id:int}"
+@using MudBlazor
+@using RecettesIndex.Models
+@using Supabase.Postgrest
+@inject Supabase.Client SupabaseClient
+
+<PageTitle>Author Details</PageTitle>
+<MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (author == null)
+{
+    <MudText>Author not found.</MudText>
+}
+else
+{
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5">@author.Name @author.LastName</MudText>
+        <MudText>
+            Books:
+            @if (books != null && books.Count > 0)
+            {
+                @foreach (var book in books)
+                {
+                    <MudLink Href="@($"/books/{book.Id}")" Style="margin-right:8px; cursor:pointer">@book.Name</MudLink>
+                }
+            }
+            else
+            {
+                <span>None</span>
+            }
+        </MudText>
+        <MudText>Related Recipes:</MudText>
+        @if (relatedRecipes != null && relatedRecipes.Count > 0)
+        {
+            <MudList T="Recipe">
+                @foreach (var recipe in relatedRecipes)
+                {
+                    <MudListItem>
+                        <MudLink Href="@($"/recipes/{recipe.Id}")" Style="margin-right:8px; cursor:pointer">@recipe.Name</MudLink>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+        else
+        {
+            <MudText>None</MudText>
+        }
+        <MudButton Href="/authors" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Authors</MudButton>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    private Author? author;
+    private bool loading = true;
+    private List<BreadcrumbItem> breadcrumbs = new()
+    {
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("Authors", href: "/authors"),
+        new BreadcrumbItem("Details", href: null, disabled: true)
+    };
+    private List<Book> books = new();
+    private List<Recipe> relatedRecipes = new();
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true; var response = await SupabaseClient.From<Author>().Where(x => x.Id == id).Get();
+        author = response.Models?.FirstOrDefault();
+        if (author != null)
+        {
+            var result = await SupabaseClient.From<Recipe>()
+                  .Select("*, book_id_info:books(authors!inner(id))")
+                  .Filter("book_id_info.authors.id", Constants.Operator.Equals, id)
+                  .Get();
+            relatedRecipes = result
+                 .Models
+                 .Where(x => x.Book != null && x.Book.Authors.Any(a => a.Id == id)).ToList();
+        }
+        loading = false;
+    }
+}

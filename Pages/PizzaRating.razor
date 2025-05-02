@@ -1,0 +1,9 @@
+@using MudBlazor
+
+<MudRating @bind-SelectedValue="Value" MaxValue="5" FullIcon="@Icons.Material.Filled.LocalPizza" EmptyIcon="@Icons.Material.Outlined.LocalPizza" ReadOnly="@ReadOnly" />
+
+@code {
+    [Parameter] public int Value { get; set; }
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
+    [Parameter] public bool ReadOnly { get; set; } = true;
+}

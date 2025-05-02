@@ -1,0 +1,127 @@
+@page "/books"
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+@inject RecettesIndex.Services.AuthService AuthService
+@inject MudBlazor.IDialogService DialogService
+
+<PageTitle>Books</PageTitle>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5">Books</MudText>
+    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+    <MudTextField @bind-Value="searchTerm" Placeholder="Search books..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (books.Count == 0)
+    {
+        <MudText>No books found.</MudText>
+    }
+    else
+    {
+        <MudTable Items="filteredBooks" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+            <HeaderContent>
+                <MudTh> <MudTableSortLabel SortBy="new Func<Book, object>(x=>x.Name)">Titre</MudTableSortLabel></MudTh>
+                <MudTh>Authors</MudTh>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTh>Actions</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    <MudLink Href="@($"/books/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
+                </MudTd>
+                <MudTd DataLabel="Authors">
+                    @if (context.Authors != null && context.Authors.Count > 0)
+                    {
+                        @string.Join(", ", context.Authors.Select(a => a.Name + (string.IsNullOrWhiteSpace(a.LastName) ? "" : $" {a.LastName}")))
+                    }
+                </MudTd>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTd>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Edit</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteBook(context)">Delete</MudButton>
+                    </MudTd>
+                }
+            </RowTemplate>
+        </MudTable>
+    }
+    @if (AuthService.IsAuthenticated)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Add Book</MudButton>
+    }
+</MudPaper>
+
+@code {
+    private List<Book> books = new();
+    private bool loading = true;
+    private List<BreadcrumbItem> breadcrumbs = new()
+    {
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("Books", href: "/books", disabled: true)
+    };
+    private string searchTerm = string.Empty;
+    private MudTable<Book> table;
+    private IEnumerable<Book> filteredBooks => string.IsNullOrWhiteSpace(searchTerm)
+        ? books
+        : books.Where(b => b.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (b.Authors != null && b.Authors.Any(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))));
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBooks();
+    }
+
+    private async Task LoadBooks()
+    {
+        loading = true;
+        try
+        {
+            var response = await SupabaseClient.From<Book>().Get();
+            books = response.Models ?? new List<Book>();
+        }
+        catch
+        {
+            books = new List<Book>();
+        }
+        loading = false;
+    }
+
+    private async Task ShowAddDialog()
+    {
+        var dialog = DialogService.Show<AddBookDialog>("Add Book");
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadBooks();
+        }
+    }
+
+    private async Task ShowEditDialog(Book bookToEdit)
+    {
+        var parameters = new MudBlazor.DialogParameters { ["BookToEdit"] = bookToEdit };
+        var dialog = DialogService.Show<EditBookDialog>("Edit Book", parameters);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadBooks();
+        }
+    }
+
+    private async Task DeleteBook(Book bookToDelete)
+    {
+        await SupabaseClient.From<Book>().Where(x => x.Id == bookToDelete.Id).Delete();
+        await LoadBooks();
+    }
+}

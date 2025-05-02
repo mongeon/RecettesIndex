@@ -1,0 +1,75 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+@using System.Linq;
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">Add Recipe</MudText>
+        <MudTextField @bind-Value="recipe.Name" Label="Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <PizzaRating @bind-Value="recipe.Rating" ReadOnly="false" />
+        <MudTextField @bind-Value="recipe.Notes" Label="Notes" Variant="Variant.Outlined" Class="mb-2" />
+        <MudTextField @bind-Value="bookRef" Label="Book Reference (optional)" Variant="Variant.Outlined" Class="mb-2" />
+        <MudNumericField @bind-Value="recipe.BookPage" Label="Book Page (optional)" Variant="Variant.Outlined" Class="mb-2" />
+        <MudSelect T="Book" Label="Book (optional)" @bind-Value="selectedBook" Variant="Variant.Outlined" Class="mb-2">
+            <MudSelectItem T="Book" Value="null">None</MudSelectItem>
+            @foreach (var book in books)
+            {
+                <MudSelectItem T="Book" Value="book">@book.Name</MudSelectItem>
+            }
+        </MudSelect>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="AddRecipe" Color="Color.Primary" Variant="Variant.Filled">Add</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+    private Recipe recipe = new() { CreationDate = DateTime.Now };
+    private string? bookRef;
+    private string? errorMessage;
+    private List<Book> books = new();
+    private Book? selectedBook;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await SupabaseClient.From<Book>().Get();
+        books = response.Models ?? new List<Book>();
+    }
+
+    private async Task AddRecipe()
+    {
+        errorMessage = null;
+        try
+        {
+            if (selectedBook != null)
+            {
+                recipe.BookId = selectedBook.Id;
+            }
+            else
+            {
+                recipe.BookId = null;
+            }
+            var response = await SupabaseClient.From<Recipe>().Insert(recipe);
+            if (response.Models?.Count > 0)
+                MudDialog.Close(DialogResult.Ok(response.Models[0]));
+            else
+                errorMessage = "Failed to add recipe.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

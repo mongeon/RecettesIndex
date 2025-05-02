@@ -1,0 +1,111 @@
+﻿@page "/"
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+@inject MudBlazor.IDialogService DialogService
+
+<PageTitle>Home</PageTitle>
+
+<MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+
+<MudPaper Class="pa-4 mb-4">
+    <MudText Typo="Typo.h5">Newest Recipes</MudText>
+    @if (loadingNewest)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (newestRecipes.Count == 0)
+    {
+        <MudText>No recipes found.</MudText>
+    }
+    else
+    {
+        <MudList T="Recipe">
+            @foreach (var recipe in newestRecipes)
+            {
+                <MudListItem Style="cursor:pointer" @onclick="() => ShowRecipeDetails(recipe)">
+                    @recipe.Name <PizzaRating Value="@recipe.Rating" />
+                </MudListItem>
+            }
+        </MudList>
+    }
+</MudPaper>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5">Random Recipes</MudText>
+    @if (loadingRandom)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (randomRecipes.Count == 0)
+    {
+        <MudText>No recipes found.</MudText>
+    }
+    else
+    {
+        <MudList T="Recipe">
+            @foreach (var recipe in randomRecipes)
+            {
+                <MudListItem Style="cursor:pointer" @onclick="() => ShowRecipeDetails(recipe)">
+                    @recipe.Name <PizzaRating Value="@recipe.Rating" />
+                </MudListItem>
+            }
+        </MudList>
+    }
+</MudPaper>
+
+@code {
+    private List<Recipe> newestRecipes = new();
+    private List<Recipe> randomRecipes = new();
+    private bool loadingNewest = true;
+    private bool loadingRandom = true;
+
+    private List<BreadcrumbItem> breadcrumbs = new()
+    {
+        new BreadcrumbItem("Home", href: "/", disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNewestRecipes();
+        await LoadRandomRecipes();
+    }
+
+    private async Task LoadNewestRecipes()
+    {
+        loadingNewest = true;
+        try
+        {
+            var response = await SupabaseClient.From<Recipe>().Order(x => x.CreationDate, Supabase.Postgrest.Constants.Ordering.Descending).Limit(5).Get();
+            newestRecipes = response.Models ?? new List<Recipe>();
+        }
+        catch
+        {
+            newestRecipes = new List<Recipe>();
+        }
+        loadingNewest = false;
+    }
+
+    private async Task LoadRandomRecipes()
+    {
+        loadingRandom = true;
+        try
+        {
+            var response = await SupabaseClient.From<Recipe>().Get();
+            var allRecipes = response.Models ?? new List<Recipe>();
+            var rnd = new Random();
+            randomRecipes = allRecipes.OrderBy(x => rnd.Next()).Take(5).ToList();
+        }
+        catch
+        {
+            randomRecipes = new List<Recipe>();
+        }
+        loadingRandom = false;
+    }
+
+    private async Task ShowRecipeDetails(Recipe recipe)
+    {
+        var parameters = new DialogParameters { ["Recipe"] = recipe };
+        await DialogService.ShowAsync<RecipeDetailsDialog>("Recipe Details", parameters);
+    }
+}
