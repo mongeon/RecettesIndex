@@ -1,46 +1,98 @@
-@page "/recipes/{id:int}"
+@page "/recipes/{Id:int}"
 @using MudBlazor
 @using RecettesIndex.Models
 @inject Supabase.Client SupabaseClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
-<PageTitle>Recipe Details</PageTitle>
+<PageTitle>Recipe Details - @(recipe?.Name ?? "Loading...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
 
 @if (loading)
 {
-    <MudProgressCircular Indeterminate="true" />
+    <MudProgressLinear Indeterminate="true" Class="my-4" />
 }
 else if (recipe == null)
 {
-    <MudText>Recipe not found.</MudText>
+    <MudAlert Severity="Severity.Error" Class="my-4">Recipe not found.</MudAlert>
 }
 else
 {
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h5">@recipe.Name</MudText>
-        <MudText>Rating: <PizzaRating Value="@recipe.Rating" /></MudText>
-        <MudText>Notes: @recipe.Notes</MudText>
-        <MudText>Created: @recipe.CreationDate.ToShortDateString()</MudText>
-        @if (book != null)
-        {
-            if (book != null)
-            {
-                <MudText>Book: <MudLink Href="@($"/books/{book.Id}")">@book.Name</MudLink></MudText>
-            }
-            else
-            {
-                <MudText>Book ID: @recipe.BookId</MudText>
-            }
-        }
-        <div class="d-flex mt-4">
-            <MudButton Href="/recipes" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Recipes</MudButton>
-            <MudButton Href="@($"/recipes/{id}/print")" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print" Class="ml-auto">Print-Friendly View</MudButton>
-        </div>
-    </MudPaper>
+    <MudGrid>
+        <MudItem xs="12">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h4">@recipe.Name</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            @if (!string.IsNullOrEmpty(recipe.Notes))
+                            {
+                                <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
+                                    <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.Notes" Class="mr-2" />Notes</MudText>
+                                    <MudText Typo="Typo.body1" Style="white-space: pre-line">@recipe.Notes</MudText>
+                                </MudPaper>
+                            }
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudList Clickable="false" T="Recipe">
+                                <MudListItem Icon="@Icons.Material.Filled.CalendarToday">
+                                    <MudText>Created: @recipe.CreationDate.ToShortDateString()</MudText>
+                                </MudListItem>
+                                
+                                @if (book != null)
+                                {
+                                    <MudListItem Icon="@Icons.Material.Filled.Book">
+                                        <MudText>Book: <MudLink Href="@($"/books/{book.Id}")">@book.Name</MudLink></MudText>
+                                    </MudListItem>
+                                    
+                                    @if (recipe.BookPage != null)
+                                    {
+                                        <MudListItem Icon="@Icons.Material.Filled.MenuBook">
+                                            <MudText>Page: @recipe.BookPage</MudText>
+                                        </MudListItem>
+                                    }
+                                    
+                                    @if (book.Authors != null && book.Authors.Count > 0)
+                                    {
+                                        <MudListItem Icon="@Icons.Material.Filled.Person">
+                                            <MudText>
+                                                Author(s):
+                                                @foreach (var author in book.Authors)
+                                                {
+                                                    <MudLink Href="@($"/authors/{author.Id}")" Class="mr-2">@author.Name @author.LastName</MudLink>
+                                                }
+                                            </MudText>
+                                        </MudListItem>
+                                    }
+                                }
+                            </MudList>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="/recipes" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back</MudButton>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" 
+                              OnClick="@OpenEditDialog">Edit</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print" 
+                              Href="@($"/recipes/{Id}/print")">Print View</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
-    [Parameter] public int id { get; set; }
+    [Parameter] 
+    public int Id { get; set; }
+    
     private Recipe? recipe;
     private Book? book;
     private bool loading = true;
@@ -50,17 +102,41 @@ else
         new BreadcrumbItem("Recipes", href: "/recipes"),
         new BreadcrumbItem("Details", href: null, disabled: true)
     };
+    
     protected override async Task OnInitializedAsync()
     {
         loading = true;
-        var response = await SupabaseClient.From<Recipe>().Where(x => x.Id == id).Get();
-        recipe = response.Models?.FirstOrDefault();
-        if (recipe.BookId != null)
+        
+        try 
         {
-            var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
-            book = bookResponse.Models?.FirstOrDefault();
+            var response = await SupabaseClient.From<Recipe>().Where(x => x.Id == Id).Get();
+            recipe = response.Models?.FirstOrDefault();
+            
+            if (recipe != null)
+            {
+                // Update the breadcrumbs with recipe name
+                breadcrumbs[2] = new BreadcrumbItem(recipe.Name, href: null, disabled: true);
+                
+                if (recipe.BookId != null)
+                {
+                    var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
+                    book = bookResponse.Models?.FirstOrDefault();
+                }
+            }
         }
-        loading = false;
+        catch (Exception ex)
+        {
+            // Add error handling if needed
+            Console.WriteLine($"Error loading recipe: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
     }
-
+    
+    private void OpenEditDialog()
+    {
+        NavigationManager.NavigateTo($"/recipes/{Id}/edit");
+    }
 }
