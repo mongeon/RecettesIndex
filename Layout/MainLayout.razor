@@ -3,43 +3,130 @@
 @using RecettesIndex.Services
 @inject AuthService AuthService
 @inject MudBlazor.IDialogService DialogService
+@inject IJSRuntime JSRuntime
 
-<MudThemeProvider />
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="@_currentTheme" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
-<div class="page">
-    <div class="sidebar">
+
+<MudLayout>
+    <MudAppBar Elevation="1" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h6" Class="ml-3">RecettesIndex</MudText>
+        <MudSpacer />
+        
+        <MudTooltip Text="Toggle Dark Mode">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
+                          Color="Color.Inherit" 
+                          OnClick="@ToggleDarkMode" />
+        </MudTooltip>
+        
+        @if (!AuthService.IsAuthenticated)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="ShowSignInDialog">Sign In</MudButton>
+        }
+        else
+        {
+            <MudTooltip Text="@AuthService.UserEmail">
+                <MudChip Color="Color.Secondary" Size="Size.Small" Label="true" Class="mr-2" T="string">
+                    <MudAvatar Size="Size.Small" Color="Color.Secondary" Class="mr-2">
+                        @GetUserInitials(AuthService.UserEmail)
+                    </MudAvatar>
+                    @AuthService.UserEmail?.Split('@')[0]
+                </MudChip>
+            </MudTooltip>
+            <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="SignOut">Sign Out</MudButton>
+        }
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" ClipMode="DrawerClipMode.Always">
         <NavMenu />
-    </div>
-    <main>
-        <div class="top-row px-4" style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                @if (!AuthService.IsAuthenticated)
-                {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowSignInDialog">Sign In</MudButton>
-                }
-                else
-                {
-                    <MudTooltip Text="@AuthService.UserEmail">
-                        <MudAvatar Size="Size.Medium" Color="Color.Primary" Class="me-2">
-                            @GetUserInitials(AuthService.UserEmail)
-                        </MudAvatar>
-                    </MudTooltip>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="SignOut">Sign Out</MudButton>
-                }
-            </div>
-        </div>
-        <article class="content px-4">
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 px-4">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
 
 @code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode;
+    
+    // Define light and dark themes
+    private MudTheme _currentTheme = new MudTheme
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#FF6B6B",
+            Secondary = "#4ECDC4",
+            Background = "#F7F5F3",
+            Surface = "#FFFFFF",
+            AppbarBackground = "#FF6B6B",
+            DrawerBackground = "#F7F5F3",
+            DrawerText = "#474747",
+            Success = "#6BCB77",
+            TextPrimary = "#333333",
+            TextSecondary = "#666666",
+            PrimaryContrastText = "#ffffff",
+            SecondaryContrastText = "#ffffff"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#FF6B6B",
+            Secondary = "#4ECDC4",
+            Background = "#1A1A1A",
+            Surface = "#242424",
+            AppbarBackground = "#272727",
+            DrawerBackground = "#1E1E1E",
+            DrawerText = "#DDDDDD",
+            Success = "#6BCB77",
+            TextPrimary = "#EEEEEE",
+            TextSecondary = "#AAAAAA"
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "6px"
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1rem",
+                FontWeight = "400",
+                LineHeight = "1.5"
+            }
+        }
+    };
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Load user's theme preference from local storage
+            var storedTheme = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "recipes-theme-preference");
+            _isDarkMode = storedTheme == "dark";
+            StateHasChanged();
+        }
+    }
+    
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+    
+    private async Task ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+        // Save the user's preference to local storage
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "recipes-theme-preference", _isDarkMode ? "dark" : "light");
+    }
+
     private async Task ShowSignInDialog()
     {
-      //  var parameters = new MudBlazor.DialogParameters();
         var options = new MudBlazor.DialogOptions { CloseButton = true, MaxWidth = MudBlazor.MaxWidth.Small };
         await DialogService.ShowAsync<SignInDialog>("Sign In", options);
         StateHasChanged();        

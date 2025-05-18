@@ -1,44 +1,28 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">RecettesIndex</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+﻿<MudNavMenu>
+    <div class="d-flex justify-center py-4">
+        <MudImage Src="/icons/recipe-icon.svg" Alt="Logo" Width="60" Height="60" Class="mt-4 mb-3" />
     </div>
-</div>
-
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="recipes">
-                <span class="bi bi-journal-text-nav-menu" aria-hidden="true"></span> Recipes
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="books">
-                <span class="bi bi-book-nav-menu" aria-hidden="true"></span> Books
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="authors">
-                <span class="bi bi-person-lines-fill-nav-menu" aria-hidden="true"></span> Authors
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
-@code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-}
+    
+    <MudDivider Class="mb-2" />
+    
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
+        Home
+    </MudNavLink>
+    <MudNavLink Href="recipes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook">
+        Recipes
+    </MudNavLink>
+    <MudNavLink Href="books" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.LibraryBooks">
+        Books
+    </MudNavLink>
+    <MudNavLink Href="authors" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">
+        Authors
+    </MudNavLink>
+    
+    <MudSpacer />
+    <MudDivider Class="mb-2" />
+    
+    <div class="d-flex flex-column align-center px-4 mb-4">
+        <MudText Typo="Typo.caption" Class="mb-2" Align="Align.Center">RecettesIndex</MudText>
+        <MudText Typo="Typo.caption" Align="Align.Center" Style="opacity: 0.7;">Your personal recipe collection</MudText>
+    </div>
+</MudNavMenu>
