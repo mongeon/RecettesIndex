@@ -1,0 +1,96 @@
+@page "/recipes/{id:int}/print"
+@using MudBlazor
+@using RecettesIndex.Models
+@inject Supabase.Client SupabaseClient
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Print Recipe - @(recipe?.Name ?? "Loading...")</PageTitle>
+
+<div class="print-container">
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (recipe == null)
+    {
+        <MudText>Recipe not found.</MudText>
+    }
+    else
+    {
+        <div class="print-header">
+            <h1>@recipe.Name</h1>
+            <div class="print-rating">
+                <span>Rating: </span>
+                <PizzaRating Value="@recipe.Rating" />
+            </div>
+        </div>
+
+        <div class="print-body">
+            @if (!string.IsNullOrWhiteSpace(recipe.Notes))
+            {
+                <div class="print-section">
+                    <h2>Notes</h2>
+                    <div class="print-notes">@recipe.Notes</div>
+                </div>
+            }
+
+            <div class="print-section">
+                <h2>Details</h2>
+                <div class="print-details">
+                    <p><strong>Created:</strong> @recipe.CreationDate.ToShortDateString()</p>
+                    
+                    @if (book != null)
+                    {
+                        <p><strong>Book:</strong> @book.Name</p>
+                        
+                        @if (recipe.BookPage.HasValue)
+                        {
+                            <p><strong>Page:</strong> @recipe.BookPage</p>
+                        }
+                        
+                        @if (book.Authors != null && book.Authors.Any())
+                        {
+                            <p><strong>Author(s):</strong> @string.Join(", ", book.Authors.Select(a => a.FullName))</p>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="print-footer">
+            <p>Printed from RecettesIndex on @DateTime.Now.ToString("MMMM d, yyyy")</p>
+        </div>
+
+        <div class="no-print">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="PrintPage" StartIcon="@Icons.Material.Filled.Print" Class="mt-4 mb-2">Print</MudButton>
+            <MudButton Href="@($"/recipes/{id}")" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Class="ml-2 mt-4 mb-2">Back to Recipe</MudButton>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int id { get; set; }
+    private Recipe? recipe;
+    private Book? book;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        var response = await SupabaseClient.From<Recipe>().Where(x => x.Id == id).Get();
+        recipe = response.Models?.FirstOrDefault();
+        
+        if (recipe?.BookId != null)
+        {
+            var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
+            book = bookResponse.Models?.FirstOrDefault();
+        }
+        
+        loading = false;
+    }
+
+    private async Task PrintPage()
+    {
+        await JSRuntime.InvokeVoidAsync("print");
+    }
+}

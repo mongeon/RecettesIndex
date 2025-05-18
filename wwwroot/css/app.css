@@ -112,3 +112,91 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Print styles */
+.print-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.print-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 15px;
+}
+
+.print-header h1 {
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.print-rating {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.print-section {
+    margin-bottom: 25px;
+}
+
+.print-section h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.print-notes {
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+.print-details p {
+    margin-bottom: 8px;
+}
+
+.print-footer {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 12px;
+    color: #777;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+@media print {
+    body {
+        font-size: 12pt;
+    }
+
+    .no-print, .mud-appbar, .mud-drawer, .mud-breadcrumbs {
+        display: none !important;
+    }
+
+    .print-container {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    .print-header h1 {
+        font-size: 24pt;
+    }
+
+    .print-section h2 {
+        font-size: 18pt;
+    }
+
+    .print-details p {
+        font-size: 12pt;
+    }
+
+    /* Ensure page breaks don't occur in the middle of sections */
+    .print-section {
+        page-break-inside: avoid;
+    }
+}
