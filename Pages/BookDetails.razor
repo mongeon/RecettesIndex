@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 
-<PageTitle>Book Details - @(book?.Name ?? "Loading...")</PageTitle>
+<PageTitle>Book - @(book?.Name ?? "Loading...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
 
 @if (loading)
@@ -22,81 +22,83 @@ else
         <MudItem xs="12">
             <MudCard Elevation="3">
                 <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudAvatar Color="Color.Tertiary" Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.Book" />
+                        </MudAvatar>
+                    </CardHeaderAvatar>
                     <CardHeaderContent>
                         <MudText Typo="Typo.h4">@book.Name</MudText>
+                        <MudText Typo="Typo.body2">Added on @book.CreationDate.ToShortDateString()</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudGrid>
-                        <MudItem xs="12" md="6">
-                            <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
-                                <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />Authors</MudText>
-                                @if (book.Authors != null && book.Authors.Count > 0)
-                                {
-                                    <MudList Clickable="true" T="Author">
+                    <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
+                        <MudTabPanel Text="Authors" Icon="@Icons.Material.Filled.Person">
+                            @if (book.Authors != null && book.Authors.Count > 0)
+                            {
+                                <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
+                                    <MudList Clickable="true" DisablePadding="true" T="Author">
                                         @foreach (var author in book.Authors)
                                         {
                                             <MudListItem Href="@($"/authors/{author.Id}")">
-                                                <MudText>@author.Name @author.LastName</MudText>
+                                                <div class="d-flex">
+                                                    <MudAvatar Color="Color.Primary" Size="Size.Small" Class="mr-2">
+                                                        @(author.Name.Length > 0 ? author.Name[0].ToString() : "")@(author.LastName?.Length > 0 ? author.LastName[0].ToString() : "")
+                                                    </MudAvatar>
+                                                    <MudText>@author.Name @author.LastName</MudText>
+                                                </div>
                                             </MudListItem>
                                         }
                                     </MudList>
-                                }
-                                else
-                                {
-                                    <MudText>No authors available</MudText>
-                                }
-                            </MudPaper>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudPaper Elevation="0" Class="pa-4">
-                                <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="mr-2" />Created</MudText>
-                                <MudText>@book.CreationDate.ToShortDateString()</MudText>
-                            </MudPaper>
-                        </MudItem>
-                    </MudGrid>
-
-                    <MudDivider Class="my-4" />
-
-                    <MudText Typo="Typo.h6" Class="mt-4 mb-2"><MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="mr-2" />Recipes in this Book</MudText>
-                    @if (relatedRecipes != null && relatedRecipes.Count > 0)
-                    {
-                        <MudPaper Elevation="0" Class="pa-2">
-                            <MudGrid>
-                                @foreach (var recipe in relatedRecipes)
-                                {
-                                    <MudItem xs="12" sm="6" md="4">
-                                        <MudCard Elevation="2" Class="ma-2 recipe-card">
-                                            <MudCardHeader>
-                                                <CardHeaderContent>
-                                                    <MudText Typo="Typo.h6">@recipe.Name</MudText>
-                                                </CardHeaderContent>
-                                                <CardHeaderActions>
-                                                    <MudRating ReadOnly="true" SelectedValue="@recipe.Rating" />
-                                                </CardHeaderActions>
-                                            </MudCardHeader>
-                                            <MudCardContent>
-                                                @if (recipe.BookPage != null)
-                                                {
-                                                    <MudText>Page: @recipe.BookPage</MudText>
-                                                }
-                                            </MudCardContent>
-                                            <MudCardActions>
-                                                <MudButton Variant="Variant.Text" Color="Color.Primary" 
-                                                          Href="@($"/recipes/{recipe.Id}")">
-                                                    View Details
-                                                </MudButton>
-                                            </MudCardActions>
-                                        </MudCard>
-                                    </MudItem>
-                                }
-                            </MudGrid>
-                        </MudPaper>
-                    }
-                    else
-                    {
-                        <MudAlert Severity="Severity.Info" Class="mt-3">No recipes found in this book.</MudAlert>
-                    }
+                                </MudPaper>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Info" Class="mt-3">No authors available for this book.</MudAlert>
+                            }
+                        </MudTabPanel>
+                        <MudTabPanel Text="Recipes" Icon="@Icons.Material.Filled.Restaurant">
+                            @if (relatedRecipes != null && relatedRecipes.Count > 0)
+                            {
+                                <MudPaper Elevation="0" Class="pa-2">
+                                    <MudGrid>
+                                        @foreach (var recipe in relatedRecipes)
+                                        {
+                                            <MudItem xs="12" sm="6" md="4">
+                                                <MudCard Elevation="2" Class="ma-2 recipe-card">
+                                                    <MudCardHeader>
+                                                        <CardHeaderContent>
+                                                            <MudText Typo="Typo.h6">@recipe.Name</MudText>
+                                                        </CardHeaderContent>
+                                                        <CardHeaderActions>
+                                                            <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
+                                                        </CardHeaderActions>
+                                                    </MudCardHeader>
+                                                    <MudCardContent>
+                                                        @if (recipe.BookPage != null)
+                                                        {
+                                                            <MudText>Page: @recipe.BookPage</MudText>
+                                                        }
+                                                    </MudCardContent>
+                                                    <MudCardActions>
+                                                        <MudButton Variant="Variant.Text" Color="Color.Primary" 
+                                                                Href="@($"/recipes/{recipe.Id}")">
+                                                            View Details
+                                                        </MudButton>
+                                                    </MudCardActions>
+                                                </MudCard>
+                                            </MudItem>
+                                        }
+                                    </MudGrid>
+                                </MudPaper>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Info" Class="mt-3">No recipes found in this book.</MudAlert>
+                            }
+                        </MudTabPanel>
+                    </MudTabs>
                 </MudCardContent>
                 <MudCardActions>
                     <MudButton Href="/books" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Books</MudButton>

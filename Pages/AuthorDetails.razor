@@ -30,7 +30,7 @@ else
                     </CardHeaderAvatar>
                     <CardHeaderContent>
                         <MudText Typo="Typo.h4">@author.Name @author.LastName</MudText>
-                        <MudText Typo="Typo.body2">Author since @author.CreationDate.ToShortDateString()</MudText>
+                        <MudText Typo="Typo.body2">Added on @author.CreationDate.ToShortDateString()</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
@@ -45,6 +45,11 @@ else
                                             <MudItem xs="12" sm="6" md="4">
                                                 <MudCard Elevation="2" Class="ma-2 book-card">
                                                     <MudCardHeader>
+                                                        <CardHeaderAvatar>
+                                                            <MudAvatar Color="Color.Tertiary" Size="Size.Small">
+                                                                <MudIcon Icon="@Icons.Material.Filled.Book" />
+                                                            </MudAvatar>
+                                                        </CardHeaderAvatar>
                                                         <CardHeaderContent>
                                                             <MudText Typo="Typo.h6">@book.Name</MudText>
                                                         </CardHeaderContent>
@@ -76,7 +81,7 @@ else
                         <MudTabPanel Text="Recipes" Icon="@Icons.Material.Filled.Restaurant">
                             @if (relatedRecipes != null && relatedRecipes.Count > 0)
                             {
-                                <MudTable Items="@relatedRecipes" Dense="true" Hover="true" Bordered="false" Striped="true">
+                                <MudTable Items="@filteredRecipes" Dense="true" Hover="true" Bordered="false" Striped="true">
                                     <ToolBarContent>
                                         <MudText Typo="Typo.h6">Recipes by @author.Name @author.LastName</MudText>
                                         <MudSpacer />
