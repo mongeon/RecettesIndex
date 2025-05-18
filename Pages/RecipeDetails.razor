@@ -32,7 +32,10 @@ else
                 <MudText>Book ID: @recipe.BookId</MudText>
             }
         }
-        <MudButton Href="/recipes" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Recipes</MudButton>
+        <div class="d-flex mt-4">
+            <MudButton Href="/recipes" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Recipes</MudButton>
+            <MudButton Href="@($"/recipes/{id}/print")" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print" Class="ml-auto">Print-Friendly View</MudButton>
+        </div>
     </MudPaper>
 }
 
