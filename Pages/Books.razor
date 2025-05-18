@@ -5,39 +5,41 @@
 @inject RecettesIndex.Services.AuthService AuthService
 @inject MudBlazor.IDialogService DialogService
 
-<PageTitle>Books</PageTitle>
+<PageTitle>Livres</PageTitle>
 
 <MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Books</MudText>
+    <MudText Typo="Typo.h5">Livres</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
-    <MudTextField @bind-Value="searchTerm" Placeholder="Search books..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+    <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des livres..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
     @if (loading)
     {
         <MudProgressCircular Indeterminate="true" />
     }
     else if (books.Count == 0)
     {
-        <MudText>No books found.</MudText>
+        <MudText>Aucun livre trouvé.</MudText>
     }
     else
     {
         <MudTable Items="filteredBooks" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
             <PagerContent>
-                <MudTablePager />
+                <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
+                               RowsPerPageString="Lignes par page:" 
+                               PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
             </PagerContent>
             <HeaderContent>
                 <MudTh> <MudTableSortLabel SortBy="new Func<Book, object>(x=>x.Name)">Titre</MudTableSortLabel></MudTh>
-                <MudTh>Authors</MudTh>
+                <MudTh>Auteurs</MudTh>
                 @if (AuthService.IsAuthenticated)
                 {
                     <MudTh>Actions</MudTh>
                 }
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">
+                <MudTd DataLabel="Nom">
                     <MudLink Href="@($"/books/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
                 </MudTd>
-                <MudTd DataLabel="Authors">
+                <MudTd DataLabel="Auteurs">
                     @if (context.Authors != null && context.Authors.Count > 0)
                     {
                         @string.Join(", ", context.Authors.Select(a => a.Name + (string.IsNullOrWhiteSpace(a.LastName) ? "" : $" {a.LastName}")))
@@ -46,8 +48,8 @@
                 @if (AuthService.IsAuthenticated)
                 {
                     <MudTd>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Edit</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteBook(context)">Delete</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteBook(context)">Supprimer</MudButton>
                     </MudTd>
                 }
             </RowTemplate>
@@ -55,7 +57,7 @@
     }
     @if (AuthService.IsAuthenticated)
     {
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Add Book</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter un livre</MudButton>
     }
 </MudPaper>
 
@@ -64,8 +66,8 @@
     private bool loading = true;
     private List<BreadcrumbItem> breadcrumbs = new()
     {
-        new BreadcrumbItem("Home", href: "/"),
-        new BreadcrumbItem("Books", href: "/books", disabled: true)
+        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Livres", href: "/books", disabled: true)
     };
     private string searchTerm = string.Empty;
     private MudTable<Book> table;
@@ -100,7 +102,7 @@
 
     private async Task ShowAddDialog()
     {
-        var dialog = DialogService.Show<AddBookDialog>("Add Book");
+        var dialog = DialogService.Show<AddBookDialog>("Ajouter un livre");
         var result = await dialog.Result;
         if (!result.Canceled)
         {
@@ -111,7 +113,7 @@
     private async Task ShowEditDialog(Book bookToEdit)
     {
         var parameters = new MudBlazor.DialogParameters { ["BookToEdit"] = bookToEdit };
-        var dialog = DialogService.Show<EditBookDialog>("Edit Book", parameters);
+        var dialog = DialogService.Show<EditBookDialog>("Modifier le livre", parameters);
         var result = await dialog.Result;
         if (!result.Canceled)
         {

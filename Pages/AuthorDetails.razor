@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 
-<PageTitle>Author - @(author?.FullName ?? "Loading...")</PageTitle>
+<PageTitle>Auteur - @(author?.FullName ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
 
 @if (loading)
@@ -15,7 +15,7 @@
 }
 else if (author == null)
 {
-    <MudAlert Severity="Severity.Error" Class="my-4">Author not found.</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="my-4">Auteur introuvable.</MudAlert>
 }
 else
 {
@@ -30,12 +30,12 @@ else
                     </CardHeaderAvatar>
                     <CardHeaderContent>
                         <MudText Typo="Typo.h4">@author.Name @author.LastName</MudText>
-                        <MudText Typo="Typo.body2">Added on @author.CreationDate.ToShortDateString()</MudText>
+                        <MudText Typo="Typo.body2">Ajouté le @author.CreationDate.ToShortDateString()</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
                     <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
-                        <MudTabPanel Text="Books" Icon="@Icons.Material.Filled.Book">
+                        <MudTabPanel Text="Livres" Icon="@Icons.Material.Filled.Book">
                             @if (books != null && books.Count > 0)
                             {
                                 <MudPaper Elevation="0" Class="pa-2">
@@ -55,16 +55,16 @@ else
                                                         </CardHeaderContent>
                                                     </MudCardHeader>
                                                     <MudCardContent>
-                                                        <MudText Typo="Typo.body2">Created: @book.CreationDate.ToShortDateString()</MudText>
+                                                        <MudText Typo="Typo.body2">Créé le: @book.CreationDate.ToShortDateString()</MudText>
                                                         @{
                                                             var recipeCount = relatedRecipes.Count(r => r.BookId == book.Id);
                                                         }
-                                                        <MudText Typo="Typo.body2">Recipes: @recipeCount</MudText>
+                                                        <MudText Typo="Typo.body2">Recettes: @recipeCount</MudText>
                                                     </MudCardContent>
                                                     <MudCardActions>
                                                         <MudButton Variant="Variant.Text" Color="Color.Primary" 
                                                                 Href="@($"/books/{book.Id}")">
-                                                            View Book
+                                                            Voir le livre
                                                         </MudButton>
                                                     </MudCardActions>
                                                 </MudCard>
@@ -75,31 +75,31 @@ else
                             }
                             else
                             {
-                                <MudAlert Severity="Severity.Info" Class="mt-3">This author has no books.</MudAlert>
+                                <MudAlert Severity="Severity.Info" Class="mt-3">Cet auteur n'a pas de livres.</MudAlert>
                             }
                         </MudTabPanel>
-                        <MudTabPanel Text="Recipes" Icon="@Icons.Material.Filled.Restaurant">
+                        <MudTabPanel Text="Recettes" Icon="@Icons.Material.Filled.Restaurant">
                             @if (relatedRecipes != null && relatedRecipes.Count > 0)
                             {
                                 <MudTable Items="@filteredRecipes" Dense="true" Hover="true" Bordered="false" Striped="true">
                                     <ToolBarContent>
-                                        <MudText Typo="Typo.h6">Recipes by @author.Name @author.LastName</MudText>
+                                        <MudText Typo="Typo.h6">Recettes par @author.Name @author.LastName</MudText>
                                         <MudSpacer />
                                         <MudTextField T="string" ValueChanged="@(s => FilterRecipes(s))" 
-                                                    Placeholder="Search" Adornment="Adornment.Start" 
+                                                    Placeholder="Rechercher" Adornment="Adornment.Start" 
                                                     AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" 
                                                     Class="mt-0 ml-2" />
                                     </ToolBarContent>
                                     <HeaderContent>
-                                        <MudTh>Name</MudTh>
-                                        <MudTh>Book</MudTh>
-                                        <MudTh>Rating</MudTh>
+                                        <MudTh>Nom</MudTh>
+                                        <MudTh>Livre</MudTh>
+                                        <MudTh>Évaluation</MudTh>
                                         <MudTh>Page</MudTh>
                                         <MudTh>Actions</MudTh>
                                     </HeaderContent>
                                     <RowTemplate>
-                                        <MudTd DataLabel="Name">@context.Name</MudTd>
-                                        <MudTd DataLabel="Book">
+                                        <MudTd DataLabel="Nom">@context.Name</MudTd>
+                                        <MudTd DataLabel="Livre">
                                             @if (context.Book != null)
                                             {
                                                 <MudLink Href="@($"/books/{context.Book.Id}")">@context.Book.Name</MudLink>
@@ -109,14 +109,14 @@ else
                                                 <span>-</span>
                                             }
                                         </MudTd>
-                                        <MudTd DataLabel="Rating">
+                                        <MudTd DataLabel="Évaluation">
                                             <PizzaRating ReadOnly="true" Value="@context.Rating" />
                                         </MudTd>
                                         <MudTd DataLabel="Page">@(context.BookPage.HasValue ? context.BookPage.Value.ToString() : "-")</MudTd>
                                         <MudTd DataLabel="Actions">
                                             <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
                                                     Href="@($"/recipes/{context.Id}")">
-                                                View
+                                                Voir
                                             </MudButton>
                                         </MudTd>
                                     </RowTemplate>
@@ -127,16 +127,16 @@ else
                             }
                             else
                             {
-                                <MudAlert Severity="Severity.Info" Class="mt-3">No recipes found by this author.</MudAlert>
+                                <MudAlert Severity="Severity.Info" Class="mt-3">Aucune recette trouvée de cet auteur.</MudAlert>
                             }
                         </MudTabPanel>
                     </MudTabs>
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton Href="/authors" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Authors</MudButton>
+                    <MudButton Href="/authors" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Retour aux auteurs</MudButton>
                     <MudSpacer />
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                              OnClick="@OpenEditDialog">Edit</MudButton>
+                              OnClick="@OpenEditDialog">Modifier</MudButton>
                 </MudCardActions>
             </MudCard>
         </MudItem>
@@ -151,9 +151,9 @@ else
     private bool loading = true;
     private List<BreadcrumbItem> breadcrumbs = new()
     {
-        new BreadcrumbItem("Home", href: "/"),
-        new BreadcrumbItem("Authors", href: "/authors"),
-        new BreadcrumbItem("Details", href: null, disabled: true)
+        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Auteurs", href: "/authors"),
+        new BreadcrumbItem("Détails", href: null, disabled: true)
     };
     
     private List<Book> books = new();

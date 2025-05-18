@@ -4,17 +4,17 @@
 
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Add Author</MudText>
-        <MudTextField @bind-Value="author.Name" Label="First Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
-        <MudTextField @bind-Value="author.LastName" Label="Last Name (optional)" Variant="Variant.Outlined" Class="mb-2" />
+        <MudText Typo="Typo.h6">Ajouter un Auteur</MudText>
+        <MudTextField @bind-Value="author.Name" Label="Prénom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <MudTextField @bind-Value="author.LastName" Label="Nom de famille (optionnel)" Variant="Variant.Outlined" Class="mb-2" />
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="AddAuthor" Color="Color.Primary" Variant="Variant.Filled">Add</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="AddAuthor" Color="Color.Primary" Variant="Variant.Filled">Ajouter</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -32,7 +32,7 @@
             if (response.Models?.Count > 0)
                 await MudDialog.CloseAsync(DialogResult.Ok(response.Models[0]));
             else
-                errorMessage = "Failed to add author.";
+                errorMessage = "Échec lors de l'ajout de l'auteur.";
         }
         catch (Exception ex)
         {

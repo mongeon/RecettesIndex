@@ -31,7 +31,7 @@
             if (response.Models?.Count > 0)
                 MudDialog.Close(DialogResult.Ok(response.Models[0]));
             else
-                errorMessage = "Failed to update book.";
+                errorMessage = "Échec lors de la mise à jour du livre.";
         }
         catch (Exception ex)
         {
@@ -45,9 +45,9 @@
 }
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Edit Book</MudText>
-        <MudTextField @bind-Value="book.Name" Label="Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
-        <MudSelect T="Author" Label="Authors (optional)" @bind-SelectedValues="selectedAuthors" Variant="Variant.Outlined" Class="mb-2" MultiSelection="true">
+        <MudText Typo="Typo.h6">Modifier le Livre</MudText>
+        <MudTextField @bind-Value="book.Name" Label="Nom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <MudSelect T="Author" Label="Auteurs (optionnel)" @bind-SelectedValues="selectedAuthors" Variant="Variant.Outlined" Class="mb-2" MultiSelection="true">
             @foreach (var author in authors)
             {
                 <MudSelectItem T="Author" Value="author">@author.Name @author.LastName</MudSelectItem>
@@ -59,7 +59,7 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled">Enregistrer</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
     </DialogActions>
 </MudDialog>

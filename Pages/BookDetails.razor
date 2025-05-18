@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 
-<PageTitle>Book - @(book?.Name ?? "Loading...")</PageTitle>
+<PageTitle>Livre - @(book?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
 
 @if (loading)
@@ -14,7 +14,7 @@
 }
 else if (book == null)
 {
-    <MudAlert Severity="Severity.Error" Class="my-4">Book not found.</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="my-4">Livre introuvable.</MudAlert>
 }
 else
 {
@@ -29,12 +29,12 @@ else
                     </CardHeaderAvatar>
                     <CardHeaderContent>
                         <MudText Typo="Typo.h4">@book.Name</MudText>
-                        <MudText Typo="Typo.body2">Added on @book.CreationDate.ToShortDateString()</MudText>
+                        <MudText Typo="Typo.body2">Ajouté le @book.CreationDate.ToShortDateString()</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
                     <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
-                        <MudTabPanel Text="Authors" Icon="@Icons.Material.Filled.Person">
+                        <MudTabPanel Text="Auteurs" Icon="@Icons.Material.Filled.Person">
                             @if (book.Authors != null && book.Authors.Count > 0)
                             {
                                 <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
@@ -55,10 +55,10 @@ else
                             }
                             else
                             {
-                                <MudAlert Severity="Severity.Info" Class="mt-3">No authors available for this book.</MudAlert>
+                                <MudAlert Severity="Severity.Info" Class="mt-3">Aucun auteur disponible pour ce livre.</MudAlert>
                             }
                         </MudTabPanel>
-                        <MudTabPanel Text="Recipes" Icon="@Icons.Material.Filled.Restaurant">
+                        <MudTabPanel Text="Recettes" Icon="@Icons.Material.Filled.Restaurant">
                             @if (relatedRecipes != null && relatedRecipes.Count > 0)
                             {
                                 <MudPaper Elevation="0" Class="pa-2">
@@ -84,7 +84,7 @@ else
                                                     <MudCardActions>
                                                         <MudButton Variant="Variant.Text" Color="Color.Primary" 
                                                                 Href="@($"/recipes/{recipe.Id}")">
-                                                            View Details
+                                                            Voir les détails
                                                         </MudButton>
                                                     </MudCardActions>
                                                 </MudCard>
@@ -95,16 +95,16 @@ else
                             }
                             else
                             {
-                                <MudAlert Severity="Severity.Info" Class="mt-3">No recipes found in this book.</MudAlert>
+                                <MudAlert Severity="Severity.Info" Class="mt-3">Aucune recette trouvée dans ce livre.</MudAlert>
                             }
                         </MudTabPanel>
                     </MudTabs>
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton Href="/books" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Books</MudButton>
+                    <MudButton Href="/books" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Retour aux livres</MudButton>
                     <MudSpacer />
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                              OnClick="@OpenEditDialog">Edit</MudButton>
+                              OnClick="@OpenEditDialog">Modifier</MudButton>
                 </MudCardActions>
             </MudCard>
         </MudItem>
@@ -119,9 +119,9 @@ else
     private bool loading = true;
     private List<BreadcrumbItem> breadcrumbs = new()
     {
-        new BreadcrumbItem("Home", href: "/"),
-        new BreadcrumbItem("Books", href: "/books"),
-        new BreadcrumbItem("Details", href: null, disabled: true)
+        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Livres", href: "/books"),
+        new BreadcrumbItem("Détails", href: null, disabled: true)
     };
     
     private List<Recipe> relatedRecipes = new();

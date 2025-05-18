@@ -5,7 +5,7 @@
 @inject MudBlazor.IDialogService DialogService
 @inject NavigationManager NavigationManager
 
-<PageTitle>RecettesIndex - Your Recipe Collection</PageTitle>
+<PageTitle>RecettesIndex - Votre Collection de Recettes</PageTitle>
 
 <!-- Hero Section -->
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-0">
@@ -14,18 +14,18 @@
         <MudContainer Class="py-8 py-md-16">
             <MudGrid>
                 <MudItem xs="12" sm="10" md="8" lg="6">
-                    <MudText Typo="Typo.h3" Color="Color.Surface" Style="font-weight: bold;" Class="mb-4 position-relative">Discover Delicious Recipes</MudText>
+                    <MudText Typo="Typo.h3" Color="Color.Surface" Style="font-weight: bold;" Class="mb-4 position-relative">Découvrez de Délicieuses Recettes</MudText>
                     <MudText Typo="Typo.body1" Color="Color.Surface" Class="mb-6 position-relative" Style="font-size: 1.1rem;">
-                        Your personal collection of culinary treasures, organized by books and authors.
+                        Votre collection personnelle de trésors culinaires, organisée par livres et auteurs.
                     </MudText>
                     <div class="d-flex flex-column flex-sm-row gap-3 position-relative">
                         <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Large" Href="/recipes" 
                                    StartIcon="@Icons.Material.Filled.MenuBook">
-                            Browse Recipes
+                            Parcourir les Recettes
                         </MudButton>
                         <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Large" 
                                    StartIcon="@Icons.Material.Filled.Add">
-                            Add Recipe
+                            Ajouter une Recette
                         </MudButton>
                     </div>
                 </MudItem>
@@ -40,10 +40,10 @@
                 <div class="d-flex justify-center mb-4">
                     <MudIcon Icon="@Icons.Material.Filled.Restaurant" Color="Color.Primary" Size="Size.Large" />
                 </div>
-                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalRecipesCount</MudText>
-                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Primary">Total Recipes</MudText>
+                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@(newestRecipes.Count + randomRecipes.Count)</MudText>
+                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Primary">Recettes Totales</MudText>
                 <MudSpacer />
-                <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" Href="/recipes">View All</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" Href="/recipes">Voir Tout</MudButton>
             </MudPaper>
         </MudItem>
         
@@ -55,9 +55,9 @@
                 <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">
                     @GetUniqueBookCount()
                 </MudText>
-                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">Recipe Books</MudText>
+                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">Livres de Recettes</MudText>
                 <MudSpacer />
-                <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Href="/books">View All</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Href="/books">Voir Tout</MudButton>
             </MudPaper>
         </MudItem>
         
@@ -69,11 +69,11 @@
                 <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">
                     @(newestRecipes.Count > 0 ? newestRecipes.OrderByDescending(r => r.Rating).First().Rating : 0)
                 </MudText>
-                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Error">Top Rating</MudText>
+                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Error">Meilleure Évaluation</MudText>
                 <MudSpacer />
                 <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" 
                            Href="@($"/recipes/{(newestRecipes.Count > 0 ? newestRecipes.OrderByDescending(r => r.Rating).First().Id : 0)}")">
-                    View Best Recipe
+                    Voir la Meilleure Recette
                 </MudButton>
             </MudPaper>
         </MudItem>
@@ -81,7 +81,7 @@
 
     <!-- Newest Recipes Section -->
     <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">
-        <MudIcon Icon="@Icons.Material.Filled.NewReleases" Class="mr-2" /> Newest Recipes
+        <MudIcon Icon="@Icons.Material.Filled.NewReleases" Class="mr-2" /> Recettes Récentes
     </MudText>
     
     @if (loadingNewest)
@@ -92,7 +92,7 @@
     }
     else if (newestRecipes.Count == 0)
     {
-        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">No recipes found. Start adding your first recipe!</MudAlert>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">Aucune recette trouvée. Commencez par ajouter votre première recette!</MudAlert>
     }
     else
     {
@@ -127,11 +127,11 @@
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">No notes available</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">Aucune note disponible</MudText>
                         }
                     </MudCardContent>
                     <MudCardActions Class="d-flex justify-space-between">
-                        <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">New</MudChip>
+                        <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">Nouveau</MudChip>
                         <MudText Typo="Typo.caption">@recipe.CreationDate.ToString("MMM d, yyyy")</MudText>
                     </MudCardActions>
                 </MudCard>
@@ -172,11 +172,11 @@
                                 }
                                 else
                                 {
-                                    <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">No notes available</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">Aucune note disponible</MudText>
                                 }
                             </MudCardContent>
                             <MudCardActions Class="d-flex justify-space-between">
-                                <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">New</MudChip>
+                                <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">Nouveau</MudChip>
                                 <MudText Typo="Typo.caption">@recipe.CreationDate.ToString("MMM d, yyyy")</MudText>
                             </MudCardActions>
                         </MudCard>
@@ -188,7 +188,7 @@
 
     <!-- Random Recipes Section -->
     <MudText Typo="Typo.h4" Color="Color.Secondary" Class="mb-4">
-        <MudIcon Icon="@Icons.Material.Filled.Shuffle" Class="mr-2" /> Discover Random Recipes
+        <MudIcon Icon="@Icons.Material.Filled.Shuffle" Class="mr-2" /> Découvrez des Recettes Aléatoires
     </MudText>
     
     @if (loadingRandom)
@@ -199,7 +199,7 @@
     }
     else if (randomRecipes.Count == 0)
     {
-        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">No recipes found. Start adding your first recipe!</MudAlert>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">Aucune recette trouvée. Commencez par ajouter votre première recette!</MudAlert>
     }
     else
     {
@@ -249,7 +249,7 @@
                                    Color="Color.Surface" 
                                    Size="Size.Medium"
                                    Class="mt-4 desktop-button">
-                            View Recipe
+                            Voir la Recette
                         </MudButton>
                     </div>
                 </MudCarouselItem>
@@ -345,7 +345,6 @@
     private List<Recipe> newestRecipes = new();
     private List<Recipe> randomRecipes = new();
     private List<Book> allBooks = new();
-    private int totalRecipesCount = 0;
     private bool loadingNewest = true;
     private bool loadingRandom = true;
 
@@ -378,16 +377,12 @@
         {
             var response = await SupabaseClient.From<Recipe>().Get();
             var allRecipes = response.Models ?? new List<Recipe>();
-            // Set the total count of recipes
-            totalRecipesCount = allRecipes.Count;
-            
             var rnd = new Random();
             randomRecipes = allRecipes.OrderBy(x => rnd.Next()).Take(5).ToList();
         }
         catch
         {
             randomRecipes = new List<Recipe>();
-            totalRecipesCount = 0;
         }
         loadingRandom = false;
     }

@@ -5,10 +5,10 @@
 @inject RecettesIndex.Services.AuthService AuthService
 @inject MudBlazor.IDialogService DialogService
 
-<PageTitle>Authors</PageTitle>
+<PageTitle>Auteurs</PageTitle>
 
 <MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Authors</MudText>
+    <MudText Typo="Typo.h5">Auteurs</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
     @if (loading)
     {
@@ -16,14 +16,16 @@
     }
     else if (authors.Count == 0)
     {
-        <MudText>No authors found.</MudText>
+        <MudText>Aucun auteur trouvé.</MudText>
     }
     else
     {
-        <MudTextField @bind-Value="searchTerm" Placeholder="Search authors..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+        <MudTextField @bind-Value="searchTerm" Label="Rechercher des auteurs" Placeholder="Nom d'auteur..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
         <MudTable Items="filteredAuthors" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
             <PagerContent>
-                <MudTablePager />
+                <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
+                               RowsPerPageString="Lignes par page:" 
+                               PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
             </PagerContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<Author, object>(x=>x.FullName)">Nom</MudTableSortLabel></MudTh>
@@ -33,14 +35,14 @@
                 }
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="First Name">
+                <MudTd DataLabel="Nom">
                     <MudLink Href="@($"/authors/{context.Id}")" Style="cursor:pointer">@context.FullName</MudLink>
                 </MudTd>
                 @if (AuthService.IsAuthenticated)
                 {
                     <MudTd>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Edit</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAuthor(context)">Delete</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAuthor(context)">Supprimer</MudButton>
                     </MudTd>
                 }
             </RowTemplate>
@@ -48,7 +50,7 @@
     }
     @if (AuthService.IsAuthenticated)
     {
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Add Author</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter un auteur</MudButton>
     }
 </MudPaper>
 
@@ -57,8 +59,8 @@
     private bool loading = true;
     private List<BreadcrumbItem> breadcrumbs = new()
     {
-        new BreadcrumbItem("Home", href: "/"),
-        new BreadcrumbItem("Authors", href: "/authors", disabled: true)
+        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Auteurs", href: "/authors", disabled: true)
     };
     private string searchTerm = string.Empty;
     private MudTable<Author> table;
@@ -88,7 +90,7 @@
 
     private async Task ShowAddDialog()
     {
-        var dialog = DialogService.Show<AddAuthorDialog>("Add Author");
+        var dialog = DialogService.Show<AddAuthorDialog>("Ajouter un auteur");
         var result = await dialog.Result;
         if (!result.Canceled)
         {
@@ -99,7 +101,7 @@
     private async Task ShowEditDialog(Author authorToEdit)
     {
         var parameters = new MudBlazor.DialogParameters { ["AuthorToEdit"] = authorToEdit };
-        var dialog = DialogService.Show<EditAuthorDialog>("Edit Author", parameters);
+        var dialog = DialogService.Show<EditAuthorDialog>("Modifier l'auteur", parameters);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
