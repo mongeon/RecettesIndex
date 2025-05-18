@@ -3,6 +3,7 @@
 @using RecettesIndex.Models
 @inject Supabase.Client SupabaseClient
 @inject MudBlazor.IDialogService DialogService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Home</PageTitle>
 
@@ -103,9 +104,10 @@
         loadingRandom = false;
     }
 
-    private async Task ShowRecipeDetails(Recipe recipe)
+    private void ShowRecipeDetails(Recipe recipe)
     {
-        var parameters = new DialogParameters { ["Recipe"] = recipe };
-        await DialogService.ShowAsync<RecipeDetailsDialog>("Recipe Details", parameters);
+        // Navigate to the recipe details page instead of showing a dialog
+        var uri = $"/recipes/{recipe.Id}";
+        NavigationManager.NavigateTo(uri);
     }
 }
