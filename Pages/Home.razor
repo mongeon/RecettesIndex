@@ -40,7 +40,7 @@
                 <div class="d-flex justify-center mb-4">
                     <MudIcon Icon="@Icons.Material.Filled.Restaurant" Color="Color.Primary" Size="Size.Large" />
                 </div>
-                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@(newestRecipes.Count + randomRecipes.Count)</MudText>
+                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalRecipesCount</MudText>
                 <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Primary">Total Recipes</MudText>
                 <MudSpacer />
                 <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" Href="/recipes">View All</MudButton>
@@ -345,6 +345,7 @@
     private List<Recipe> newestRecipes = new();
     private List<Recipe> randomRecipes = new();
     private List<Book> allBooks = new();
+    private int totalRecipesCount = 0;
     private bool loadingNewest = true;
     private bool loadingRandom = true;
 
@@ -377,12 +378,16 @@
         {
             var response = await SupabaseClient.From<Recipe>().Get();
             var allRecipes = response.Models ?? new List<Recipe>();
+            // Set the total count of recipes
+            totalRecipesCount = allRecipes.Count;
+            
             var rnd = new Random();
             randomRecipes = allRecipes.OrderBy(x => rnd.Next()).Take(5).ToList();
         }
         catch
         {
             randomRecipes = new List<Recipe>();
+            totalRecipesCount = 0;
         }
         loadingRandom = false;
     }
