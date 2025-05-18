@@ -4,9 +4,9 @@
 
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Add Book</MudText>
-        <MudTextField @bind-Value="book.Name" Label="Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
-        <MudSelect T="Author" Label="Authors (optional)" @bind-SelectedValues="selectedAuthors" Variant="Variant.Outlined" Class="mb-2" MultiSelection="true">
+        <MudText Typo="Typo.h6">Ajouter un Livre</MudText>
+        <MudTextField @bind-Value="book.Name" Label="Nom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <MudSelect T="Author" Label="Auteurs (optionnel)" @bind-SelectedValues="selectedAuthors" Variant="Variant.Outlined" Class="mb-2" MultiSelection="true">
             @foreach (var author in authors)
             {
                 <MudSelectItem T="Author" Value="author">@author.Name @author.LastName</MudSelectItem>
@@ -18,8 +18,8 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="AddBook" Color="Color.Primary" Variant="Variant.Filled">Add</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="AddBook" Color="Color.Primary" Variant="Variant.Filled">Ajouter</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -47,7 +47,7 @@
             if (response.Models?.Count > 0)
                 MudDialog.Close(DialogResult.Ok(response.Models[0]));
             else
-                errorMessage = "Failed to add book.";
+                errorMessage = "Échec lors de l'ajout du livre.";
         }
         catch (Exception ex)
         {

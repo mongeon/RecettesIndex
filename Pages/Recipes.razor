@@ -5,10 +5,10 @@
 @inject Supabase.Client SupabaseClient
 @inject MudBlazor.IDialogService DialogService
 
-<PageTitle>Recipes</PageTitle>
+<PageTitle>Recettes</PageTitle>
 
 <MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Recipes</MudText>
+    <MudText Typo="Typo.h5">Recettes</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
     @if (loading)
     {
@@ -16,36 +16,38 @@
     }
     else if (recipes.Count == 0)
     {
-        <MudText>No recipes found.</MudText>
+        <MudText>Aucune recette trouvée.</MudText>
     }
     else
     {
-        <MudTextField @bind-Value="searchTerm" Placeholder="Search recipes..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+        <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des recettes..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
         <MudTable Items="filteredRecipes" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
             <PagerContent>
-                <MudTablePager />
+                <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
+                               RowsPerPageString="Lignes par page:" 
+                               PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
             </PagerContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Name)">Nom</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Rating)">Note</MudTableSortLabel></MudTh>
-                <MudTh>Created</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Rating)">Évaluation</MudTableSortLabel></MudTh>
+                <MudTh>Créée le</MudTh>
                 <MudTh>Notes</MudTh>
-                <MudTh>Book</MudTh>
+                <MudTh>Livre</MudTh>
                 @if (AuthService.IsAuthenticated)
                 {
                     <MudTh>Actions</MudTh>
                 }
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">
+                <MudTd DataLabel="Nom">
                     <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
                 </MudTd>
-                <MudTd DataLabel="Rating">
+                <MudTd DataLabel="Évaluation">
                     <PizzaRating Value="@context.Rating" />
                 </MudTd>
-                <MudTd DataLabel="Created">@context.CreationDate.ToShortDateString()</MudTd>
+                <MudTd DataLabel="Créée le">@context.CreationDate.ToShortDateString()</MudTd>
                 <MudTd DataLabel="Notes">@context.Notes</MudTd>
-                <MudTd DataLabel="Book">
+                <MudTd DataLabel="Livre">
                     @if (context.BookId != null)
                     {
                         var book = books.FirstOrDefault(b => b.Id == context.BookId);
@@ -58,8 +60,8 @@
                 @if (AuthService.IsAuthenticated)
                 {
                     <MudTd>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Edit</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Delete</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Supprimer</MudButton>
                     </MudTd>
                 }
             </RowTemplate>
@@ -67,7 +69,7 @@
     }
     @if (AuthService.IsAuthenticated)
     {
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Add Recipe</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter une recette</MudButton>
     }
 </MudPaper>
 
@@ -77,8 +79,8 @@
     private bool loading = true;
     private List<BreadcrumbItem> breadcrumbs = new()
     {
-        new BreadcrumbItem("Home", href: "/"),
-        new BreadcrumbItem("Recipes", href: "/recipes", disabled: true)
+        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Recettes", href: "/recipes", disabled: true)
     };
     private string searchTerm = string.Empty;
     private MudTable<Recipe> table;
@@ -103,7 +105,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading recipes: {ex.Message}");
+            Console.WriteLine($"Erreur lors du chargement des recettes: {ex.Message}");
             recipes = new List<Recipe>();
             books = new List<Book>();
         }
@@ -112,7 +114,7 @@
 
     private async Task ShowAddDialog()
     {
-        var dialog = DialogService.Show<AddRecipeDialog>("Add Recipe");
+        var dialog = DialogService.Show<AddRecipeDialog>("Ajouter une recette");
         var result = await dialog.Result;
         if (!result.Canceled)
         {
@@ -123,7 +125,7 @@
     private async Task ShowEditDialog(Recipe recipeToEdit)
     {
         var parameters = new MudBlazor.DialogParameters { ["RecipeToEdit"] = recipeToEdit };
-        var dialog = DialogService.Show<EditRecipeDialog>("Edit Recipe", parameters);
+        var dialog = DialogService.Show<EditRecipeDialog>("Modifier la recette", parameters);
         var result = await dialog.Result;
         if (!result.Canceled)
         {

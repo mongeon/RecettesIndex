@@ -45,7 +45,7 @@
             if (response.Models?.Count > 0)
                 MudDialog.Close(DialogResult.Ok(response.Models[0]));
             else
-                errorMessage = "Failed to update recipe.";
+                errorMessage = "Échec lors de la mise à jour de la recette.";
         }
         catch (Exception ex)
         {
@@ -59,13 +59,13 @@
 }
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Edit Recipe</MudText>
-        <MudTextField @bind-Value="recipe.Name" Label="Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <MudText Typo="Typo.h6">Modifier la Recette</MudText>
+        <MudTextField @bind-Value="recipe.Name" Label="Nom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
         <PizzaRating @bind-Value="recipe.Rating" ReadOnly="false" />
         <MudTextField @bind-Value="recipe.Notes" Label="Notes" Variant="Variant.Outlined" Class="mb-2" />
-        <MudNumericField @bind-Value="recipe.BookPage" Label="Book Page (optional)" Variant="Variant.Outlined" Class="mb-2" />
-        <MudSelect T="Book" Label="Book (optional)" @bind-Value="selectedBook" Variant="Variant.Outlined" Class="mb-2">
-            <MudSelectItem T="Book" Value="null">None</MudSelectItem>
+        <MudNumericField @bind-Value="recipe.BookPage" Label="Page du livre (optionnel)" Variant="Variant.Outlined" Class="mb-2" />
+        <MudSelect T="Book" Label="Livre (optionnel)" @bind-Value="selectedBook" Variant="Variant.Outlined" Class="mb-2">
+            <MudSelectItem T="Book" Value="null">Aucun</MudSelectItem>
             @foreach (var book in books)
             {
                 <MudSelectItem T="Book" Value="book">@book.Name</MudSelectItem>
@@ -77,7 +77,7 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled">Enregistrer</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
     </DialogActions>
 </MudDialog>
