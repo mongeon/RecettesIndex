@@ -5,71 +5,354 @@
 @inject MudBlazor.IDialogService DialogService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Home</PageTitle>
+<PageTitle>RecettesIndex - Your Recipe Collection</PageTitle>
 
-<MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+<!-- Hero Section -->
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-0">
+    <MudPaper Elevation="0" Class="hero-section rounded-lg mb-6 position-relative overflow-hidden">
+        <div class="hero-overlay"></div>
+        <MudContainer Class="py-8 py-md-16">
+            <MudGrid>
+                <MudItem xs="12" sm="10" md="8" lg="6">
+                    <MudText Typo="Typo.h3" Color="Color.Surface" Style="font-weight: bold;" Class="mb-4 position-relative">Discover Delicious Recipes</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Surface" Class="mb-6 position-relative" Style="font-size: 1.1rem;">
+                        Your personal collection of culinary treasures, organized by books and authors.
+                    </MudText>
+                    <div class="d-flex flex-column flex-sm-row gap-3 position-relative">
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Large" Href="/recipes" 
+                                   StartIcon="@Icons.Material.Filled.MenuBook">
+                            Browse Recipes
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Large" 
+                                   StartIcon="@Icons.Material.Filled.Add">
+                            Add Recipe
+                        </MudButton>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </MudPaper>
 
-<MudPaper Class="pa-4 mb-4">
-    <MudText Typo="Typo.h5">Newest Recipes</MudText>
+    <!-- Stats Cards -->
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                <div class="d-flex justify-center mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Restaurant" Color="Color.Primary" Size="Size.Large" />
+                </div>
+                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@(newestRecipes.Count + randomRecipes.Count)</MudText>
+                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Primary">Total Recipes</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" Href="/recipes">View All</MudButton>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                <div class="d-flex justify-center mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoStories" Color="Color.Secondary" Size="Size.Large" />
+                </div>
+                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">
+                    @GetUniqueBookCount()
+                </MudText>
+                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">Recipe Books</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Href="/books">View All</MudButton>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="4" Class="mx-auto mx-md-0">
+            <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                <div class="d-flex justify-center mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Whatshot" Color="Color.Error" Size="Size.Large" />
+                </div>
+                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">
+                    @(newestRecipes.Count > 0 ? newestRecipes.OrderByDescending(r => r.Rating).First().Rating : 0)
+                </MudText>
+                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Error">Top Rating</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" 
+                           Href="@($"/recipes/{(newestRecipes.Count > 0 ? newestRecipes.OrderByDescending(r => r.Rating).First().Id : 0)}")">
+                    View Best Recipe
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Newest Recipes Section -->
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">
+        <MudIcon Icon="@Icons.Material.Filled.NewReleases" Class="mr-2" /> Newest Recipes
+    </MudText>
+    
     @if (loadingNewest)
     {
-        <MudProgressCircular Indeterminate="true" />
+        <div class="d-flex justify-center my-8">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
     }
     else if (newestRecipes.Count == 0)
     {
-        <MudText>No recipes found.</MudText>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">No recipes found. Start adding your first recipe!</MudAlert>
     }
     else
     {
-        <MudList T="Recipe">
+        <div class="d-none d-sm-flex overflow-auto pb-4 gap-4 flex-nowrap mb-6 recipe-scroll">
             @foreach (var recipe in newestRecipes)
             {
-                <MudListItem Style="cursor:pointer" @onclick="() => ShowRecipeDetails(recipe)">
-                    @recipe.Name <PizzaRating Value="@recipe.Rating" />
-                </MudListItem>
+                <MudCard Elevation="2" Class="recipe-card flex-shrink-0" Style="width: 320px; cursor: pointer;" @onclick="() => ShowRecipeDetails(recipe)">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Style="margin-bottom: 0;">@recipe.Name</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" />
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <div class="d-flex align-center mb-2">
+                            <PizzaRating Value="@recipe.Rating" />
+                            <MudText Typo="Typo.body2" Class="ml-2">@recipe.Rating/5</MudText>
+                        </div>
+                        @if (!string.IsNullOrEmpty(recipe.Notes) && recipe.Notes.Length > 100)
+                        {
+                            <MudText Typo="Typo.body2" Style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                @recipe.Notes.Substring(0, 100)...
+                            </MudText>
+                        }
+                        else if (!string.IsNullOrEmpty(recipe.Notes))
+                        {
+                            <MudText Typo="Typo.body2" Style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                @recipe.Notes
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">No notes available</MudText>
+                        }
+                    </MudCardContent>
+                    <MudCardActions Class="d-flex justify-space-between">
+                        <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">New</MudChip>
+                        <MudText Typo="Typo.caption">@recipe.CreationDate.ToString("MMM d, yyyy")</MudText>
+                    </MudCardActions>
+                </MudCard>
             }
-        </MudList>
-    }
-</MudPaper>
+        </div>
 
-<MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Random Recipes</MudText>
+        <!-- Vertical stacked grid for mobile -->
+        <div class="d-block d-sm-none mb-6">
+            <MudGrid>
+                @foreach (var recipe in newestRecipes)
+                {
+                    <MudItem xs="12">
+                        <MudCard Elevation="2" Class="recipe-card" @onclick="() => ShowRecipeDetails(recipe)">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6" Style="margin-bottom: 0;">@recipe.Name</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <div class="d-flex align-center mb-2">
+                                    <PizzaRating Value="@recipe.Rating" />
+                                    <MudText Typo="Typo.body2" Class="ml-2">@recipe.Rating/5</MudText>
+                                </div>
+                                @if (!string.IsNullOrEmpty(recipe.Notes) && recipe.Notes.Length > 100)
+                                {
+                                    <MudText Typo="Typo.body2" Class="recipe-notes-mobile">
+                                        @recipe.Notes.Substring(0, 100)...
+                                    </MudText>
+                                }
+                                else if (!string.IsNullOrEmpty(recipe.Notes))
+                                {
+                                    <MudText Typo="Typo.body2" Class="recipe-notes-mobile">
+                                        @recipe.Notes
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">No notes available</MudText>
+                                }
+                            </MudCardContent>
+                            <MudCardActions Class="d-flex justify-space-between">
+                                <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">New</MudChip>
+                                <MudText Typo="Typo.caption">@recipe.CreationDate.ToString("MMM d, yyyy")</MudText>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        </div>
+    }
+
+    <!-- Random Recipes Section -->
+    <MudText Typo="Typo.h4" Color="Color.Secondary" Class="mb-4">
+        <MudIcon Icon="@Icons.Material.Filled.Shuffle" Class="mr-2" /> Discover Random Recipes
+    </MudText>
+    
     @if (loadingRandom)
     {
-        <MudProgressCircular Indeterminate="true" />
+        <div class="d-flex justify-center my-8">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" Size="Size.Large" />
+        </div>
     }
     else if (randomRecipes.Count == 0)
     {
-        <MudText>No recipes found.</MudText>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">No recipes found. Start adding your first recipe!</MudAlert>
     }
     else
     {
-        <MudList T="Recipe">
+        <MudCarousel Class="mud-width-full carousel-responsive" 
+                     ShowArrows="true" ShowDelimiters="true" AutoCycle="true" TData="Recipe">
             @foreach (var recipe in randomRecipes)
             {
-                <MudListItem Style="cursor:pointer" @onclick="() => ShowRecipeDetails(recipe)">
-                    @recipe.Name <PizzaRating Value="@recipe.Rating" />
-                </MudListItem>
+                <MudCarouselItem Color="@GetRandomColor()" Transition="Transition.Slide">
+                    <div class="d-flex flex-column justify-center align-center h-100 px-4" 
+                         @onclick="() => ShowRecipeDetails(recipe)" style="cursor: pointer;">
+                        <MudText Typo="Typo.h4" Color="Color.Surface" Class="mb-4 text-center desktop-h3">
+                            @recipe.Name
+                        </MudText>
+                        <div class="d-flex gap-2 mb-4">
+                            <PizzaRating Value="@recipe.Rating" />
+                        </div>
+                        <div class="d-none d-sm-block">
+                            @if (!string.IsNullOrEmpty(recipe.Notes) && recipe.Notes.Length > 150)
+                            {
+                                <MudText Typo="Typo.body1" Color="Color.Surface" Style="max-width: 70%; text-align: center;">
+                                    @recipe.Notes.Substring(0, 150)...
+                                </MudText>
+                            }
+                            else if (!string.IsNullOrEmpty(recipe.Notes))
+                            {
+                                <MudText Typo="Typo.body1" Color="Color.Surface" Style="max-width: 70%; text-align: center;">
+                                    @recipe.Notes
+                                </MudText>
+                            }
+                        </div>
+                        <div class="d-block d-sm-none">
+                            @if (!string.IsNullOrEmpty(recipe.Notes) && recipe.Notes.Length > 80)
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Surface" Style="max-width: 90%; text-align: center;">
+                                    @recipe.Notes.Substring(0, 80)...
+                                </MudText>
+                            }
+                            else if (!string.IsNullOrEmpty(recipe.Notes))
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Surface" Style="max-width: 90%; text-align: center;">
+                                    @recipe.Notes
+                                </MudText>
+                            }
+                        </div>
+                        
+                        <MudButton Variant="Variant.Outlined" 
+                                   Color="Color.Surface" 
+                                   Size="Size.Medium"
+                                   Class="mt-4 desktop-button">
+                            View Recipe
+                        </MudButton>
+                    </div>
+                </MudCarouselItem>
             }
-        </MudList>
+        </MudCarousel>
     }
-</MudPaper>
+</MudContainer>
+
+<style>
+    .hero-section {
+        background-image: url('https://images.unsplash.com/photo-1499028344343-cd173ffc68a9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        min-height: 300px;
+    }
+    
+    ::deep @@media (min-width: 768px) {
+        .hero-section {
+            min-height: 400px;
+        }
+        
+        .desktop-h3 {
+            font-size: 2.5rem !important;
+        }
+        
+        .desktop-rating {
+            font-size: 1.5rem !important;
+        }
+        
+        .desktop-button {
+            font-size: 1.1rem !important;
+        }
+    }
+    
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255,107,107,0.9) 0%, rgba(255,107,107,0.7) 100%);
+    }
+    
+    .recipe-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    
+    .recipe-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .recipe-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: var(--mud-palette-primary) transparent;
+    }
+    
+    .recipe-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+    
+    .recipe-scroll::-webkit-scrollbar-thumb {
+        background-color: var(--mud-palette-primary);
+        border-radius: 6px;
+    }
+    
+    .recipe-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .recipe-notes-mobile {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    
+    .carousel-responsive {
+        height: 300px;
+    }
+    
+    ::deep @@media (min-width: 768px) {
+        .carousel-responsive {
+            height: 400px;
+        }
+    }
+</style>
 
 @code {
     private List<Recipe> newestRecipes = new();
     private List<Recipe> randomRecipes = new();
+    private List<Book> allBooks = new();
     private bool loadingNewest = true;
     private bool loadingRandom = true;
-
-    private List<BreadcrumbItem> breadcrumbs = new()
-    {
-        new BreadcrumbItem("Home", href: "/", disabled: true)
-    };
 
     protected override async Task OnInitializedAsync()
     {
         await LoadNewestRecipes();
         await LoadRandomRecipes();
+        await LoadBooks();
     }
 
     private async Task LoadNewestRecipes()
@@ -104,10 +387,34 @@
         loadingRandom = false;
     }
 
+    private async Task LoadBooks()
+    {
+        try
+        {
+            var response = await SupabaseClient.From<Book>().Get();
+            allBooks = response.Models ?? new List<Book>();
+        }
+        catch
+        {
+            allBooks = new List<Book>();
+        }
+    }
+
     private void ShowRecipeDetails(Recipe recipe)
     {
         // Navigate to the recipe details page instead of showing a dialog
         var uri = $"/recipes/{recipe.Id}";
         NavigationManager.NavigateTo(uri);
+    }
+
+    private int GetUniqueBookCount()
+    {
+        return allBooks.Count;
+    }
+
+    private Color GetRandomColor()
+    {
+        var colors = new[] { Color.Primary, Color.Secondary, Color.Tertiary, Color.Info };
+        return colors[new Random().Next(0, colors.Length)];
     }
 }
