@@ -1,59 +1,118 @@
-@page "/books/{id:int}"
+@page "/books/{Id:int}"
 @using MudBlazor
 @using RecettesIndex.Models
 @inject Supabase.Client SupabaseClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
-<PageTitle>Book Details</PageTitle>
+<PageTitle>Book Details - @(book?.Name ?? "Loading...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
 
 @if (loading)
 {
-    <MudProgressCircular Indeterminate="true" />
+    <MudProgressLinear Indeterminate="true" Class="my-4" />
 }
 else if (book == null)
 {
-    <MudText>Book not found.</MudText>
+    <MudAlert Severity="Severity.Error" Class="my-4">Book not found.</MudAlert>
 }
 else
 {
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h5">@book.Name</MudText>
-        <MudText>Created: @book.CreationDate.ToShortDateString()</MudText>
-        <MudText>Authors: 
-            @if (book.Authors != null && book.Authors.Count > 0)
-            {
-                @foreach (var author in book.Authors)
-                {
-                    <MudLink Href="@($"/authors/{author.Id}")" Style="margin-right:8px; cursor:pointer">@author.Name @author.LastName</MudLink>
-                }
-            }
-            else
-            {
-                <span>None</span>
-            }
-        </MudText>
-        <MudText>Related Recipes:</MudText>
-        @if (relatedRecipes != null && relatedRecipes.Count > 0)
-        {
-            <MudList T="Recipe">
-                @foreach (var recipe in relatedRecipes)
-                {
-                    <MudListItem>
-                        <MudLink Href="@($"/recipes/{recipe.Id}")" Style="margin-right:8px; cursor:pointer">@recipe.Name</MudLink>
-                    </MudListItem>
-                }
-            </MudList>
-        }
-        else
-        {
-            <MudText>None</MudText>
-        }
-        <MudButton Href="/books" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Books</MudButton>
-    </MudPaper>
+    <MudGrid>
+        <MudItem xs="12">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h4">@book.Name</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
+                                <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />Authors</MudText>
+                                @if (book.Authors != null && book.Authors.Count > 0)
+                                {
+                                    <MudList Clickable="true" T="Author">
+                                        @foreach (var author in book.Authors)
+                                        {
+                                            <MudListItem Href="@($"/authors/{author.Id}")">
+                                                <MudText>@author.Name @author.LastName</MudText>
+                                            </MudListItem>
+                                        }
+                                    </MudList>
+                                }
+                                else
+                                {
+                                    <MudText>No authors available</MudText>
+                                }
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="0" Class="pa-4">
+                                <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="mr-2" />Created</MudText>
+                                <MudText>@book.CreationDate.ToShortDateString()</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2"><MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="mr-2" />Recipes in this Book</MudText>
+                    @if (relatedRecipes != null && relatedRecipes.Count > 0)
+                    {
+                        <MudPaper Elevation="0" Class="pa-2">
+                            <MudGrid>
+                                @foreach (var recipe in relatedRecipes)
+                                {
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <MudCard Elevation="2" Class="ma-2 recipe-card">
+                                            <MudCardHeader>
+                                                <CardHeaderContent>
+                                                    <MudText Typo="Typo.h6">@recipe.Name</MudText>
+                                                </CardHeaderContent>
+                                                <CardHeaderActions>
+                                                    <MudRating ReadOnly="true" SelectedValue="@recipe.Rating" />
+                                                </CardHeaderActions>
+                                            </MudCardHeader>
+                                            <MudCardContent>
+                                                @if (recipe.BookPage != null)
+                                                {
+                                                    <MudText>Page: @recipe.BookPage</MudText>
+                                                }
+                                            </MudCardContent>
+                                            <MudCardActions>
+                                                <MudButton Variant="Variant.Text" Color="Color.Primary" 
+                                                          Href="@($"/recipes/{recipe.Id}")">
+                                                    View Details
+                                                </MudButton>
+                                            </MudCardActions>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mt-3">No recipes found in this book.</MudAlert>
+                    }
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="/books" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Books</MudButton>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                              OnClick="@OpenEditDialog">Edit</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
-    [Parameter] public int id { get; set; }
+    [Parameter] 
+    public int Id { get; set; }
+    
     private Book? book;
     private bool loading = true;
     private List<BreadcrumbItem> breadcrumbs = new()
@@ -62,17 +121,41 @@ else
         new BreadcrumbItem("Books", href: "/books"),
         new BreadcrumbItem("Details", href: null, disabled: true)
     };
+    
     private List<Recipe> relatedRecipes = new();
+    
     protected override async Task OnInitializedAsync()
     {
         loading = true;
-        var response = await SupabaseClient.From<Book>().Where(x => x.Id == id).Get();
-        book = response.Models?.FirstOrDefault();
-        if (book != null)
+        
+        try 
         {
-            var recipesResponse = await SupabaseClient.From<Recipe>().Where(x => x.BookId == book.Id).Get();
-            relatedRecipes = recipesResponse.Models ?? new List<Recipe>();
+            var response = await SupabaseClient.From<Book>().Where(x => x.Id == Id).Get();
+            book = response.Models?.FirstOrDefault();
+            
+            if (book != null)
+            {
+                // Update the breadcrumbs with book name
+                breadcrumbs[2] = new BreadcrumbItem(book.Name, href: null, disabled: true);
+                
+                // Get related recipes
+                var recipesResponse = await SupabaseClient.From<Recipe>().Where(x => x.BookId == book.Id).Get();
+                relatedRecipes = recipesResponse.Models ?? new List<Recipe>();
+            }
         }
-        loading = false;
+        catch (Exception ex)
+        {
+            // Add error handling if needed
+            Console.WriteLine($"Error loading book: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    
+    private void OpenEditDialog()
+    {
+        NavigationManager.NavigateTo($"/books/{Id}/edit");
     }
 }
