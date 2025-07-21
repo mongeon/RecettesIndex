@@ -1,0 +1,29 @@
+{
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": true,
+        "razor": true,
+        "csharp": true,
+        "json": true,
+        "xml": true
+    },
+    "github.copilot.editor.enableAutoCompletions": true,
+    "github.copilot.inlineSuggest.enable": true,
+    "github.copilot.chat.experimental.codeGeneration.instructions": [
+        "Follow the project's existing patterns for Blazor components",
+        "Use MudBlazor components instead of plain HTML",
+        "Include proper error handling for async operations",
+        "Use nullable reference types appropriately",
+        "Follow the existing Supabase data access patterns",
+        "Include loading states for async operations",
+        "Use dependency injection for services",
+        "Follow the established dialog patterns for CRUD operations"
+    ],
+    "csharp.format.enable": true,
+    "csharp.semanticHighlighting.enabled": true,
+    "razor.format.enable": true,
+    "files.associations": {
+        "*.razor": "razor"
+    }
+}
