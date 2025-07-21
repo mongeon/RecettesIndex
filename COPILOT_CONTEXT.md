@@ -62,3 +62,15 @@ Author (1) -> (Many) Books (1) -> (Many) Recipes
 - **Always create a new branch** for any changes or features - never modify main directly
 - Use clear, descriptive branch names that indicate the purpose of the changes
 - Test functionality thoroughly before suggesting merge to main branch
+
+### Documentation Maintenance
+- **Update Copilot Instruction Files**: When implementing features or modifications, update these files as necessary:
+  - `/.github/copilot-instructions.md` - Detailed development guidelines and patterns
+  - `/.copilot-instructions.md` - Quick reference for coding standards
+  - `/COPILOT_CONTEXT.md` - Business context and user workflows (this file)
+- **Update Project Documentation**: Maintain the `/docs` folder with current information about:
+  - Feature specifications and user guides
+  - Technical architecture and setup instructions
+  - API documentation and configuration details
+  - Deployment and maintenance procedures
+- **Documentation Consistency**: Ensure all documentation reflects the current state of the application and development practices
