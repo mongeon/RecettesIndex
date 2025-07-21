@@ -197,3 +197,16 @@ public class RecipeService
 - Make atomic commits with clear messages
 - Test changes before suggesting merge to main
 - Follow existing pull request patterns if established
+
+### Documentation Requirements
+- **Update Copilot Instructions**: When creating a new branch for any feature or modification, update these instruction files as necessary:
+  - `/.github/copilot-instructions.md` - Comprehensive development guidelines and patterns (this file)
+  - `/.copilot-instructions.md` - Quick reference for common coding patterns
+  - `/COPILOT_CONTEXT.md` - Business domain context and user workflows
+- **Update Project Documentation**: For every modification, ensure documentation in the `/docs` folder is updated to reflect:
+  - New features and functionality
+  - API changes or new endpoints
+  - Configuration changes
+  - Setup or deployment procedures
+  - User-facing changes or new workflows
+- **Documentation Consistency**: Keep all documentation synchronized with code changes to maintain accuracy and usefulness for future development
