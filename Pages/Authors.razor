@@ -20,7 +20,7 @@
     }
     else
     {
-        <MudTextField @bind-Value="searchTerm" Label="Rechercher des auteurs" Placeholder="Nom d'auteur..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+        <MudTextField @bind-Value="searchTerm" Label="Rechercher des auteurs" Placeholder="Nom d'auteur..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" @oninput="OnSearchChanged" />
         <MudTable Items="filteredAuthors" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
             <PagerContent>
                 <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
@@ -63,7 +63,6 @@
         new BreadcrumbItem("Auteurs", href: "/authors", disabled: true)
     };
     private string searchTerm = string.Empty;
-    private MudTable<Author> table;
     private IEnumerable<Author> filteredAuthors => string.IsNullOrWhiteSpace(searchTerm)
         ? authors
         : authors.Where(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (a.LastName != null && a.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
@@ -90,7 +89,7 @@
 
     private async Task ShowAddDialog()
     {
-        var dialog = DialogService.Show<AddAuthorDialog>("Ajouter un auteur");
+        var dialog = await DialogService.ShowAsync<AddAuthorDialog>("Ajouter un auteur");
         var result = await dialog.Result;
         if (!result.Canceled)
         {
@@ -101,7 +100,7 @@
     private async Task ShowEditDialog(Author authorToEdit)
     {
         var parameters = new MudBlazor.DialogParameters { ["AuthorToEdit"] = authorToEdit };
-        var dialog = DialogService.Show<EditAuthorDialog>("Modifier l'auteur", parameters);
+        var dialog = await DialogService.ShowAsync<EditAuthorDialog>("Modifier l'auteur", parameters);
         var result = await dialog.Result;
         if (!result.Canceled)
         {

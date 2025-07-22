@@ -4,7 +4,7 @@
 @inject Supabase.Client SupabaseClient
 @code {
     [Parameter] public Author AuthorToEdit { get; set; } = new();
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }
     private Author author = new();
     private string? errorMessage;
     protected override void OnInitialized()

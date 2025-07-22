@@ -22,7 +22,7 @@
 
 @code {
     [CascadingParameter]
-    IMudDialogInstance MudDialog { get; set; }
+    public required IMudDialogInstance MudDialog { get; set; }
     private string email = string.Empty;
     private string password = string.Empty;
     private string? errorMessage;

@@ -10,7 +10,7 @@
 <MudPaper Class="pa-4">
     <MudText Typo="Typo.h5">Livres</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
-    <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des livres..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+    <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des livres..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" @oninput="OnSearchChanged" />
     @if (loading)
     {
         <MudProgressCircular Indeterminate="true" />
@@ -70,7 +70,6 @@
         new BreadcrumbItem("Livres", href: "/books", disabled: true)
     };
     private string searchTerm = string.Empty;
-    private MudTable<Book> table;
     private IEnumerable<Book> filteredBooks => string.IsNullOrWhiteSpace(searchTerm)
         ? books
         : books.Where(b => b.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (b.Authors != null && b.Authors.Any(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))));
@@ -102,7 +101,7 @@
 
     private async Task ShowAddDialog()
     {
-        var dialog = DialogService.Show<AddBookDialog>("Ajouter un livre");
+        var dialog = await DialogService.ShowAsync<AddBookDialog>("Ajouter un livre");
         var result = await dialog.Result;
         if (!result.Canceled)
         {
@@ -113,7 +112,7 @@
     private async Task ShowEditDialog(Book bookToEdit)
     {
         var parameters = new MudBlazor.DialogParameters { ["BookToEdit"] = bookToEdit };
-        var dialog = DialogService.Show<EditBookDialog>("Modifier le livre", parameters);
+        var dialog = await DialogService.ShowAsync<EditBookDialog>("Modifier le livre", parameters);
         var result = await dialog.Result;
         if (!result.Canceled)
         {

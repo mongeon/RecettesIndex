@@ -19,7 +19,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudBlazor.MudDialog MudDialog { get; set; }
+    [CascadingParameter] public required MudBlazor.MudDialog MudDialog { get; set; }
     private Author author = new();
     private string? errorMessage;
 

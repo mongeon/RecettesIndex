@@ -20,7 +20,7 @@
     }
     else
     {
-        <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des recettes..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" OnInput="OnSearchChanged" />
+        <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des recettes..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" @oninput="OnSearchChanged" />
         <MudTable Items="filteredRecipes" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
             <PagerContent>
                 <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
@@ -83,7 +83,6 @@
         new BreadcrumbItem("Recettes", href: "/recipes", disabled: true)
     };
     private string searchTerm = string.Empty;
-    private MudTable<Recipe> table;
     private IEnumerable<Recipe> filteredRecipes => string.IsNullOrWhiteSpace(searchTerm)
         ? recipes
         : recipes.Where(r => r.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (r.Notes != null && r.Notes.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
@@ -114,7 +113,7 @@
 
     private async Task ShowAddDialog()
     {
-        var dialog = DialogService.Show<AddRecipeDialog>("Ajouter une recette");
+        var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette");
         var result = await dialog.Result;
         if (!result.Canceled)
         {
@@ -125,7 +124,7 @@
     private async Task ShowEditDialog(Recipe recipeToEdit)
     {
         var parameters = new MudBlazor.DialogParameters { ["RecipeToEdit"] = recipeToEdit };
-        var dialog = DialogService.Show<EditRecipeDialog>("Modifier la recette", parameters);
+        var dialog = await DialogService.ShowAsync<EditRecipeDialog>("Modifier la recette", parameters);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
