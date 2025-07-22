@@ -8,6 +8,7 @@ Mes Recettes is a personal recipe management application built with Blazor WebAs
 - **Framework**: .NET 9.0 Blazor WebAssembly
 - **Package Manager**: NuGet
 - **Database**: Supabase (PostgreSQL)
+- **GitHub Operations**: Use GitHub MCP server for all GitHub-related tasks (PRs, issues, etc.)
 
 ## Project Structure
 ```
@@ -196,7 +197,17 @@ public class RecipeService
 - Use descriptive branch names (e.g., `feature/add-recipe-search`, `fix/rating-validation`)
 - Make atomic commits with clear messages
 - Test changes before suggesting merge to main
+- **Use GitHub MCP server** for all GitHub operations (creating PRs, issues, reviews, etc.)
 - Follow existing pull request patterns if established
+
+### GitHub Operations
+- **Always use GitHub MCP server tools** for:
+  - Creating pull requests (`mcp_github_create_pull_request`)
+  - Managing issues (`mcp_github_create_issue`, `mcp_github_update_issue`)
+  - Adding comments (`mcp_github_add_issue_comment`)
+  - Repository management and operations
+- **Never use git CLI commands** for GitHub-specific operations when MCP server is available
+- **Example**: Instead of `gh pr create`, use `mcp_github_create_pull_request`
 
 ### Documentation Requirements
 - **Update Copilot Instructions**: When creating a new branch for any feature or modification, update these instruction files as necessary:
