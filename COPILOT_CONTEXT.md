@@ -42,6 +42,7 @@ Author (1) -> (Many) Books (1) -> (Many) Recipes
 - Supabase requires internet connectivity
 - Browser storage limitations for offline scenarios
 - Single-page application navigation patterns
+- Use GitHub MCP server for all GitHub operations (PRs, issues, etc.)
 
 ## Common User Stories
 - "As a user, I want to quickly find recipes by rating"
