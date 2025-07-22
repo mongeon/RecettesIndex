@@ -30,14 +30,23 @@
     private async Task SignIn()
     {
         errorMessage = null;
-        var success = await AuthService.SignInAsync(email, password);
-        if (success)
+        try
         {
-            MudDialog.Close(DialogResult.Ok(true));
+            var success = await AuthService.SignInAsync(email, password);
+            if (success)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                errorMessage = "Courriel ou mot de passe invalide.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            errorMessage = "Courriel ou mot de passe invalide.";
+            // Log the actual exception for debugging but show user-friendly message
+            Console.WriteLine($"Login error: {ex.Message}");
+            errorMessage = "Erreur de connexion. Veuillez vérifier vos identifiants et réessayer.";
         }
     }
 
