@@ -209,7 +209,7 @@
     else
     {
         <MudCarousel Class="mud-width-full carousel-responsive" 
-                     ShowArrows="true" ShowDelimiters="true" AutoCycle="true" TData="Recipe">
+                     ShowArrows="true" ShowBullets="true" AutoCycle="true" TData="Recipe">
             @foreach (var recipe in randomRecipes)
             {
                 <MudCarouselItem Color="@GetRandomColor()" Transition="Transition.Slide">
@@ -448,7 +448,7 @@
 
     private async Task ShowAddRecipeDialog()
     {
-        var dialog = DialogService.Show<AddRecipeDialog>("Ajouter une recette");
+        var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette");
         var result = await dialog.Result;
         if (!result.Canceled && result.Data is Recipe newRecipe)
         {

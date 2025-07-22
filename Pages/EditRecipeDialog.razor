@@ -7,7 +7,7 @@
     [Parameter] public Recipe RecipeToEdit { get; set; } = new();
 
     [CascadingParameter]
-    IMudDialogInstance MudDialog { get; set; }
+    public required IMudDialogInstance MudDialog { get; set; }
     private Recipe recipe = new();
     private string? errorMessage;
     private List<Book> books = new();
