@@ -212,7 +212,7 @@
                      ShowArrows="true" ShowBullets="true" AutoCycle="true" TData="Recipe">
             @foreach (var recipe in randomRecipes)
             {
-                <MudCarouselItem Color="@GetRandomColor()" Transition="Transition.Slide">
+                <MudCarouselItem Color="@(recipeColors.GetValueOrDefault(recipe.Id, Color.Primary))" Transition="Transition.Slide">
                     <div class="d-flex flex-column justify-center align-center h-100 px-4" 
                          @onclick="() => ShowRecipeDetails(recipe)" style="cursor: pointer;">
                         <MudText Typo="Typo.h4" Color="Color.Surface" Class="mb-4 text-center desktop-h3">
@@ -349,6 +349,7 @@
 @code {
     private List<Recipe> newestRecipes = new();
     private List<Recipe> randomRecipes = new();
+    private Dictionary<int, Color> recipeColors = new(); // Store colors for each recipe
     private List<Book> allBooks = new();
     private bool loadingNewest = true;
     private bool loadingRandom = true;
@@ -388,6 +389,16 @@
             var allRecipes = response.Models ?? new List<Recipe>();
             var rnd = new Random();
             randomRecipes = allRecipes.OrderBy(x => rnd.Next()).Take(5).ToList();
+            
+            // Assign colors to each recipe once when loading
+            var colors = new[] { Color.Primary, Color.Secondary, Color.Tertiary, Color.Info };
+            foreach (var recipe in randomRecipes)
+            {
+                if (!recipeColors.ContainsKey(recipe.Id))
+                {
+                    recipeColors[recipe.Id] = colors[rnd.Next(0, colors.Length)];
+                }
+            }
         }
         catch
         {
@@ -457,11 +468,5 @@
             await LoadRandomRecipes();
             await LoadCounts(); // Also refresh the counts
         }
-    }
-
-    private Color GetRandomColor()
-    {
-        var colors = new[] { Color.Primary, Color.Secondary, Color.Tertiary, Color.Info };
-        return colors[new Random().Next(0, colors.Length)];
     }
 }
