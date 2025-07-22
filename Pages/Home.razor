@@ -1,9 +1,11 @@
 ﻿@page "/"
 @using MudBlazor
 @using RecettesIndex.Models
+@using RecettesIndex.Services
 @inject Supabase.Client SupabaseClient
 @inject MudBlazor.IDialogService DialogService
 @inject NavigationManager NavigationManager
+@inject AuthService AuthService
 
 <PageTitle>Mes Recettes - Votre Collection de Recettes</PageTitle>
 
@@ -23,10 +25,13 @@
                                    StartIcon="@Icons.Material.Filled.MenuBook">
                             Parcourir les Recettes
                         </MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Large" 
-                                   StartIcon="@Icons.Material.Filled.Add">
-                            Ajouter une Recette
-                        </MudButton>
+                        @if (AuthService.IsAuthenticated)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Large" 
+                                       StartIcon="@Icons.Material.Filled.Add" OnClick="ShowAddRecipeDialog">
+                                Ajouter une Recette
+                            </MudButton>
+                        }
                     </div>
                 </MudItem>
             </MudGrid>
@@ -405,6 +410,18 @@
         // Navigate to the recipe details page instead of showing a dialog
         var uri = $"/recipes/{recipe.Id}";
         NavigationManager.NavigateTo(uri);
+    }
+
+    private async Task ShowAddRecipeDialog()
+    {
+        var dialog = DialogService.Show<AddRecipeDialog>("Ajouter une recette");
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is Recipe newRecipe)
+        {
+            // Refresh the recipes lists to include the new recipe
+            await LoadNewestRecipes();
+            await LoadRandomRecipes();
+        }
     }
 
     private int GetUniqueBookCount()

@@ -152,8 +152,23 @@ else
         }
     }
     
-    private void OpenEditDialog()
+    
+    private async Task OpenEditDialog()
     {
-        NavigationManager.NavigateTo($"/recipes/{Id}/edit");
+        if (recipe != null)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("RecipeToEdit", recipe);
+            
+            var dialog = DialogService.Show<EditRecipeDialog>("Modifier la recette", parameters);
+            var result = await dialog.Result;
+            
+            if (!result.Canceled && result.Data is Recipe updatedRecipe)
+            {
+                // Refresh the recipe data
+                recipe = updatedRecipe;
+                StateHasChanged();
+            }
+        }
     }
 }
