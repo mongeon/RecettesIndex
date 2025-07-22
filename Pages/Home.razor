@@ -45,7 +45,7 @@
                 <div class="d-flex justify-center mb-4">
                     <MudIcon Icon="@Icons.Material.Filled.Restaurant" Color="Color.Primary" Size="Size.Large" />
                 </div>
-                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@(newestRecipes.Count + randomRecipes.Count)</MudText>
+                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalRecipesCount</MudText>
                 <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Primary">Recettes Totales</MudText>
                 <MudSpacer />
                 <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" Href="/recipes">Voir Tout</MudButton>
@@ -58,7 +58,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.AutoStories" Color="Color.Secondary" Size="Size.Large" />
                 </div>
                 <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">
-                    @GetUniqueBookCount()
+                    @totalBooksCount
                 </MudText>
                 <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">Livres de Recettes</MudText>
                 <MudSpacer />
@@ -352,12 +352,16 @@
     private List<Book> allBooks = new();
     private bool loadingNewest = true;
     private bool loadingRandom = true;
+    private int totalRecipesCount = 0;
+    private int totalBooksCount = 0;
+    private int totalAuthorsCount = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadNewestRecipes();
         await LoadRandomRecipes();
         await LoadBooks();
+        await LoadCounts();
     }
 
     private async Task LoadNewestRecipes()
@@ -405,6 +409,36 @@
         }
     }
 
+    private async Task LoadCounts()
+    {
+        try
+        {
+            // Get total recipes count - use a simple select with just id to minimize data transfer
+            var recipesCountResponse = await SupabaseClient.From<Recipe>()
+                .Select("id")
+                .Get();
+            totalRecipesCount = recipesCountResponse.Models?.Count ?? 0;
+
+            // Get total books count - use a simple select with just id to minimize data transfer
+            var booksCountResponse = await SupabaseClient.From<Book>()
+                .Select("id")
+                .Get();
+            totalBooksCount = booksCountResponse.Models?.Count ?? 0;
+
+            // Get total authors count - use a simple select with just id to minimize data transfer
+            var authorsCountResponse = await SupabaseClient.From<Author>()
+                .Select("id")
+                .Get();
+            totalAuthorsCount = authorsCountResponse.Models?.Count ?? 0;
+        }
+        catch
+        {
+            totalRecipesCount = 0;
+            totalBooksCount = 0;
+            totalAuthorsCount = 0;
+        }
+    }
+
     private void ShowRecipeDetails(Recipe recipe)
     {
         // Navigate to the recipe details page instead of showing a dialog
@@ -421,12 +455,8 @@
             // Refresh the recipes lists to include the new recipe
             await LoadNewestRecipes();
             await LoadRandomRecipes();
+            await LoadCounts(); // Also refresh the counts
         }
-    }
-
-    private int GetUniqueBookCount()
-    {
-        return allBooks.Count;
     }
 
     private Color GetRandomColor()
