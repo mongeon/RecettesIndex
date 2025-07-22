@@ -450,7 +450,7 @@
     {
         var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette");
         var result = await dialog.Result;
-        if (!result.Canceled && result.Data is Recipe newRecipe)
+        if (result is not null && !result.Canceled && result.Data is Recipe newRecipe)
         {
             // Refresh the recipes lists to include the new recipe
             await LoadNewestRecipes();

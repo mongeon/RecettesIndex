@@ -91,7 +91,7 @@
     {
         var dialog = await DialogService.ShowAsync<AddAuthorDialog>("Ajouter un auteur");
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await LoadAuthors();
         }
@@ -102,7 +102,7 @@
         var parameters = new MudBlazor.DialogParameters { ["AuthorToEdit"] = authorToEdit };
         var dialog = await DialogService.ShowAsync<EditAuthorDialog>("Modifier l'auteur", parameters);
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await LoadAuthors();
         }

@@ -115,7 +115,7 @@
     {
         var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette");
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await LoadRecipes();
         }
@@ -126,7 +126,7 @@
         var parameters = new MudBlazor.DialogParameters { ["RecipeToEdit"] = recipeToEdit };
         var dialog = await DialogService.ShowAsync<EditRecipeDialog>("Modifier la recette", parameters);
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await LoadRecipes();
         }

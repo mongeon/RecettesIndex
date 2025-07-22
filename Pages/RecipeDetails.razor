@@ -57,7 +57,7 @@ else
                                         <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.Book" Class="mr-2" />Informations sur la source</MudText>
                                         @if (book != null)
                                         {
-                                            <MudList Clickable="false" Dense="true" T="Recipe">
+                                            <MudList Dense="true" T="Recipe">
                                                 <MudListItem Icon="@Icons.Material.Filled.Book">
                                                     <MudText>Livre: <MudLink Href="@($"/books/{book.Id}")">@book.Name</MudLink></MudText>
                                                 </MudListItem>
@@ -163,7 +163,7 @@ else
             var dialog = await DialogService.ShowAsync<EditRecipeDialog>("Modifier la recette", parameters);
             var result = await dialog.Result;
             
-            if (!result.Canceled && result.Data is Recipe updatedRecipe)
+            if (result is not null && !result.Canceled && result.Data is Recipe updatedRecipe)
             {
                 // Refresh the recipe data
                 recipe = updatedRecipe;
