@@ -38,7 +38,7 @@ else
                             @if (book.Authors != null && book.Authors.Count > 0)
                             {
                                 <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
-                                    <MudList Clickable="true" Dense="true" T="Author">
+                                    <MudList Dense="true" T="Author">
                                         @foreach (var author in book.Authors)
                                         {
                                             <MudListItem Href="@($"/authors/{author.Id}")">

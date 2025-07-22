@@ -103,7 +103,7 @@
     {
         var dialog = await DialogService.ShowAsync<AddBookDialog>("Ajouter un livre");
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await LoadBooks();
         }
@@ -114,7 +114,7 @@
         var parameters = new MudBlazor.DialogParameters { ["BookToEdit"] = bookToEdit };
         var dialog = await DialogService.ShowAsync<EditBookDialog>("Modifier le livre", parameters);
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await LoadBooks();
         }
