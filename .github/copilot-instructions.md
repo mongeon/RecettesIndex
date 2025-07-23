@@ -196,6 +196,7 @@ public class RecipeService
 - **Never work directly on main branch** - always create feature branches
 - Use descriptive branch names (e.g., `feature/add-recipe-search`, `fix/rating-validation`)
 - **Always validate changes before committing** - use `git diff`, `git show --stat`, or `git status` to review what was changed
+- **Run the application to test changes** - use `dotnet run` or appropriate commands to validate functionality
 - **Confirm changes with user before creating commits or PRs** - show validation results and get approval
 - Make atomic commits with clear messages
 - Test changes before suggesting merge to main
