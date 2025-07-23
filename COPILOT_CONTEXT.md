@@ -62,6 +62,8 @@ Author (1) -> (Many) Books (1) -> (Many) Recipes
 ## Development Practices
 - **Always create a new branch** for any changes or features - never modify main directly
 - Use clear, descriptive branch names that indicate the purpose of the changes
+- **Always validate changes before committing** - review what was modified using git tools
+- **Confirm changes with user before creating commits or PRs** - show validation results for approval
 - Test functionality thoroughly before suggesting merge to main branch
 
 ### Documentation Maintenance

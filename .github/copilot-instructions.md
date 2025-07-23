@@ -195,6 +195,8 @@ public class RecipeService
 ## Development Workflow
 - **Never work directly on main branch** - always create feature branches
 - Use descriptive branch names (e.g., `feature/add-recipe-search`, `fix/rating-validation`)
+- **Always validate changes before committing** - use `git diff`, `git show --stat`, or `git status` to review what was changed
+- **Confirm changes with user before creating commits or PRs** - show validation results and get approval
 - Make atomic commits with clear messages
 - Test changes before suggesting merge to main
 - **Use GitHub MCP server** for all GitHub operations (creating PRs, issues, reviews, etc.)
