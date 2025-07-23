@@ -32,12 +32,20 @@ graph TB
     A --> C[Backend - Supabase]
     C --> D[Database - PostgreSQL]
     C --> E[Authentication - Supabase Auth]
-    A --> F[Hosting - Static Web Host]
+    A --> F[Hosting - Azure Static Web Apps]
     
     subgraph "Development Tools"
         G[VS Code + C# Dev Kit]
         H[GitHub Actions CI/CD]
         I[GitHub MCP Server]
+        J[xUnit Testing Framework]
+        K[109+ Unit Tests]
+    end
+    
+    subgraph "Quality Assurance"
+        L[Automated Testing Pipeline]
+        M[Code Validation]
+        N[Rating Validation 1-5]
     end
 ```
 
@@ -74,35 +82,49 @@ graph LR
 
 ```
 RecettesIndex/
-├── 📁 Configuration/          # App configuration files
-│   └── SupabaseConfig.cs
+├── 📁 .github/
+│   └── 📁 workflows/          # GitHub Actions CI/CD pipelines
+│       └── azure-static-web-apps-*.yml # Automated testing & deployment
+├── 📁 src/                    # Main application source
+│   ├── 📁 Configuration/      # App configuration files
+│   │   └── SupabaseConfig.cs
+│   ├── 📁 Layout/             # Application layout components
+│   │   ├── MainLayout.razor
+│   │   └── NavMenu.razor
+│   ├── 📁 Models/             # Data models with validation
+│   │   └── Recette.cs         # Recipe, Book, Author models
+│   ├── 📁 Pages/              # Blazor pages and dialogs
+│   │   ├── Home.razor
+│   │   ├── Recipes.razor
+│   │   ├── Books.razor
+│   │   ├── Authors.razor
+│   │   └── *Dialog.razor
+│   ├── 📁 Services/           # Business logic and data access
+│   │   ├── AuthService.cs
+│   │   └── BookAuthorService.cs
+│   ├── 📁 wwwroot/            # Static assets
+│   │   ├── index.html
+│   │   ├── css/
+│   │   └── icons/
+│   ├── 📄 Program.cs          # Application entry point
+│   └── 📄 _Imports.razor      # Global using statements
+├── 📁 tests/                  # Comprehensive unit test suite
+│   ├── 📄 RecipeModelTests.cs           # Recipe model validation tests
+│   ├── 📄 AuthorModelTests.cs           # Author model and FullName tests
+│   ├── 📄 BookModelTests.cs             # Book model functionality tests
+│   ├── 📄 BookAuthorModelTests.cs       # Junction table relationship tests
+│   ├── 📄 RecipeValidationTests.cs      # DataAnnotation validation tests
+│   ├── 📄 RecipeRatingValidationTests.cs # Rating constraint tests (1-5)
+│   ├── 📄 ModelRelationshipTests.cs     # Cross-model relationship tests
+│   └── 📄 RecettesIndex.Tests.csproj    # Test project configuration
 ├── 📁 docs/                   # Project documentation
-│   ├── README.md
-│   ├── API.md
-│   ├── ARCHITECTURE.md
-│   └── DEVELOPMENT.md
-├── 📁 Layout/                 # Application layout components
-│   ├── MainLayout.razor
-│   └── NavMenu.razor
-├── 📁 Models/                 # Data models
-│   ├── Recette.cs
-│   ├── Book.cs
-│   └── Author.cs
-├── 📁 Pages/                  # Blazor pages and dialogs
-│   ├── Home.razor
-│   ├── Recipes.razor
-│   ├── Books.razor
-│   ├── Authors.razor
-│   └── *Dialog.razor
-├── 📁 Services/               # Business logic and data access
-│   ├── AuthService.cs
-│   └── BookAuthorService.cs
-├── 📁 wwwroot/                # Static assets
-│   ├── index.html
-│   ├── css/
-│   └── icons/
-├── 📄 Program.cs              # Application entry point
-└── 📄 _Imports.razor          # Global using statements
+│   ├── README.md              # Complete project overview
+│   ├── API.md                 # Data models and API reference
+│   ├── ARCHITECTURE.md        # System design and decisions
+│   ├── DEVELOPMENT.md         # Development guidelines and setup
+│   └── DEPLOYMENT.md          # Deployment and hosting guide
+├── 📄 RecettesAI.sln          # Solution file
+└── 📄 README.md               # Quick start guide
 ```
 
 ## ✨ Features
@@ -110,9 +132,10 @@ RecettesIndex/
 ### Core Functionality
 
 #### Recipe Management
-- **CRUD Operations**: Create, read, update, and delete recipes
+- **CRUD Operations**: Create, read, update, and delete recipes with comprehensive validation
 - **Rich Text Support**: Store ingredients, instructions, and personal notes
-- **Rating System**: 1-5 star rating system for recipe evaluation
+- **Rating System**: 1-5 star rating system with enforced validation constraints
+- **Data Validation**: Business rules validation with user-friendly error messages
 - **Search & Filter**: Find recipes by name, rating, or cookbook
 
 #### Cookbook Integration
@@ -151,7 +174,7 @@ erDiagram
         int id PK
         string name
         text notes
-        int rating
+        int rating "1-5 stars with validation"
         int book_id FK
         int page_number
         datetime creation_date
@@ -192,9 +215,14 @@ erDiagram
    }
    ```
 
-4. **Run the application**
+4. **Run tests** (recommended before development)
    ```bash
-   dotnet run
+   dotnet test
+   ```
+
+5. **Run the application**
+   ```bash
+   dotnet run --project src
    ```
 
 5. **Open in browser**
@@ -225,7 +253,7 @@ CREATE TABLE recettes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     notes TEXT,
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5), -- Enforced validation
     book_id INTEGER REFERENCES books(id),
     page_number INTEGER,
     creation_date TIMESTAMP DEFAULT NOW()
@@ -248,8 +276,14 @@ dotnet clean && dotnet build
 # Run with specific port
 dotnet run --urls "http://localhost:5030"
 
-# Run tests (when available)
+# Run tests (comprehensive unit test suite - 109+ tests)
 dotnet test
+
+# Run tests with detailed output
+dotnet test --verbosity normal
+
+# Run specific test file
+dotnet test --filter "ClassName=RecipeModelTests"
 
 # Publish for deployment
 dotnet publish -c Release
@@ -260,16 +294,26 @@ dotnet publish -c Release
 ```mermaid
 flowchart TD
     A[Create Feature Branch] --> B[Make Changes]
-    B --> C[Validate Changes]
-    C --> D{git diff, git show}
-    D --> E[Run Application]
-    E --> F{Test Functionality}
-    F --> G[Get User Approval]
-    G --> H[Commit Changes]
-    H --> I[Push to Remote]
-    I --> J[Create Pull Request]
-    J --> K[Code Review]
-    K --> L[Merge to Main]
+    B --> C[Add Unit Tests]
+    C --> D[Run Test Suite]
+    D --> E{All Tests Pass?}
+    E -->|No| F[Fix Tests/Code]
+    F --> D
+    E -->|Yes| G[Validate Changes]
+    G --> H{git diff, git show}
+    H --> I[Run Application]
+    I --> J{Test Functionality}
+    J --> K[Get User Approval]
+    K --> L[Commit Changes]
+    L --> M[Push to Remote]
+    M --> N[Create Pull Request]
+    N --> O[GitHub Actions CI/CD]
+    O --> P{Tests Pass?}
+    P -->|No| Q[Fix Issues]
+    Q --> L
+    P -->|Yes| R[Code Review]
+    R --> S[Merge to Main]
+    S --> T[Auto-deploy to Azure]
 ```
 
 ## 📚 Documentation Structure

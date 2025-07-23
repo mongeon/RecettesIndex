@@ -86,7 +86,30 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 - **UI Framework**: MudBlazor (Material Design)
 - **Backend**: Supabase (PostgreSQL + REST API)
 - **Authentication**: Supabase Auth
-- **Hosting**: Static web hosting (GitHub Pages, Netlify, Vercel, etc.)
+- **Testing**: xUnit with comprehensive unit test coverage
+- **CI/CD**: GitHub Actions with automated testing and deployment
+- **Hosting**: Azure Static Web Apps
+
+## 🧪 Testing
+
+This project maintains comprehensive unit test coverage with 109+ tests across all business logic:
+
+```bash
+# Run all tests
+dotnet test
+
+# Run tests with detailed output
+dotnet test --verbosity detailed
+
+# Run specific test file
+dotnet test --filter "RecipeModelTests"
+```
+
+### Test Coverage
+- ✅ **Model Validation**: Recipe rating constraints (1-5), data annotations
+- ✅ **Business Logic**: Author name formatting, book-recipe relationships
+- ✅ **Edge Cases**: Invalid inputs, boundary conditions, null handling
+- ✅ **Data Relationships**: Book-Author-Recipe associations and mappings
 
 ## 📖 Documentation
 
@@ -103,17 +126,22 @@ For detailed information, visit our comprehensive documentation:
 ### Development Workflow
 
 1. **Always create a feature branch** (never work directly on main)
-2. **Validate all changes** using `git diff` and `git show --stat`
-3. **Run and test the application** before committing
-4. **Update documentation** when making changes
-5. **Get user approval** before creating commits or PRs
-6. **Use GitHub MCP server** for all GitHub operations
+2. **Write comprehensive unit tests** for all new functionality
+3. **Run tests before committing** - ensure `dotnet test` passes
+4. **Validate all changes** using `git diff` and `git show --stat`
+5. **Run and test the application** before committing
+6. **Update documentation** when making changes
+7. **Get user approval** before creating commits or PRs
+8. **Use GitHub MCP server** for all GitHub operations
 
 ### Quick Commands
 
 ```bash
 # Clean and rebuild
 dotnet clean && dotnet build
+
+# Run all tests
+dotnet test
 
 # Run with hot reload
 dotnet run
@@ -129,15 +157,28 @@ dotnet publish -c Release
 
 ```
 RecettesIndex/
-├── 📁 Configuration/     # App configuration
-├── 📁 docs/             # Project documentation  
-├── 📁 Layout/           # App layout components
-├── 📁 Models/           # Data models
-├── 📁 Pages/            # Blazor pages and dialogs
-├── 📁 Services/         # Business logic
-├── 📁 wwwroot/          # Static assets
-├── 📄 Program.cs        # App entry point
-└── 📄 _Imports.razor    # Global imports
+├── 📁 .github/
+│   └── 📁 workflows/    # GitHub Actions CI/CD
+├── 📁 src/             # Main application source
+│   ├── 📁 Configuration/ # App configuration
+│   ├── 📁 Layout/       # App layout components
+│   ├── 📁 Models/       # Data models with validation
+│   ├── 📁 Pages/        # Blazor pages and dialogs
+│   ├── 📁 Services/     # Business logic services
+│   ├── 📁 wwwroot/      # Static assets
+│   ├── 📄 Program.cs    # App entry point
+│   └── 📄 _Imports.razor # Global imports
+├── 📁 tests/           # Unit test project
+│   ├── 📄 AuthorModelTests.cs      # Author model tests
+│   ├── 📄 BookModelTests.cs        # Book model tests
+│   ├── 📄 BookAuthorModelTests.cs  # Junction table tests
+│   ├── 📄 RecipeModelTests.cs      # Recipe model tests
+│   ├── 📄 RecipeValidationTests.cs # Validation tests
+│   ├── 📄 RecipeRatingValidationTests.cs # Rating tests
+│   ├── 📄 ModelRelationshipTests.cs # Relationship tests
+│   └── 📄 RecettesIndex.Tests.csproj # Test project file
+├── 📁 docs/            # Project documentation  
+└── 📄 RecettesAI.sln   # Solution file
 ```
 
 ## 🤝 Contributing
@@ -159,7 +200,9 @@ We welcome contributions! Please follow these steps:
 - Use MudBlazor components for consistent UI
 - Implement proper async/await patterns
 - Include error handling and loading states
-- Write tests for new features
+- **Write comprehensive unit tests for all new features** - mandatory before PRs
+- **Achieve high test coverage** - aim for 100% coverage of business logic
+- **Follow testing conventions** - use descriptive test file names and Arrange-Act-Assert pattern
 - Keep documentation up to date
 
 ## 📄 License

@@ -5,6 +5,7 @@ This document provides detailed information about the data models, services, and
 ## 📋 Table of Contents
 
 - [Data Models](#data-models)
+- [Validation Rules](#validation-rules)
 - [Services](#services)
 - [Supabase Integration](#supabase-integration)
 - [API Patterns](#api-patterns)
@@ -22,18 +23,22 @@ public class Recipe : BaseModel
     public int Id { get; set; }
     
     [Column("name")]
+    [Required(ErrorMessage = "Recipe name is required")]
+    [MaxLength(255, ErrorMessage = "Recipe name cannot exceed 255 characters")]
     public string Name { get; set; } = string.Empty;
     
     [Column("notes")]
     public string? Notes { get; set; }
     
     [Column("rating")]
+    [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
     public int Rating { get; set; } = 0;
     
     [Column("book_id")]
     public int? BookId { get; set; }
     
     [Column("page_number")]
+    [Range(1, int.MaxValue, ErrorMessage = "Page number must be positive")]
     public int? PageNumber { get; set; }
     
     [Column("creation_date")]
@@ -46,8 +51,9 @@ public class Recipe : BaseModel
 
 **Validation Rules:**
 - `Name`: Required, max 255 characters
-- `Rating`: Optional, range 1-5 when provided
+- `Rating`: **REQUIRED**, range 1-5 stars with enforced validation
 - `Notes`: Optional, unlimited text
+- `PageNumber`: Optional, must be positive when provided
 - `PageNumber`: Optional, positive integer
 
 ### Book Model
@@ -125,11 +131,57 @@ erDiagram
         int id PK
         string name
         text notes
-        int rating
+        int rating "1-5 stars validated"
         int book_id FK
         int page_number
         datetime creation_date
     }
+```
+
+## ✅ Validation Rules
+
+### Data Validation Overview
+
+The application uses comprehensive validation through System.ComponentModel.DataAnnotations and custom business rules.
+
+#### Recipe Validation
+
+| Property | Validation Rule | Error Message |
+|----------|----------------|---------------|
+| `Name` | Required, MaxLength(255) | "Recipe name is required" / "Recipe name cannot exceed 255 characters" |
+| `Rating` | Range(1, 5) | "Rating must be between 1 and 5" |
+| `PageNumber` | Range(1, int.MaxValue) | "Page number must be positive" |
+
+#### Author Validation
+
+| Property | Validation Rule | Error Message |
+|----------|----------------|---------------|
+| `Name` | Required, MaxLength(255) | "Author name is required" / "Author name cannot exceed 255 characters" |
+
+#### Book Validation
+
+| Property | Validation Rule | Error Message |
+|----------|----------------|---------------|
+| `Title` | Required, MaxLength(255) | "Book title is required" / "Book title cannot exceed 255 characters" |
+| `AuthorId` | Required | "Author is required" |
+
+### Validation Testing
+
+Our comprehensive test suite includes 109+ tests covering all validation scenarios:
+
+```csharp
+// Example: Rating validation test
+[Theory]
+[InlineData(1, true)]   // Valid: minimum
+[InlineData(3, true)]   // Valid: middle  
+[InlineData(5, true)]   // Valid: maximum
+[InlineData(0, false)]  // Invalid: below range
+[InlineData(6, false)]  // Invalid: above range
+[InlineData(-1, false)] // Invalid: negative
+public void Rating_ShouldValidateRange_ForAllValues(int rating, bool isValid)
+{
+    // Validation testing implementation
+}
 ```
 
 ## 🛠️ Services
