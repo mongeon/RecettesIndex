@@ -1,5 +1,6 @@
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
+using System.ComponentModel.DataAnnotations;
 // Recipe.cs
 namespace RecettesIndex.Models
 {
@@ -11,6 +12,7 @@ namespace RecettesIndex.Models
         [Column("name")]
         public string Name { get; set; } = string.Empty;
         [Column("rating")]
+        [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
         public int Rating { get; set; }
         [Column("created_at")]
         public DateTime CreationDate { get; set; }
