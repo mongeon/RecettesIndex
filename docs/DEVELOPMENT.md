@@ -316,7 +316,118 @@ git commit -m "Fix rating validation bug
 
 ## 🧪 Testing Guidelines
 
-### Unit Testing
+### Test Structure
+
+We maintain a comprehensive unit test suite with 109+ tests covering all business logic and validation rules. Tests are organized by functionality:
+
+```
+tests/
+├── RecipeModelTests.cs           # Recipe model validation tests
+├── AuthorModelTests.cs           # Author model and FullName property tests
+├── BookModelTests.cs             # Book model functionality tests
+├── BookAuthorModelTests.cs       # Junction table relationship tests
+├── RecipeValidationTests.cs      # DataAnnotation validation tests
+├── RecipeRatingValidationTests.cs # Rating constraint tests (1-5)
+└── ModelRelationshipTests.cs     # Cross-model relationship tests
+```
+
+### Testing Principles
+
+1. **Comprehensive Coverage**: All business logic must have unit tests
+2. **Validation Testing**: Every validation rule must be tested with valid and invalid data
+3. **Arrange-Act-Assert Pattern**: All tests follow the AAA pattern
+4. **Theory-Driven Tests**: Use `[Theory]` and `[InlineData]` for data-driven test scenarios
+5. **Test Before Push**: Run all tests before creating pull requests
+
+### Test Examples
+
+```csharp
+// ✅ Good: Comprehensive validation testing
+[Theory]
+[InlineData(1, true)]
+[InlineData(3, true)]
+[InlineData(5, true)]
+[InlineData(0, false)]
+[InlineData(6, false)]
+[InlineData(-1, false)]
+public void Rating_ShouldValidateRange_ForAllValues(int rating, bool isValid)
+{
+    // Arrange
+    var recipe = new Recipe { Rating = rating };
+    var context = new ValidationContext(recipe);
+    var results = new List<ValidationResult>();
+
+    // Act
+    var actualIsValid = Validator.TryValidateObject(recipe, context, results, true);
+
+    // Assert
+    Assert.Equal(isValid, actualIsValid);
+    if (!isValid)
+    {
+        Assert.Contains(results, r => r.ErrorMessage!.Contains("Rating must be between 1 and 5"));
+    }
+}
+
+// ✅ Good: Model relationship testing
+[Fact]
+public void Author_Books_ShouldBeInitialized()
+{
+    // Arrange & Act
+    var author = new Author();
+
+    // Assert
+    Assert.NotNull(author.Books);
+    Assert.Empty(author.Books);
+}
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test
+
+# Run tests with detailed output
+dotnet test --verbosity normal
+
+# Run specific test class
+dotnet test --filter "ClassName=RecipeModelTests"
+
+# Run tests for specific namespace
+dotnet test --filter "FullyQualifiedName~RecettesIndex.Tests"
+
+# Generate code coverage (if configured)
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+### CI/CD Testing
+
+Our GitHub Actions workflow automatically:
+1. Runs all unit tests before deployment
+2. Prevents merging if tests fail
+3. Ensures code quality through automated validation
+
+```yaml
+# Testing job in GitHub Actions
+test_job:
+  runs-on: ubuntu-latest
+  name: Test
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.x'
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Run tests
+      run: dotnet test --no-build --verbosity normal
+```
+
+### Unit Testing (Legacy Reference)
 
 ```csharp
 [TestClass]

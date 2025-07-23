@@ -8,6 +8,7 @@ This document describes the system architecture, design decisions, and technical
 - [Architecture Patterns](#architecture-patterns)
 - [Technology Stack](#technology-stack)
 - [Data Architecture](#data-architecture)
+- [Testing Architecture](#testing-architecture)
 - [Security Considerations](#security-considerations)
 - [Performance & Scalability](#performance--scalability)
 - [Deployment Architecture](#deployment-architecture)
@@ -217,17 +218,24 @@ graph LR
     C --> D[Material Design]
     B --> E[SignalR Client]
     B --> F[HTTP Client]
+    B --> G[DataAnnotations Validation]
+    
+    subgraph "Testing Framework"
+        H[xUnit]
+        I[109+ Unit Tests]
+        J[Test Coverage]
+    end
     
     subgraph "Build Tools"
-        G[MSBuild]
-        H[NuGet]
-        I[GitHub Actions]
+        K[MSBuild]
+        L[NuGet]
+        M[GitHub Actions CI/CD]
     end
     
     subgraph "Development Tools"
-        J[VS Code]
-        K[C# Dev Kit]
-        L[GitHub Copilot]
+        N[VS Code]
+        O[C# Dev Kit]
+        P[GitHub Copilot]
     end
 ```
 
@@ -254,10 +262,12 @@ graph LR
 |------------|----------|-----------|
 | **Frontend Framework** | Blazor WebAssembly | C# everywhere, strong typing, component-based |
 | **UI Library** | MudBlazor | Material Design, rich components, good documentation |
+| **Validation** | DataAnnotations | Built-in .NET validation, model-level constraints |
+| **Testing Framework** | xUnit | Modern .NET testing, rich assertion library, parallel execution |
 | **Backend** | Supabase | BaaS solution, PostgreSQL, auth included, real-time |
 | **Database** | PostgreSQL | Relational data, ACID compliance, rich query capabilities |
-| **Hosting** | Static Web Host | Cost-effective, global CDN, simple deployment |
-| **CI/CD** | GitHub Actions | Integrated with repository, free tier, powerful |
+| **Hosting** | Azure Static Web Apps | Cost-effective, global CDN, simple deployment, CI/CD integration |
+| **CI/CD** | GitHub Actions | Integrated with repository, free tier, automated testing |
 
 ## 🗃️ Data Architecture
 
@@ -284,7 +294,7 @@ erDiagram
         int id PK
         varchar name
         text notes
-        int rating
+        int rating "1-5 stars with validation"
         int book_id FK
         int page_number
         timestamp creation_date
@@ -392,6 +402,91 @@ graph TD
     B --> G
     G --> H
     H --> I
+```
+
+## 🧪 Testing Architecture
+
+### Test Structure Overview
+
+Our testing architecture ensures comprehensive coverage of business logic, validation rules, and data relationships with 109+ unit tests organized across multiple test files.
+
+```mermaid
+graph TB
+    subgraph "Test Organization"
+        A[Model Tests] --> A1[RecipeModelTests.cs]
+        A --> A2[AuthorModelTests.cs]
+        A --> A3[BookModelTests.cs]
+        A --> A4[BookAuthorModelTests.cs]
+        
+        B[Validation Tests] --> B1[RecipeValidationTests.cs]
+        B --> B2[RecipeRatingValidationTests.cs]
+        
+        C[Relationship Tests] --> C1[ModelRelationshipTests.cs]
+    end
+    
+    subgraph "Testing Framework"
+        D[xUnit Framework]
+        E[Theory Data-Driven Tests]
+        F[Arrange-Act-Assert Pattern]
+        G[Validation Context Testing]
+    end
+    
+    subgraph "CI/CD Integration"
+        H[GitHub Actions]
+        I[Automated Test Execution]
+        J[Test Results Reporting]
+        K[Deployment Gating]
+    end
+    
+    A1 --> D
+    B1 --> E
+    C1 --> F
+    D --> H
+    E --> I
+    F --> J
+    G --> K
+```
+
+### Test Coverage Areas
+
+| Test Category | Coverage | Test Files | Key Areas |
+|---------------|----------|------------|-----------|
+| **Model Validation** | Property validation, constraints | RecipeModelTests, AuthorModelTests, BookModelTests | DataAnnotations, business rules |
+| **Rating Validation** | 1-5 star constraint testing | RecipeRatingValidationTests | Range validation, error messages |
+| **Relationships** | Model associations and navigation | ModelRelationshipTests, BookAuthorModelTests | Foreign keys, collections |
+| **Business Logic** | Core functionality testing | RecipeValidationTests | Complete validation scenarios |
+
+### Validation Testing Strategy
+
+```csharp
+// Example: Comprehensive rating validation testing
+[Theory]
+[InlineData(1, true)]   // Valid: minimum
+[InlineData(3, true)]   // Valid: middle
+[InlineData(5, true)]   // Valid: maximum
+[InlineData(0, false)]  // Invalid: below range
+[InlineData(6, false)]  // Invalid: above range
+[InlineData(-1, false)] // Invalid: negative
+public void Rating_ShouldValidateRange_ForAllValues(int rating, bool isValid)
+{
+    // Comprehensive validation testing with expected outcomes
+}
+```
+
+### CI/CD Testing Pipeline
+
+```mermaid
+flowchart LR
+    A[Code Push] --> B[GitHub Actions Trigger]
+    B --> C[Setup .NET 9.0]
+    C --> D[Restore Dependencies]
+    D --> E[Build Solution]
+    E --> F[Run Test Suite]
+    F --> G{All Tests Pass?}
+    G -->|Yes| H[Deploy to Azure]
+    G -->|No| I[Block Deployment]
+    I --> J[Notify Developer]
+    H --> K[Production Ready]
 ```
 
 ## 🔒 Security Considerations
