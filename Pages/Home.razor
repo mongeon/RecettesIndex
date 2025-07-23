@@ -65,23 +65,6 @@
                 <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Href="/books">Voir Tout</MudButton>
             </MudPaper>
         </MudItem>
-        
-        <MudItem xs="12" sm="6" md="4" Class="mx-auto mx-md-0">
-            <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                <div class="d-flex justify-center mb-4">
-                    <MudIcon Icon="@Icons.Material.Filled.Whatshot" Color="Color.Error" Size="Size.Large" />
-                </div>
-                <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">
-                    @(newestRecipes.Count > 0 ? newestRecipes.OrderByDescending(r => r.Rating).First().Rating : 0)
-                </MudText>
-                <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Error">Meilleure Évaluation</MudText>
-                <MudSpacer />
-                <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" 
-                           Href="@($"/recipes/{(newestRecipes.Count > 0 ? newestRecipes.OrderByDescending(r => r.Rating).First().Id : 0)}")">
-                    Voir la Meilleure Recette
-                </MudButton>
-            </MudPaper>
-        </MudItem>
     </MudGrid>
 
     <!-- Newest Recipes Section -->
