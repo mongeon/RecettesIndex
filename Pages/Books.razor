@@ -89,14 +89,53 @@
         loading = true;
         try
         {
-            var response = await SupabaseClient.From<Book>().Get();
-            books = response.Models ?? new List<Book>();
+            // Load books
+            var booksResponse = await SupabaseClient.From<Book>().Get();
+            books = booksResponse.Models ?? new List<Book>();
+            
+            // Load authors for each book using the junction table
+            foreach (var book in books)
+            {
+                await LoadAuthorsForBook(book);
+            }
         }
         catch
         {
             books = new List<Book>();
         }
         loading = false;
+    }
+
+    private async Task LoadAuthorsForBook(Book book)
+    {
+        try
+        {
+            // Get book-author associations
+            var bookAuthorsResponse = await SupabaseClient.From<BookAuthor>()
+                .Where(x => x.BookId == book.Id)
+                .Get();
+            
+            if (bookAuthorsResponse.Models?.Any() == true)
+            {
+                var authorIds = bookAuthorsResponse.Models.Select(ba => ba.AuthorId).ToList();
+                
+                // Get the actual author objects
+                var authorsResponse = await SupabaseClient.From<Author>()
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
+                    .Get();
+                
+                book.Authors = authorsResponse.Models ?? new List<Author>();
+            }
+            else
+            {
+                book.Authors = new List<Author>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading authors for book {book.Id}: {ex.Message}");
+            book.Authors = new List<Author>();
+        }
     }
 
     private async Task ShowAddDialog()

@@ -59,4 +59,18 @@ namespace RecettesIndex.Models
 
         public string FullName { get { return $"{Name} {LastName}"; } }
     }
+
+    // Junction table for many-to-many relationship between books and authors
+    [Table("books_authors")]
+    public class BookAuthor : BaseModel
+    {
+        [Column("book_id")]
+        public int BookId { get; set; }
+
+        [Column("author_id")]
+        public int AuthorId { get; set; }
+
+        [Column("created_at")]
+        public DateTime CreationDate { get; set; }
+    }
 }

@@ -19,35 +19,123 @@
             Name = BookToEdit.Name,
             Authors = BookToEdit.Authors ?? new List<Author>()
         };
-        selectedAuthors = book.Authors != null ? new HashSet<Author>(book.Authors) : new HashSet<Author>();
+        // Pre-select authors by finding matching objects in the loaded authors list
+        selectedAuthors = authors.Where(a => book.Authors.Any(ba => ba.Id == a.Id)).ToHashSet();
     }
     private async Task Save()
     {
         errorMessage = null;
         try
         {
-           // book.Authors = selectedAuthors.ToList();
-            var response = await SupabaseClient.From<Book>().Where(x => x.Id == book.Id).Update(book);
+            // Update the book basic information (without authors)
+            var bookToUpdate = new Book 
+            { 
+                Id = book.Id,
+                Name = book.Name 
+            };
+            
+            var response = await SupabaseClient.From<Book>().Where(x => x.Id == book.Id).Update(bookToUpdate);
+            
             if (response.Models?.Count > 0)
-                MudDialog.Close(DialogResult.Ok(response.Models[0]));
+            {
+                var updatedBook = response.Models[0];
+                
+                // Handle the many-to-many relationship manually
+                await UpdateBookAuthorAssociations(book.Id, selectedAuthors);
+                
+                // Return the book with authors populated
+                updatedBook.Authors = selectedAuthors.ToList();
+                MudDialog.Close(DialogResult.Ok(updatedBook));
+            }
             else
+            {
                 errorMessage = "Échec lors de la mise à jour du livre.";
+            }
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = $"Erreur: {ex.Message}";
+            Console.WriteLine($"Error updating book: {ex}");
+        }
+    }
+
+    private async Task UpdateBookAuthorAssociations(int bookId, IEnumerable<Author> newAuthors)
+    {
+        try
+        {
+            // Get current associations
+            var currentAssociationsResponse = await SupabaseClient.From<BookAuthor>()
+                .Where(x => x.BookId == bookId)
+                .Get();
+            
+            var currentAuthorIds = currentAssociationsResponse.Models?.Select(x => x.AuthorId).ToHashSet() ?? new HashSet<int>();
+            var newAuthorIds = newAuthors.Select(x => x.Id).ToHashSet();
+            
+            // Find authors to remove
+            var authorsToRemove = currentAuthorIds.Except(newAuthorIds).ToList();
+            
+            // Find authors to add
+            var authorsToAdd = newAuthorIds.Except(currentAuthorIds).ToList();
+            
+            // Remove associations that are no longer needed
+            foreach (var authorIdToRemove in authorsToRemove)
+            {
+                await SupabaseClient.From<BookAuthor>()
+                    .Where(x => x.BookId == bookId && x.AuthorId == authorIdToRemove)
+                    .Delete();
+            }
+            
+            // Add new associations
+            if (authorsToAdd.Any())
+            {
+                var bookAuthorsToAdd = authorsToAdd.Select(authorId => new BookAuthor
+                {
+                    BookId = bookId,
+                    AuthorId = authorId
+                }).ToList();
+
+                await SupabaseClient.From<BookAuthor>().Insert(bookAuthorsToAdd);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating book-author associations: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            throw; // Re-throw to handle in the calling method
         }
     }
     private void Cancel()
     {
         MudDialog.Cancel();
     }
+
+    private class AuthorComparer : IEqualityComparer<Author>
+    {
+        public bool Equals(Author? x, Author? y)
+        {
+            if (x == null && y == null) return true;
+            if (x == null || y == null) return false;
+            return x.Id == y.Id;
+        }
+
+        public int GetHashCode(Author obj)
+        {
+            return obj?.Id.GetHashCode() ?? 0;
+        }
+    }
 }
 <MudDialog>
     <DialogContent>
         <MudText Typo="Typo.h6">Modifier le Livre</MudText>
         <MudTextField @bind-Value="book.Name" Label="Nom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
-        <MudSelect T="Author" Label="Auteurs (optionnel)" @bind-SelectedValues="selectedAuthors" Variant="Variant.Outlined" Class="mb-2" MultiSelection="true">
+        <MudSelect T="Author" 
+                   Label="Auteurs (optionnel)" 
+                   @bind-SelectedValues="selectedAuthors" 
+                   Variant="Variant.Outlined" 
+                   Class="mb-2" 
+                   MultiSelection="true"
+                   ToStringFunc="@(author => $"{author.Name} {author.LastName}")"
+                   Comparer="@(new AuthorComparer())">
             @foreach (var author in authors)
             {
                 <MudSelectItem T="Author" Value="author">@author.Name @author.LastName</MudSelectItem>
