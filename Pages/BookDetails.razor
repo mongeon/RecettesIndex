@@ -145,6 +145,9 @@ else
                 // Update the breadcrumbs with book name
                 breadcrumbs[2] = new BreadcrumbItem(book.Name, href: null, disabled: true);
                 
+                // Load authors for this book using the junction table
+                await LoadAuthorsForBook(book);
+                
                 // Get related recipes
                 var recipesResponse = await SupabaseClient.From<Recipe>().Where(x => x.BookId == book.Id).Get();
                 relatedRecipes = recipesResponse.Models ?? new List<Recipe>();
@@ -158,6 +161,38 @@ else
         finally
         {
             loading = false;
+        }
+    }
+
+    private async Task LoadAuthorsForBook(Book bookToLoad)
+    {
+        try
+        {
+            // Get book-author associations
+            var bookAuthorsResponse = await SupabaseClient.From<BookAuthor>()
+                .Where(x => x.BookId == bookToLoad.Id)
+                .Get();
+            
+            if (bookAuthorsResponse.Models?.Any() == true)
+            {
+                var authorIds = bookAuthorsResponse.Models.Select(ba => ba.AuthorId).ToList();
+                
+                // Get the actual author objects
+                var authorsResponse = await SupabaseClient.From<Author>()
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
+                    .Get();
+                
+                bookToLoad.Authors = authorsResponse.Models ?? new List<Author>();
+            }
+            else
+            {
+                bookToLoad.Authors = new List<Author>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading authors for book {bookToLoad.Id}: {ex.Message}");
+            bookToLoad.Authors = new List<Author>();
         }
     }
     

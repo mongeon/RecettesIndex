@@ -6,7 +6,14 @@
     <DialogContent>
         <MudText Typo="Typo.h6">Ajouter un Livre</MudText>
         <MudTextField @bind-Value="book.Name" Label="Nom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
-        <MudSelect T="Author" Label="Auteurs (optionnel)" @bind-SelectedValues="selectedAuthors" Variant="Variant.Outlined" Class="mb-2" MultiSelection="true">
+        <MudSelect T="Author" 
+                   Label="Auteurs (optionnel)" 
+                   @bind-SelectedValues="selectedAuthors" 
+                   Variant="Variant.Outlined" 
+                   Class="mb-2" 
+                   MultiSelection="true"
+                   ToStringFunc="@(author => $"{author.Name} {author.LastName}")"
+                   Comparer="@(new AuthorComparer())">
             @foreach (var author in authors)
             {
                 <MudSelectItem T="Author" Value="author">@author.Name @author.LastName</MudSelectItem>
@@ -42,20 +49,78 @@
         errorMessage = null;
         try
         {
-            book.Authors = selectedAuthors.ToList();
-            var response = await SupabaseClient.From<Book>().Insert(book);
+            // First, insert the book without authors
+            var bookToInsert = new Book 
+            { 
+                Name = book.Name,
+                CreationDate = DateTime.UtcNow
+            };
+            
+            var response = await SupabaseClient.From<Book>().Insert(bookToInsert);
+            
             if (response.Models?.Count > 0)
-                MudDialog.Close(DialogResult.Ok(response.Models[0]));
+            {
+                var insertedBook = response.Models[0];
+                
+                // Now handle the many-to-many relationship manually
+                if (selectedAuthors.Any())
+                {
+                    await CreateBookAuthorAssociations(insertedBook.Id, selectedAuthors);
+                }
+                
+                // Return the book with authors populated
+                insertedBook.Authors = selectedAuthors.ToList();
+                MudDialog.Close(DialogResult.Ok(insertedBook));
+            }
             else
+            {
                 errorMessage = "Échec lors de l'ajout du livre.";
+            }
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = $"Erreur: {ex.Message}";
+            Console.WriteLine($"Error adding book: {ex}");
+        }
+    }
+
+    private async Task CreateBookAuthorAssociations(int bookId, IEnumerable<Author> authors)
+    {
+        if (!authors.Any()) return;
+        
+        try
+        {
+            var bookAuthors = authors.Select(author => new BookAuthor
+            {
+                BookId = bookId,
+                AuthorId = author.Id
+            }).ToList();
+
+            await SupabaseClient.From<BookAuthor>().Insert(bookAuthors);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating book-author associations: {ex.Message}");
+            throw;
         }
     }
     private void Cancel()
     {
         MudDialog.Cancel();
+    }
+
+    private class AuthorComparer : IEqualityComparer<Author>
+    {
+        public bool Equals(Author? x, Author? y)
+        {
+            if (x == null && y == null) return true;
+            if (x == null || y == null) return false;
+            return x.Id == y.Id;
+        }
+
+        public int GetHashCode(Author obj)
+        {
+            return obj?.Id.GetHashCode() ?? 0;
+        }
     }
 }

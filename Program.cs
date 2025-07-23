@@ -34,6 +34,7 @@ builder.Services.AddSingleton(sp =>
 );
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<BookAuthorService>();
 
 
 
