@@ -1,9 +1,11 @@
 @page "/recipes/{Id:int}"
 @using MudBlazor
 @using RecettesIndex.Models
+@using RecettesIndex.Services
 @inject Supabase.Client SupabaseClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
+@inject AuthService AuthService
 
 <PageTitle>Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -96,10 +98,13 @@ else
                 <MudCardActions>
                     <MudButton Href="/recipes" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Retour</MudButton>
                     <MudSpacer />
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" 
-                              OnClick="@OpenEditDialog">Modifier</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print" 
-                              Href="@($"/recipes/{Id}/print")">Vue d'impression</MudButton>
+                    @if (AuthService.IsAuthenticated)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" 
+                                  OnClick="@OpenEditDialog">Modifier</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print" 
+                                  Href="@($"/recipes/{Id}/print")">Vue d'impression</MudButton>
+                    }
                 </MudCardActions>
             </MudCard>
         </MudItem>

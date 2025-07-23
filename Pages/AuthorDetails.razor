@@ -1,10 +1,12 @@
 @page "/authors/{Id:int}"
 @using MudBlazor
 @using RecettesIndex.Models
+@using RecettesIndex.Services
 @using Supabase.Postgrest
 @inject Supabase.Client SupabaseClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
+@inject AuthService AuthService
 
 <PageTitle>Auteur - @(author?.FullName ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -135,8 +137,11 @@ else
                 <MudCardActions>
                     <MudButton Href="/authors" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Retour aux auteurs</MudButton>
                     <MudSpacer />
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                              OnClick="@OpenEditDialog">Modifier</MudButton>
+                    @if (AuthService.IsAuthenticated)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                                  OnClick="@OpenEditDialog">Modifier</MudButton>
+                    }
                 </MudCardActions>
             </MudCard>
         </MudItem>
@@ -224,8 +229,22 @@ else
         }
     }
     
-    private void OpenEditDialog()
+    private async Task OpenEditDialog()
     {
-        NavigationManager.NavigateTo($"/authors/{Id}/edit");
+        if (author != null)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("AuthorToEdit", author);
+            
+            var dialog = await DialogService.ShowAsync<EditAuthorDialog>("Modifier l'auteur", parameters);
+            var result = await dialog.Result;
+            
+            if (result is not null && !result.Canceled && result.Data is Author updatedAuthor)
+            {
+                // Refresh the author data
+                author = updatedAuthor;
+                StateHasChanged();
+            }
+        }
     }
 }
