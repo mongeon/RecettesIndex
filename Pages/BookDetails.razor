@@ -1,9 +1,11 @@
 @page "/books/{Id:int}"
 @using MudBlazor
 @using RecettesIndex.Models
+@using RecettesIndex.Services
 @inject Supabase.Client SupabaseClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
+@inject AuthService AuthService
 
 <PageTitle>Livre - @(book?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -103,8 +105,11 @@ else
                 <MudCardActions>
                     <MudButton Href="/books" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Retour aux livres</MudButton>
                     <MudSpacer />
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                              OnClick="@OpenEditDialog">Modifier</MudButton>
+                    @if (AuthService.IsAuthenticated)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                                  OnClick="@OpenEditDialog">Modifier</MudButton>
+                    }
                 </MudCardActions>
             </MudCard>
         </MudItem>
@@ -156,8 +161,22 @@ else
         }
     }
     
-    private void OpenEditDialog()
+    private async Task OpenEditDialog()
     {
-        NavigationManager.NavigateTo($"/books/{Id}/edit");
+        if (book != null)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("BookToEdit", book);
+            
+            var dialog = await DialogService.ShowAsync<EditBookDialog>("Modifier le livre", parameters);
+            var result = await dialog.Result;
+            
+            if (result is not null && !result.Canceled && result.Data is Book updatedBook)
+            {
+                // Refresh the book data
+                book = updatedBook;
+                StateHasChanged();
+            }
+        }
     }
 }
