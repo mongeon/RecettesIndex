@@ -64,8 +64,23 @@ Author (1) -> (Many) Books (1) -> (Many) Recipes
 - Use clear, descriptive branch names that indicate the purpose of the changes
 - **Always validate changes before committing** - review what was modified using git tools
 - **Run the application to test changes** - execute the app to ensure functionality works correctly
+- **Write comprehensive unit tests** - add unit tests for ALL new functionality before creating PRs
+- **Achieve high test coverage** - aim for comprehensive coverage of business logic, models, and services
+- **Run tests before committing** - ensure `dotnet test` passes with all tests
 - **Confirm changes with user before creating commits or PRs** - show validation results for approval
 - Test functionality thoroughly before suggesting merge to main branch
+
+### Unit Testing Standards
+- **Mandatory for all PRs**: No pull request should be created without comprehensive unit tests
+- **Test file organization**: Use separate, properly named test files (e.g., `RecipeModelTests.cs`, `AuthorServiceTests.cs`)
+- **Test coverage requirements**: Include tests for:
+  - Model validation and business rules (especially rating constraints 1-5)
+  - Service layer functionality and data operations
+  - Component behavior and user interactions
+  - Error scenarios and edge cases
+  - Relationship mappings between entities
+- **Testing patterns**: Follow Arrange-Act-Assert pattern with descriptive test method names
+- **xUnit framework**: Use xUnit with Theory tests for multiple data scenarios and comprehensive validation
 
 ### Documentation Maintenance
 - **Update Copilot Instruction Files**: When implementing features or modifications, update these files as necessary:
