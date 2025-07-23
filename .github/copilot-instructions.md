@@ -139,10 +139,19 @@ var recipes = await SupabaseClient
 - Optimize Supabase queries with proper filtering
 
 ## Testing Guidelines
-- Write unit tests for business logic
-- Test Blazor components with bUnit
-- Mock Supabase client for testing
-- Test error scenarios
+- **Write comprehensive unit tests for ALL business logic** - every new feature must have corresponding tests
+- **Use xUnit framework** with proper test organization and naming conventions
+- **Test file naming**: Match class names (e.g., `RecipeModelTests.cs` for `Recipe` model)
+- **Test method naming**: Use descriptive names that explain what is being tested
+- **Follow Arrange-Act-Assert pattern** in all test methods
+- **Test both positive and negative scenarios** - valid inputs and edge cases
+- **Validate business rules** - especially data validation attributes and constraints
+- **Use Theory tests** with `[InlineData]` for testing multiple scenarios
+- **Test Blazor components with bUnit** when component testing is needed
+- **Mock Supabase client for testing** to avoid external dependencies
+- **Test error scenarios** and exception handling
+- **Achieve high test coverage** - aim for comprehensive coverage of models, services, and business logic
+- **Run tests before committing** - `dotnet test` must pass before any PR creation
 
 ## Common Patterns to Follow
 
@@ -197,11 +206,34 @@ public class RecipeService
 - Use descriptive branch names (e.g., `feature/add-recipe-search`, `fix/rating-validation`)
 - **Always validate changes before committing** - use `git diff`, `git show --stat`, or `git status` to review what was changed
 - **Run the application to test changes** - use `dotnet run` or appropriate commands to validate functionality
+- **Write comprehensive unit tests** - add unit tests for ALL new functionality before creating PRs
+- **Achieve high test coverage** - aim for comprehensive coverage of business logic, models, and services
+- **Run tests before committing** - ensure `dotnet test` passes with all tests
 - **Confirm changes with user before creating commits or PRs** - show validation results and get approval
 - Make atomic commits with clear messages
 - Test changes before suggesting merge to main
 - **Use GitHub MCP server** for all GitHub operations (creating PRs, issues, reviews, etc.)
 - Follow existing pull request patterns if established
+
+### Unit Testing Requirements
+- **Mandatory for all PRs**: No pull request should be created without comprehensive unit tests
+- **Test file naming**: Use descriptive names matching the classes being tested (e.g., `RecipeModelTests.cs`, `AuthorServiceTests.cs`)
+- **Test organization**: Separate test files for different concerns (models, services, components)
+- **Validation testing**: Test both valid and invalid scenarios, especially for business rules
+- **Edge cases**: Include tests for boundary conditions and error scenarios
+- **Test patterns to follow**:
+  - Arrange-Act-Assert pattern
+  - Descriptive test method names
+  - Theory tests for multiple data scenarios
+  - Proper use of xUnit attributes
+- **Current test structure**: Follow the established pattern in `/tests/` directory
+- **Test coverage areas**:
+  - Model validation and business rules
+  - Service layer functionality
+  - Data access patterns
+  - Component behavior
+  - API endpoints (when applicable)
+- **Run tests**: Always run `dotnet test` before committing and ensure all tests pass
 
 ### GitHub Operations
 - **Always use GitHub MCP server tools** for:
