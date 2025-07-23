@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RecettesIndex.csproj" />
     <ProjectReference Include="..\src\RecettesIndex.csproj" />
   </ItemGroup>
 
