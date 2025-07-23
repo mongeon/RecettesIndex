@@ -77,4 +77,9 @@ Author (1) -> (Many) Books (1) -> (Many) Recipes
   - Technical architecture and setup instructions
   - API documentation and configuration details
   - Deployment and maintenance procedures
+- **Update README files**: Keep both main `README.md` and `docs/README.md` synchronized with:
+  - Current features and capabilities
+  - Setup and installation instructions
+  - Technology stack and dependencies
+  - Contributing guidelines
 - **Documentation Consistency**: Ensure all documentation reflects the current state of the application and development practices

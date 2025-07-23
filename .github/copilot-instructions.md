@@ -223,4 +223,9 @@ public class RecipeService
   - Configuration changes
   - Setup or deployment procedures
   - User-facing changes or new workflows
+- **Update README files**: Keep both the main `README.md` and `docs/README.md` synchronized with:
+  - Feature additions or removals
+  - Setup instruction changes
+  - New dependencies or requirements
+  - Architecture or technology changes
 - **Documentation Consistency**: Keep all documentation synchronized with code changes to maintain accuracy and usefulness for future development
