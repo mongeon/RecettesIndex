@@ -134,8 +134,11 @@ public class RecipeValidationTests
         var validationResults = ValidateModel(recipe);
 
         // Assert
-        // Only rating validation exists, name validation would be separate
-        Assert.Empty(validationResults);
+        // Name validation requires both Required and MaxLength attributes
+        Assert.NotEmpty(validationResults);
+        var validationResult = validationResults.Single();
+        Assert.Equal("Name", validationResult.MemberNames.Single());
+        Assert.Equal("The Name field is required.", validationResult.ErrorMessage);
     }
 
     [Fact]
