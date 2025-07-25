@@ -10,6 +10,7 @@ namespace RecettesIndex.Models
         [PrimaryKey("id")]
         public int Id { get; set; }
         [Column("name")]
+        [Required(ErrorMessage = "The Name field is required.")]
         public string Name { get; set; } = string.Empty;
         [Column("rating")]
         [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]

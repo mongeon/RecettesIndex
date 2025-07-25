@@ -10,16 +10,13 @@ namespace RecettesIndex.Tests
 {
     public class AuthServiceTests
     {
-        private readonly Supabase.Client _mockSupabaseClient;
-        private readonly IGotrueClient<User, Session> _mockAuth;
+        private readonly ISupabaseAuthWrapper _mockAuthWrapper;
         private readonly AuthService _authService;
 
         public AuthServiceTests()
         {
-            _mockSupabaseClient = Substitute.For<Supabase.Client>();
-            _mockAuth = Substitute.For<IGotrueClient<User, Session>>();
-            _mockSupabaseClient.Auth.Returns(_mockAuth);
-            _authService = new AuthService(_mockSupabaseClient);
+            _mockAuthWrapper = Substitute.For<ISupabaseAuthWrapper>();
+            _authService = new AuthService(_mockAuthWrapper);
         }
 
         [Fact]
@@ -28,17 +25,17 @@ namespace RecettesIndex.Tests
             // Arrange
             var email = "test@example.com";
             var password = "password123";
-            var mockSession = Substitute.For<Session>();
-            var mockUser = Substitute.For<User>();
-            mockSession.User.Returns(mockUser);
-            _mockAuth.SignIn(email, password).Returns(mockSession);
+            var mockSession = new Session();
+            var mockUser = new User { Email = email };
+            mockSession.User = mockUser;
+            _mockAuthWrapper.SignIn(email, password).Returns(Task.FromResult<Session?>(mockSession));
 
             // Act
             var result = await _authService.SignInAsync(email, password);
 
             // Assert
             Assert.True(result);
-            await _mockAuth.Received(1).SignIn(email, password);
+            await _mockAuthWrapper.Received(1).SignIn(email, password);
         }
 
         [Fact]
@@ -47,14 +44,14 @@ namespace RecettesIndex.Tests
             // Arrange
             var email = "test@example.com";
             var password = "wrongpassword";
-            _mockAuth.SignIn(email, password).Returns((Session?)null);
+            _mockAuthWrapper.SignIn(email, password).Returns(Task.FromResult<Session?>(null));
 
             // Act
             var result = await _authService.SignInAsync(email, password);
 
             // Assert
             Assert.False(result);
-            await _mockAuth.Received(1).SignIn(email, password);
+            await _mockAuthWrapper.Received(1).SignIn(email, password);
         }
 
         [Fact]
@@ -63,7 +60,7 @@ namespace RecettesIndex.Tests
             // Arrange
             var email = "test@example.com";
             var password = "password123";
-            _mockAuth.SignIn(email, password).Returns((Session?)null);
+            _mockAuthWrapper.SignIn(email, password).Returns(Task.FromResult<Session?>(null));
 
             // Act
             var result = await _authService.SignInAsync(email, password);
@@ -78,9 +75,8 @@ namespace RecettesIndex.Tests
             // Arrange
             var email = "test@example.com";
             var password = "password123";
-            var mockSession = Substitute.For<Session>();
-            mockSession.User.Returns((User?)null);
-            _mockAuth.SignIn(email, password).Returns(mockSession);
+            var mockSession = new Session();  // Session with null User
+            _mockAuthWrapper.SignIn(email, password).Returns(Task.FromResult<Session?>(mockSession));
 
             // Act
             var result = await _authService.SignInAsync(email, password);
@@ -95,7 +91,7 @@ namespace RecettesIndex.Tests
             // Arrange
             var email = "test@example.com";
             var password = "password123";
-            _mockAuth.SignIn(email, password).Throws(new Exception("Network error"));
+            _mockAuthWrapper.SignIn(email, password).Throws(new Exception("Network error"));
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<Exception>(
@@ -111,15 +107,15 @@ namespace RecettesIndex.Tests
             await _authService.SignOutAsync();
 
             // Assert
-            await _mockAuth.Received(1).SignOut();
+            await _mockAuthWrapper.Received(1).SignOut();
         }
 
         [Fact]
         public void IsAuthenticated_WithCurrentUser_ReturnsTrue()
         {
             // Arrange
-            var mockUser = Substitute.For<User>();
-            _mockAuth.CurrentUser.Returns(mockUser);
+            var mockUser = new User { Email = "test@example.com" };
+            _mockAuthWrapper.CurrentUser.Returns(mockUser);
 
             // Act
             var result = _authService.IsAuthenticated;
@@ -132,7 +128,7 @@ namespace RecettesIndex.Tests
         public void IsAuthenticated_WithoutCurrentUser_ReturnsFalse()
         {
             // Arrange
-            _mockAuth.CurrentUser.Returns((User?)null);
+            _mockAuthWrapper.CurrentUser.Returns((User?)null);
 
             // Act
             var result = _authService.IsAuthenticated;
@@ -146,9 +142,8 @@ namespace RecettesIndex.Tests
         {
             // Arrange
             var expectedEmail = "test@example.com";
-            var mockUser = Substitute.For<User>();
-            mockUser.Email.Returns(expectedEmail);
-            _mockAuth.CurrentUser.Returns(mockUser);
+            var mockUser = new User { Email = expectedEmail };
+            _mockAuthWrapper.CurrentUser.Returns(mockUser);
 
             // Act
             var result = _authService.UserEmail;
@@ -161,7 +156,7 @@ namespace RecettesIndex.Tests
         public void UserEmail_WithoutCurrentUser_ReturnsNull()
         {
             // Arrange
-            _mockAuth.CurrentUser.Returns((User?)null);
+            _mockAuthWrapper.CurrentUser.Returns((User?)null);
 
             // Act
             var result = _authService.UserEmail;
@@ -177,14 +172,14 @@ namespace RecettesIndex.Tests
         public async Task SignInAsync_WithEmptyCredentials_StillCallsSupabase(string email, string password)
         {
             // Arrange
-            _mockAuth.SignIn(email, password).Returns((Session?)null);
+            _mockAuthWrapper.SignIn(email, password).Returns(Task.FromResult<Session?>(null));
 
             // Act
             var result = await _authService.SignInAsync(email, password);
 
             // Assert
             Assert.False(result);
-            await _mockAuth.Received(1).SignIn(email, password);
+            await _mockAuthWrapper.Received(1).SignIn(email, password);
         }
 
         [Fact]
@@ -192,7 +187,7 @@ namespace RecettesIndex.Tests
         {
             // Arrange
             var expectedException = new Exception("Network error");
-            _mockAuth.SignOut().Throws(expectedException);
+            _mockAuthWrapper.SignOut().Throws(expectedException);
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(() => _authService.SignOutAsync());
