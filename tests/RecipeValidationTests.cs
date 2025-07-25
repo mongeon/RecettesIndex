@@ -121,12 +121,12 @@ public class RecipeValidationTests
     }
 
     [Fact]
-    public void Recipe_EmptyName_StillValidIfRatingIsCorrect()
+    public void Recipe_EmptyName_FailsValidation()
     {
         // Arrange
         var recipe = new Recipe
         {
-            Name = "", // Empty name - model doesn't validate this
+            Name = "", // Empty name - should now fail validation
             Rating = 3 // Valid rating
         };
 
@@ -134,8 +134,29 @@ public class RecipeValidationTests
         var validationResults = ValidateModel(recipe);
 
         // Assert
-        // Name validation requires both Required and MaxLength attributes
-        Assert.NotEmpty(validationResults);
+        // Name field is now marked as Required, so empty name should fail validation
+        Assert.Single(validationResults);
+        var validationResult = validationResults.Single();
+        Assert.Equal("Name", validationResult.MemberNames.Single());
+        Assert.Equal("The Name field is required.", validationResult.ErrorMessage);
+    }
+
+    [Fact]
+    public void Recipe_NullName_FailsValidation()
+    {
+        // Arrange
+        var recipe = new Recipe
+        {
+            Name = null!, // Null name - should fail validation
+            Rating = 3 // Valid rating
+        };
+
+        // Act
+        var validationResults = ValidateModel(recipe);
+
+        // Assert
+        // Name field is now marked as Required, so null name should fail validation
+        Assert.Single(validationResults);
         var validationResult = validationResults.Single();
         Assert.Equal("Name", validationResult.MemberNames.Single());
         Assert.Equal("The Name field is required.", validationResult.ErrorMessage);
