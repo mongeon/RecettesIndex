@@ -328,8 +328,16 @@ tests/
 ├── BookAuthorModelTests.cs       # Junction table relationship tests
 ├── RecipeValidationTests.cs      # DataAnnotation validation tests
 ├── RecipeRatingValidationTests.cs # Rating constraint tests (1-5)
-└── ModelRelationshipTests.cs     # Cross-model relationship tests
+├── ModelRelationshipTests.cs     # Cross-model relationship tests
+└── AuthServiceTests.cs           # Authentication service tests
 ```
+
+### Testing Framework
+
+- **xUnit**: Primary testing framework
+- **NSubstitute**: Mocking library for dependencies
+- **Theory Tests**: Data-driven testing with `[InlineData]`
+- **Arrange-Act-Assert**: Standard test pattern
 
 ### Testing Principles
 
@@ -338,6 +346,45 @@ tests/
 3. **Arrange-Act-Assert Pattern**: All tests follow the AAA pattern
 4. **Theory-Driven Tests**: Use `[Theory]` and `[InlineData]` for data-driven test scenarios
 5. **Test Before Push**: Run all tests before creating pull requests
+6. **Mock Complex Dependencies**: Use NSubstitute for external services and complex dependencies
+
+### NSubstitute Mocking Patterns
+
+```csharp
+// ✅ Good: Basic substitution and verification
+[Fact]
+public async Task SignInAsync_WithValidCredentials_ReturnsTrue()
+{
+    // Arrange
+    var mockAuth = Substitute.For<IGotrueClient<User, Session>>();
+    var mockSession = Substitute.For<Session>();
+    var mockUser = Substitute.For<User>();
+    
+    mockSession.User.Returns(mockUser);
+    mockAuth.SignIn("test@example.com", "password").Returns(mockSession);
+    
+    var authService = new AuthService(mockSupabaseClient);
+
+    // Act
+    var result = await authService.SignInAsync("test@example.com", "password");
+
+    // Assert
+    Assert.True(result);
+    await mockAuth.Received(1).SignIn("test@example.com", "password");
+}
+
+// ✅ Good: Exception testing
+[Fact]
+public async Task SignInAsync_ThrowsException_ShouldPropagate()
+{
+    // Arrange
+    var mockAuth = Substitute.For<IGotrueClient<User, Session>>();
+    mockAuth.SignIn(Arg.Any<string>(), Arg.Any<string>()).Throws(new Exception("Network error"));
+
+    // Act & Assert
+    await Assert.ThrowsAsync<Exception>(() => authService.SignInAsync("test", "test"));
+}
+```
 
 ### Test Examples
 
@@ -427,27 +474,40 @@ test_job:
       run: dotnet test --no-build --verbosity normal
 ```
 
-### Unit Testing (Legacy Reference)
+### Dependencies for Testing Complex Types
 
-```csharp
-[TestClass]
-public class RecipeServiceTests
-{
-    private Mock<SupabaseClient> _mockSupabaseClient;
-    private RecipeService _recipeService;
-    
-    [TestInitialize]
-    public void Setup()
-    {
-        _mockSupabaseClient = new Mock<SupabaseClient>();
-        _recipeService = new RecipeService(_mockSupabaseClient.Object);
-    }
-    
-    [TestMethod]
-    public async Task GetRecipesAsync_ShouldReturnRecipes_WhenDataExists()
-    {
-        // Arrange
-        var expectedRecipes = new List<Recipe> { new Recipe { Name = "Test" } };
+When testing services that depend on complex external libraries (like Supabase.Client), consider:
+- Creating wrapper interfaces for better testability
+- Testing integration points separately from unit tests  
+- Using partial mocks or test doubles for complex scenarios
+- Some complex types may require constructor parameters that are difficult to mock
+
+### Test Coverage Requirements
+
+- **Model Validation**: Test all DataAnnotation validation rules
+- **Business Logic**: Test all service methods and their edge cases
+- **Error Scenarios**: Test exception handling and error conditions
+- **Relationships**: Test entity relationships and navigation properties
+- **Authentication**: Test authentication workflows and security
+
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test
+
+# Run tests with detailed output
+dotnet test --verbosity normal
+
+# Run specific test class
+dotnet test --filter "ClassName=RecipeModelTests"
+
+# Run tests for specific namespace
+dotnet test --filter "FullyQualifiedName~RecettesIndex.Tests"
+
+# Generate code coverage (if configured)
+dotnet test --collect:"XPlat Code Coverage"
+```
         _mockSupabaseClient.Setup(x => x.From<Recipe>().Get())
             .ReturnsAsync(new ModelResponse<Recipe> { Models = expectedRecipes });
         
