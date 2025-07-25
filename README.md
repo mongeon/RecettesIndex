@@ -86,7 +86,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 - **UI Framework**: MudBlazor (Material Design)
 - **Backend**: Supabase (PostgreSQL + REST API)
 - **Authentication**: Supabase Auth
-- **Testing**: xUnit with comprehensive unit test coverage
+- **Testing**: xUnit with NSubstitute mocking and comprehensive unit test coverage
 - **CI/CD**: GitHub Actions with automated testing and deployment
 - **Hosting**: Azure Static Web Apps
 

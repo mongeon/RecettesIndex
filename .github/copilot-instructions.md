@@ -3,6 +3,52 @@
 ## Project Context
 Mes Recettes is a personal recipe management application built with Blazor WebAssembly. Users can organize their recipes, associate them with cookbooks and authors, and rate their favorites.
 
+### Application Purpose
+The application allows users to:
+- Store and organize their favorite recipes
+- Associate recipes with cookbooks and authors
+- Rate recipes using a 1-5 star system for future reference
+- Track page numbers for physical cookbook references
+- Print recipes in a clean format
+- Browse and search through their recipe collection
+
+### Business Domain Knowledge
+- **Recipe**: A cooking instruction with ingredients, steps, rating (1-5), notes, and optional book reference
+- **Book**: Recipe book entity with title and author reference
+- **Author**: Author entity for cookbook authors
+- **Data Relationships**: `Author (1) -> (Many) Books (1) -> (Many) Recipes`
+
+### User Workflows
+1. **Adding Recipes**: Users input recipe details, optionally linking to books
+2. **Browsing**: Users can filter and search through their recipe collection
+3. **Rating**: Users rate recipes after trying them (1-5 stars)
+4. **Printing**: Users can generate print-friendly versions of recipes
+5. **Organization**: Users organize recipes by book, author, or rating
+
+### UI/UX Guidelines
+- Use Material Design principles via MudBlazor components exclusively
+- Maintain consistent spacing and typography throughout the application
+- Provide clear navigation between related entities (recipes, books, authors)
+- Include confirmation dialogs for destructive actions
+- Show loading states for async operations with proper indicators
+- Display meaningful error messages to users with user-friendly language
+- Keep the interface clean and uncluttered for home cook user persona
+- Prioritize simplicity and ease of use in all interactions
+
+### Technical Constraints
+- Client-side Blazor WebAssembly (no server-side rendering)
+- Supabase requires internet connectivity for all data operations
+- Browser storage limitations for offline scenarios
+- Single-page application navigation patterns
+- Consider both digital and physical cookbook workflows in design
+
+### Common User Stories
+- "As a user, I want to quickly find recipes by rating or author"
+- "As a user, I want to see all recipes from a specific cookbook"
+- "As a user, I want to add my own notes to existing recipes"
+- "As a user, I want to print a recipe without the website formatting"
+- "As a user, I want to rate recipes after I've tried them"
+
 ## Development Environment
 - **IDE**: Visual Studio Code with C# Dev Kit
 - **Framework**: .NET 9.0 Blazor WebAssembly
@@ -141,6 +187,7 @@ var recipes = await SupabaseClient
 ## Testing Guidelines
 - **Write comprehensive unit tests for ALL business logic** - every new feature must have corresponding tests
 - **Use xUnit framework** with proper test organization and naming conventions
+- **Use NSubstitute for mocking** - preferred over Moq for cleaner syntax and better maintainability
 - **Test file naming**: Match class names (e.g., `RecipeModelTests.cs` for `Recipe` model)
 - **Test method naming**: Use descriptive names that explain what is being tested
 - **Follow Arrange-Act-Assert pattern** in all test methods
@@ -148,10 +195,31 @@ var recipes = await SupabaseClient
 - **Validate business rules** - especially data validation attributes and constraints
 - **Use Theory tests** with `[InlineData]` for testing multiple scenarios
 - **Test Blazor components with bUnit** when component testing is needed
-- **Mock Supabase client for testing** to avoid external dependencies
+- **Mock dependencies carefully** - some complex types like Supabase.Client may require wrapper interfaces for effective testing
 - **Test error scenarios** and exception handling
 - **Achieve high test coverage** - aim for comprehensive coverage of models, services, and business logic
 - **Run tests before committing** - `dotnet test` must pass before any PR creation
+
+### NSubstitute Testing Patterns
+```csharp
+// Basic substitution
+var mockService = Substitute.For<IService>();
+
+// Setup method returns
+mockService.Method(Arg.Any<string>()).Returns("result");
+
+// Verify method calls
+mockService.Received(1).Method("expected");
+
+// Throw exceptions
+mockService.Method().Throws(new Exception("error"));
+```
+
+### Testing Complex Dependencies
+When testing services that depend on complex external libraries (like Supabase.Client), consider:
+- Creating wrapper interfaces for better testability
+- Testing integration points separately from unit tests
+- Using partial mocks or test doubles for complex scenarios
 
 ## Common Patterns to Follow
 
@@ -245,10 +313,7 @@ public class RecipeService
 - **Example**: Instead of `gh pr create`, use `mcp_github_create_pull_request`
 
 ### Documentation Requirements
-- **Update Copilot Instructions**: When creating a new branch for any feature or modification, update these instruction files as necessary:
-  - `/.github/copilot-instructions.md` - Comprehensive development guidelines and patterns (this file)
-  - `/.copilot-instructions.md` - Quick reference for common coding patterns
-  - `/COPILOT_CONTEXT.md` - Business domain context and user workflows
+- **Single Source of Truth**: This file (`.github/copilot-instructions.md`) is the ONLY copilot instruction file - do not create or maintain multiple instruction files
 - **Update Project Documentation**: For every modification, ensure documentation in the `/docs` folder is updated to reflect:
   - New features and functionality
   - API changes or new endpoints
