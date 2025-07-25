@@ -33,6 +33,7 @@ builder.Services.AddSingleton(sp =>
     )
 );
 
+builder.Services.AddScoped<ISupabaseAuthWrapper, SupabaseAuthWrapper>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<BookAuthorService>();
 
