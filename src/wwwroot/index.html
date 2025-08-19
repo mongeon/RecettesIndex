@@ -17,11 +17,45 @@
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div class="recipe-loading-container">
+            <div class="recipe-loading-spinner">
+                <!-- Recipe book rotating -->
+                <div class="recipe-book-loader">
+                    <svg width="80" height="80" viewBox="0 0 512 512" class="recipe-icon">
+                        <!-- Background -->
+                        <rect width="512" height="512" rx="128" fill="#FF6B6B"/>
+                        <!-- Recipe book/notepad -->
+                        <rect x="128" y="140" width="256" height="232" rx="12" fill="white"/>
+                        <!-- Recipe lines with animation -->
+                        <rect x="168" y="172" width="176" height="28" rx="8" fill="#4ECDC4" class="recipe-line-1"/>
+                        <rect x="168" y="216" width="176" height="28" rx="8" fill="#4ECDC4" class="recipe-line-2"/>
+                        <rect x="168" y="260" width="96" height="28" rx="8" fill="#4ECDC4" class="recipe-line-3"/>
+                        <!-- Checkmark circle -->
+                        <circle cx="320" cy="274" r="32" fill="#4ECDC4" class="recipe-check"/>
+                        <path d="M308 274L316 282L334 264" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" class="recipe-checkmark"/>
+                    </svg>
+                </div>
+                <!-- Cooking utensils orbiting animation -->
+                <div class="utensil-orbit">
+                    <div class="utensil utensil-1">🥄</div>
+                    <div class="utensil utensil-2">🍴</div>
+                    <div class="utensil utensil-3">🔪</div>
+                    <div class="utensil utensil-4">🥢</div>
+                </div>
+            </div>
+            <div class="recipe-loading-text">
+                <h3>Préparation en cours...</h3>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <!-- Fallback progress bar -->
+            <div class="loading-progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
     </div>
 
     <div id="blazor-error-ui">
