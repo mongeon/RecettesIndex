@@ -28,7 +28,7 @@ else
                  AdditionalInfo=""
                  Icon="@Icons.Material.Filled.MenuBook">
         <RightContent>
-            <MudChip T="string" Color="Color.Surface" Style="color: var(--mud-palette-primary);" Size="Size.Large">
+            <MudChip T="string" Size="Size.Large" Class="hero-chip">
                 @relatedRecipes.Count Recette@(relatedRecipes.Count > 1 ? "s" : "")
             </MudChip>
         </RightContent>
