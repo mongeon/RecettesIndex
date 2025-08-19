@@ -1,0 +1,70 @@
+@using MudBlazor
+
+<MudPaper Elevation="3" Class="hero-section mb-6" Style="background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);">
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-8">
+        <MudGrid Class="align-center">
+            <MudItem xs="12" md="2" Class="d-flex justify-center justify-md-start">
+                <MudAvatar Size="Size.Large" Color="Color.Surface" Style="height: 80px; width: 80px; color: var(--mud-palette-primary);">
+                    <MudIcon Icon="@Icon" Size="Size.Large" />
+                </MudAvatar>
+            </MudItem>
+            <MudItem xs="12" md="8">
+                <div class="text-center text-md-start">
+                    <MudText Typo="Typo.h3" Color="Color.Surface" Class="mb-2" Style="font-weight: 600;">
+                        @Title
+                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Surface" Style="opacity: 0.9;">
+                        @Subtitle
+                    </MudText>
+                    @if (!string.IsNullOrEmpty(AdditionalInfo))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Surface" Style="opacity: 0.8;" Class="mt-1">
+                            @AdditionalInfo
+                        </MudText>
+                    }
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="2" Class="d-flex justify-center justify-md-end">
+                @if (RightContent != null)
+                {
+                    <div class="d-flex flex-column align-center">
+                        @RightContent
+                    </div>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</MudPaper>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string AdditionalInfo { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Info;
+    [Parameter] public RenderFragment? RightContent { get; set; }
+}
+
+<style>
+    .hero-section {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-opacity=".1"/><stop offset="100%" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="10" r="10" fill="url(%23a)"/></svg>') repeat;
+        opacity: 0.1;
+        pointer-events: none;
+    }
+
+    @@media (max-width: 960px) {
+        .hero-section .mud-container {
+            padding: 1.5rem !important;
+        }
+    }
+</style>

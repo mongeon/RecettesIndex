@@ -1,0 +1,53 @@
+@using MudBlazor
+
+<MudPaper Elevation="0" Class="d-flex flex-wrap justify-space-between align-center pa-4 mb-4">
+    <div class="d-flex flex-wrap align-center">
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   Href="@BackUrl"
+                   Class="mr-2 mb-2">
+            @BackText
+        </MudButton>
+    </div>
+    
+    <div class="d-flex flex-wrap align-center">
+        @if (ShowEditButton && IsAuthenticated)
+        {
+            <MudTooltip Text="Modifier">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                              Color="Color.Primary" 
+                              Variant="Variant.Filled"
+                              OnClick="@OnEditClick"
+                              Class="mr-2 mb-2" />
+            </MudTooltip>
+        }
+        
+        @if (ShowPrintButton)
+        {
+            <MudTooltip Text="Imprimer">
+                <MudIconButton Icon="@Icons.Material.Filled.Print" 
+                              Color="Color.Secondary" 
+                              Variant="Variant.Filled"
+                              Href="@PrintUrl"
+                              Class="mr-2 mb-2" />
+            </MudTooltip>
+        }
+        
+        @if (AdditionalActions != null)
+        {
+            @AdditionalActions
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public string BackUrl { get; set; } = "/";
+    [Parameter] public string BackText { get; set; } = "Retour";
+    [Parameter] public bool ShowEditButton { get; set; } = true;
+    [Parameter] public bool ShowPrintButton { get; set; } = false;
+    [Parameter] public string PrintUrl { get; set; } = string.Empty;
+    [Parameter] public bool IsAuthenticated { get; set; } = false;
+    [Parameter] public EventCallback OnEditClick { get; set; }
+    [Parameter] public RenderFragment? AdditionalActions { get; set; }
+}
