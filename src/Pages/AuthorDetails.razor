@@ -13,7 +13,10 @@
 
 @if (loading)
 {
-    <MudProgressLinear Indeterminate="true" Class="my-4" />
+    <MudContainer Class="d-flex flex-column align-center py-8">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.h6" Class="mt-4">Chargement de l'auteur...</MudText>
+    </MudContainer>
 }
 else if (author == null)
 {
@@ -21,20 +24,32 @@ else if (author == null)
 }
 else
 {
+    <HeroSection Title="@($"{author.Name} {author.LastName}")" 
+                 Subtitle="@GetAuthorInfo()"
+                 AdditionalInfo=""
+                 Icon="@Icons.Material.Filled.Person">
+        <RightContent>
+            <div class="d-flex flex-column align-center">
+                <MudChip T="string" Color="Color.Surface" Style="color: var(--mud-palette-primary);" Size="Size.Large" Class="mb-2">
+                    @books.Count Livre@(books.Count > 1 ? "s" : "")
+                </MudChip>
+                <MudChip T="string" Color="Color.Surface" Style="color: var(--mud-palette-primary);" Size="Size.Large">
+                    @relatedRecipes.Count Recette@(relatedRecipes.Count > 1 ? "s" : "")
+                </MudChip>
+            </div>
+        </RightContent>
+    </HeroSection>
+
+    <ActionBar BackUrl="/authors" 
+               BackText="Retour aux auteurs"
+               ShowEditButton="true"
+               ShowPrintButton="false"
+               IsAuthenticated="@AuthService.IsAuthenticated"
+               OnEditClick="@OpenEditDialog" />
+
     <MudGrid>
         <MudItem xs="12">
             <MudCard Elevation="3">
-                <MudCardHeader>
-                    <CardHeaderAvatar>
-                        <MudAvatar Color="Color.Primary" Size="Size.Large">
-                            @(author.Name.Length > 0 ? author.Name[0].ToString() : "")@(author.LastName?.Length > 0 ? author.LastName[0].ToString() : "")
-                        </MudAvatar>
-                    </CardHeaderAvatar>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h4">@author.Name @author.LastName</MudText>
-                        <MudText Typo="Typo.body2">Ajouté le @author.CreationDate.ToShortDateString()</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
                 <MudCardContent>
                     <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
                         <MudTabPanel Text="Livres" Icon="@Icons.Material.Filled.Book">
@@ -134,15 +149,6 @@ else
                         </MudTabPanel>
                     </MudTabs>
                 </MudCardContent>
-                <MudCardActions>
-                    <MudButton Href="/authors" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Retour aux auteurs</MudButton>
-                    <MudSpacer />
-                    @if (AuthService.IsAuthenticated)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                                  OnClick="@OpenEditDialog">Modifier</MudButton>
-                    }
-                </MudCardActions>
             </MudCard>
         </MudItem>
     </MudGrid>
@@ -246,5 +252,23 @@ else
                 StateHasChanged();
             }
         }
+    }
+
+    private string GetAuthorInfo()
+    {
+        var info = new List<string>();
+        
+        if (books.Any())
+        {
+            var ratedRecipes = relatedRecipes.Where(r => r.Rating > 0).ToList();
+            
+            if (ratedRecipes.Any())
+            {
+                var avgRating = ratedRecipes.Average(r => r.Rating);
+                info.Add($"Moyenne des évaluations: {avgRating:F1}/5");
+            }
+        }
+
+        return string.Join(" • ", info);
     }
 }

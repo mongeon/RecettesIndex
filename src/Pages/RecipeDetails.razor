@@ -12,7 +12,10 @@
 
 @if (loading)
 {
-    <MudProgressLinear Indeterminate="true" Class="my-4" />
+    <MudContainer Class="d-flex flex-column align-center py-8">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.h6" Class="mt-4">Chargement de la recette...</MudText>
+    </MudContainer>
 }
 else if (recipe == null)
 {
@@ -20,23 +23,30 @@ else if (recipe == null)
 }
 else
 {
+    <HeroSection Title="@recipe.Name" 
+                 Subtitle="@GetAdditionalInfo()"
+                 AdditionalInfo=""
+                 Icon="@Icons.Material.Filled.Restaurant">
+        <RightContent>
+            @if (recipe.Rating > 0)
+            {
+                <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.9;" Class="mb-2">Évaluation</MudText>
+                <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
+            }
+        </RightContent>
+    </HeroSection>
+
+    <ActionBar BackUrl="/recipes" 
+               BackText="Retour aux recettes"
+               ShowEditButton="true"
+               ShowPrintButton="true"
+               PrintUrl="@($"/recipes/{Id}/print")"
+               IsAuthenticated="@AuthService.IsAuthenticated"
+               OnEditClick="@OpenEditDialog" />
+
     <MudGrid>
         <MudItem xs="12">
             <MudCard Elevation="3">
-                <MudCardHeader>
-                    <CardHeaderAvatar>
-                        <MudAvatar Color="Color.Secondary" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.Restaurant" />
-                        </MudAvatar>
-                    </CardHeaderAvatar>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h4">@recipe.Name</MudText>
-                        <MudText Typo="Typo.body2">Ajoutée le @recipe.CreationDate.ToShortDateString()</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderActions>
-                        <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
-                    </CardHeaderActions>
-                </MudCardHeader>
                 <MudCardContent>
                     <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
                         <MudTabPanel Text="Détails" Icon="@Icons.Material.Filled.Info">
@@ -95,17 +105,6 @@ else
                         </MudTabPanel>
                     </MudTabs>
                 </MudCardContent>
-                <MudCardActions>
-                    <MudButton Href="/recipes" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack">Retour</MudButton>
-                    <MudSpacer />
-                    @if (AuthService.IsAuthenticated)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" 
-                                  OnClick="@OpenEditDialog">Modifier</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print" 
-                                  Href="@($"/recipes/{Id}/print")">Vue d'impression</MudButton>
-                    }
-                </MudCardActions>
             </MudCard>
         </MudItem>
     </MudGrid>
@@ -175,5 +174,22 @@ else
                 StateHasChanged();
             }
         }
+    }
+
+    private string GetAdditionalInfo()
+    {
+        var info = new List<string>();
+        
+        if (book != null)
+        {
+            info.Add($"Livre: {book.Name}");
+        }
+        
+        if (recipe?.BookPage != null)
+        {
+            info.Add($"Page: {recipe.BookPage}");
+        }
+
+        return string.Join(" • ", info);
     }
 }
