@@ -30,10 +30,10 @@ else
                  Icon="@Icons.Material.Filled.Person">
         <RightContent>
             <div class="d-flex flex-column align-center">
-                <MudChip T="string" Color="Color.Surface" Style="color: var(--mud-palette-primary);" Size="Size.Large" Class="mb-2">
+                <MudChip T="string" Size="Size.Large" Class="mb-2 hero-chip">
                     @books.Count Livre@(books.Count > 1 ? "s" : "")
                 </MudChip>
-                <MudChip T="string" Color="Color.Surface" Style="color: var(--mud-palette-primary);" Size="Size.Large">
+                <MudChip T="string" Size="Size.Large" Class="hero-chip">
                     @relatedRecipes.Count Recette@(relatedRecipes.Count > 1 ? "s" : "")
                 </MudChip>
             </div>
