@@ -98,7 +98,7 @@ else
                         <MudTabPanel Text="Recettes" Icon="@Icons.Material.Filled.Restaurant">
                             @if (relatedRecipes != null && relatedRecipes.Count > 0)
                             {
-                                <MudTable Items="@filteredRecipes" Dense="true" Hover="true" Bordered="false" Striped="true">
+                                <MudTable Items="@filteredRecipes" Dense="true" Hover="true" Bordered="false" Striped="true" SortLabel="Sort By">
                                     <ToolBarContent>
                                         <MudText Typo="Typo.h6">Recettes par @author.Name @author.LastName</MudText>
                                         <MudSpacer />
@@ -108,9 +108,10 @@ else
                                                     Class="mt-0 ml-2" />
                                     </ToolBarContent>
                                     <HeaderContent>
-                                        <MudTh>Nom</MudTh>
+                                        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Name)">Nom</MudTableSortLabel></MudTh>
                                         <MudTh>Livre</MudTh>
-                                        <MudTh>Évaluation</MudTh>
+                                        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Rating)">Évaluation</MudTableSortLabel></MudTh>
+                                        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.CreationDate)">Date de création</MudTableSortLabel></MudTh>
                                         <MudTh>Page</MudTh>
                                         <MudTh>Actions</MudTh>
                                     </HeaderContent>
@@ -129,6 +130,7 @@ else
                                         <MudTd DataLabel="Évaluation">
                                             <PizzaRating ReadOnly="true" Value="@context.Rating" />
                                         </MudTd>
+                                        <MudTd DataLabel="Date de création">@context.CreationDate.ToShortDateString()</MudTd>
                                         <MudTd DataLabel="Page">@(context.BookPage.HasValue ? context.BookPage.Value.ToString() : "-")</MudTd>
                                         <MudTd DataLabel="Actions">
                                             <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
