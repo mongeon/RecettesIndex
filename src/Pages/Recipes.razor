@@ -30,7 +30,7 @@
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Name)">Nom</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Rating)">Évaluation</MudTableSortLabel></MudTh>
-                <MudTh>Créée le</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.CreationDate)">Créée le</MudTableSortLabel></MudTh>
                 <MudTh>Notes</MudTh>
                 <MudTh>Livre</MudTh>
                 @if (AuthService.IsAuthenticated)
