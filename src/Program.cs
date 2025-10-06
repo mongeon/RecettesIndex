@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using RecettesIndex;
 using RecettesIndex.Services;
+using RecettesIndex.Services.Abstractions;
 using Supabase;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -36,6 +37,9 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddScoped<ISupabaseAuthWrapper, SupabaseAuthWrapper>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<BookAuthorService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
+builder.Services.AddScoped<IRecipesQuery, SupabaseRecipesQuery>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
 
 
 
