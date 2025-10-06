@@ -2,7 +2,7 @@
 @using RecettesIndex.Models
 @using MudBlazor
 @inject RecettesIndex.Services.AuthService AuthService
-@inject Supabase.Client SupabaseClient
+@inject RecettesIndex.Services.Abstractions.IRecipeService RecipeService
 @inject MudBlazor.IDialogService DialogService
 
 <PageTitle>Recettes</PageTitle>
@@ -10,63 +10,77 @@
 <MudPaper Class="pa-4">
     <MudText Typo="Typo.h5">Recettes</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
-    @if (loading)
-    {
-        <MudProgressCircular Indeterminate="true" />
-    }
-    else if (recipes.Count == 0)
-    {
-        <MudText>Aucune recette trouvée.</MudText>
-    }
-    else
-    {
-        <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des recettes..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" @oninput="OnSearchChanged" />
-        <MudTable Items="filteredRecipes" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
-            <PagerContent>
-                <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
-                               RowsPerPageString="Lignes par page:" 
-                               PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
-            </PagerContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Name)">Nom</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.Rating)">Évaluation</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x=>x.CreationDate)">Créée le</MudTableSortLabel></MudTh>
-                <MudTh>Notes</MudTh>
-                <MudTh>Livre</MudTh>
-                @if (AuthService.IsAuthenticated)
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+    <MudTextField T="string" Value="@searchTerm" ValueChanged="OnSearchChanged" Placeholder="Rechercher des recettes..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+        <MudSelect T="string" Value="@ratingFilter" ValueChanged="OnRatingChanged" Clearable="true" Dense="true" Label="Évaluation" Class="min-w-200">
+            <MudSelectItem T="string" Value='@("all")'>Toutes</MudSelectItem>
+            <MudSelectItem T="string" Value='@("1")'>1</MudSelectItem>
+            <MudSelectItem T="string" Value='@("2")'>2</MudSelectItem>
+            <MudSelectItem T="string" Value='@("3")'>3</MudSelectItem>
+            <MudSelectItem T="string" Value='@("4")'>4</MudSelectItem>
+            <MudSelectItem T="string" Value='@("5")'>5</MudSelectItem>
+        </MudSelect>
+        <MudSelect T="string" Value="@bookFilter" ValueChanged="OnBookChanged" Clearable="true" Dense="true" Label="Livre" Class="min-w-200">
+            <MudSelectItem T="string" Value='@("all")'>Tous</MudSelectItem>
+            @foreach (var b in books)
+            {
+                <MudSelectItem T="string" Value="@b.Id.ToString()">@b.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="string" Value="@authorFilter" ValueChanged="OnAuthorChanged" Clearable="true" Dense="true" Label="Auteur" Class="min-w-200">
+            <MudSelectItem T="string" Value='@("all")'>Tous</MudSelectItem>
+            @foreach (var a in authors)
+            {
+                <MudSelectItem T="string" Value="@a.Id.ToString()">@a.FullName</MudSelectItem>
+            }
+        </MudSelect>
+    </MudStack>
+
+    <MudTable T="Recipe" ServerData="LoadServerData" Hover="true" Elevation="1" Dense="true" RowsPerPage="20" @ref="table">
+        <PagerContent>
+            <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}"
+                           RowsPerPageString="Lignes par page:"
+                           PageSizeOptions="new int[] { 10, 20, 50 }" />
+        </PagerContent>
+        <HeaderContent>
+            <MudTh>Nom</MudTh>
+            <MudTh>Évaluation</MudTh>
+            <MudTh>Créée le</MudTh>
+            <MudTh>Notes</MudTh>
+            <MudTh>Livre</MudTh>
+            @if (AuthService.IsAuthenticated)
+            {
+                <MudTh>Actions</MudTh>
+            }
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nom">
+                <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Évaluation">
+                <PizzaRating Value="@context.Rating" />
+            </MudTd>
+            <MudTd DataLabel="Créée le">@context.CreationDate.ToShortDateString()</MudTd>
+            <MudTd DataLabel="Notes">@context.Notes</MudTd>
+            <MudTd DataLabel="Livre">
+                @if (context.BookId != null)
                 {
-                    <MudTh>Actions</MudTh>
-                }
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Nom">
-                    <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
-                </MudTd>
-                <MudTd DataLabel="Évaluation">
-                    <PizzaRating Value="@context.Rating" />
-                </MudTd>
-                <MudTd DataLabel="Créée le">@context.CreationDate.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Notes">@context.Notes</MudTd>
-                <MudTd DataLabel="Livre">
-                    @if (context.BookId != null)
+                    var book = books.FirstOrDefault(b => b.Id == context.BookId);
+                    if (book != null)
                     {
-                        var book = books.FirstOrDefault(b => b.Id == context.BookId);
-                        if (book != null)
-                        {
-                            <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
-                        }
+                        <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
                     }
-                </MudTd>
-                @if (AuthService.IsAuthenticated)
-                {
-                    <MudTd>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Supprimer</MudButton>
-                    </MudTd>
                 }
-            </RowTemplate>
-        </MudTable>
-    }
+            </MudTd>
+            @if (AuthService.IsAuthenticated)
+            {
+                <MudTd>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Supprimer</MudButton>
+                </MudTd>
+            }
+        </RowTemplate>
+    </MudTable>
     @if (AuthService.IsAuthenticated)
     {
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter une recette</MudButton>
@@ -74,18 +88,18 @@
 </MudPaper>
 
 @code {
-    private List<Recipe> recipes = new();
+    private MudTable<Recipe>? table;
     private List<Book> books = new();
-    private bool loading = true;
+    private List<Author> authors = new();
     private List<BreadcrumbItem> breadcrumbs = new()
     {
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Recettes", href: "/recipes", disabled: true)
     };
     private string searchTerm = string.Empty;
-    private IEnumerable<Recipe> filteredRecipes => string.IsNullOrWhiteSpace(searchTerm)
-        ? recipes
-        : recipes.Where(r => r.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (r.Notes != null && r.Notes.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+    private string? ratingFilter;
+    private string? bookFilter;
+    private string? authorFilter;
 
     protected override async Task OnInitializedAsync()
     {
@@ -94,21 +108,9 @@
 
     private async Task LoadRecipes()
     {
-        loading = true;
-        try
-        {
-            var bookResponse = await SupabaseClient.From<Book>().Get();
-            books = bookResponse.Models ?? new List<Book>();
-            var response = await SupabaseClient.From<Recipe>().Get();
-            recipes = response.Models ?? new List<Recipe>();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erreur lors du chargement des recettes: {ex.Message}");
-            recipes = new List<Recipe>();
-            books = new List<Book>();
-        }
-        loading = false;
+        books = (await RecipeService.GetBooksAsync())?.ToList() ?? new();
+        authors = (await RecipeService.GetAuthorsAsync())?.ToList() ?? new();
+        await Reload();
     }
 
     private async Task ShowAddDialog()
@@ -134,13 +136,55 @@
 
     private async Task DeleteRecipe(Recipe recipeToDelete)
     {
-        await SupabaseClient.From<Recipe>().Where(x => x.Id == recipeToDelete.Id).Delete();
-        await LoadRecipes();
+        var res = await RecipeService.DeleteAsync(recipeToDelete.Id);
+        if (res.IsSuccess)
+        {
+            await Reload();
+        }
     }
 
-    private void OnSearchChanged(ChangeEventArgs e)
+    private async Task<TableData<Recipe>> LoadServerData(TableState state, CancellationToken token)
     {
-        searchTerm = e.Value?.ToString() ?? string.Empty;
-        StateHasChanged();
+    var page = state.Page + 1;
+    var pageSize = state.PageSize;
+    int? rating = (ratingFilter == "all" || string.IsNullOrWhiteSpace(ratingFilter)) ? null : (int.TryParse(ratingFilter, out var r) ? r : null);
+    int? bookId = (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) ? null : (int.TryParse(bookFilter, out var b) ? b : null);
+    int? authorId = (authorFilter == "all" || string.IsNullOrWhiteSpace(authorFilter)) ? null : (int.TryParse(authorFilter, out var a) ? a : null);
+    var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, authorId, page, pageSize);
+        if (!result.IsSuccess)
+            return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
+        return new TableData<Recipe> { Items = result.Value.Items, TotalItems = result.Value.Total };
+    }
+
+    private async Task Reload()
+    {
+        if (table is not null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+    private async Task OnRatingChanged(string? value)
+    {
+        ratingFilter = value;
+        await Reload();
+    }
+
+    private async Task OnBookChanged(string? value)
+    {
+        bookFilter = value;
+        await Reload();
+    }
+
+    private async Task OnAuthorChanged(string? value)
+    {
+        authorFilter = value;
+        await Reload();
+    }
+
+    private async Task OnSearchChanged(string value)
+    {
+        searchTerm = value;
+        await Reload();
     }
 }
