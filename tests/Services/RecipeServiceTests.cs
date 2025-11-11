@@ -37,8 +37,8 @@ public class RecipeServiceTests
     [Fact]
     public async Task SearchAsync_InvalidRating_IgnoresFilterAndDoesNotThrow()
     {
-    _query.GetAllRecipeIdsAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>()).Returns(new List<int>());
-    var result = await _service.SearchAsync(term: null, rating: 0, bookId: null, authorId: null, page: 1, pageSize: 10, CancellationToken.None);
+        _query.GetAllRecipeIdsAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>()).Returns(new List<int>());
+        var result = await _service.SearchAsync(term: null, rating: 0, bookId: null, authorId: null, page: 1, pageSize: 10, sortLabel: null, sortDescending: false, ct: CancellationToken.None);
         // Without a functional client, the call will likely return Failure from exception; accept either but ensure no exception is thrown.
         Assert.NotNull(result);
     }
@@ -47,8 +47,8 @@ public class RecipeServiceTests
     [InlineData(0), InlineData(-1), InlineData(200)]
     public async Task SearchAsync_PageAndSize_AreClamped(int size)
     {
-    _query.GetAllRecipeIdsAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>()).Returns(new List<int>());
-    var result = await _service.SearchAsync(null, null, null, null, page: -5, pageSize: size);
+        _query.GetAllRecipeIdsAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>()).Returns(new List<int>());
+        var result = await _service.SearchAsync(null, null, null, null, page: -5, pageSize: size, sortLabel: null, sortDescending: false);
         Assert.NotNull(result);
     }
 
