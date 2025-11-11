@@ -21,7 +21,7 @@ public class RecipeService : IRecipeService
         _logger = logger;
     }
 
-    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? authorId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, CancellationToken ct = default)
     {
         try
         {
@@ -58,10 +58,28 @@ public class RecipeService : IRecipeService
             }
 
             var total = ids.Count;
+            
+            // Get all recipes for sorting
+            var allModels = await _q.GetRecipesByIdsAsync(ids.ToList(), ct);
+            
+            // Apply sorting
+            IEnumerable<Recipe> sortedModels = allModels;
+            if (!string.IsNullOrWhiteSpace(sortLabel))
+            {
+                sortedModels = sortLabel.ToLower() switch
+                {
+                    "name" => sortDescending ? allModels.OrderByDescending(r => r.Name) : allModels.OrderBy(r => r.Name),
+                    "rating" => sortDescending ? allModels.OrderByDescending(r => r.Rating) : allModels.OrderBy(r => r.Rating),
+                    "created_at" => sortDescending ? allModels.OrderByDescending(r => r.CreationDate) : allModels.OrderBy(r => r.CreationDate),
+                    _ => allModels
+                };
+            }
+            
+            // Apply pagination after sorting
             var skip = (page - 1) * pageSize;
-            var pageIds = ids.Skip(skip).Take(pageSize).ToList();
-            var models = await _q.GetRecipesByIdsAsync(pageIds, ct);
-            (IReadOnlyList<Recipe> Items, int Total) payload = (models, total);
+            var pagedModels = sortedModels.Skip(skip).Take(pageSize).ToList();
+            
+            (IReadOnlyList<Recipe> Items, int Total) payload = (pagedModels, total);
             return Result<(IReadOnlyList<Recipe> Items, int Total)>.Success(payload);
         }
         catch (Exception ex)

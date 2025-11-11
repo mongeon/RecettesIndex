@@ -43,9 +43,9 @@
                            PageSizeOptions="new int[] { 10, 20, 50 }" />
         </PagerContent>
         <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(r => r.Name)">Nom</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(r => r.Rating)">Évaluation</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(r => r.CreationDate)">Créée le</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="Recipe" SortLabel="name">Nom</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="Recipe" SortLabel="rating">Évaluation</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="Recipe" SortLabel="created_at">Créée le</MudTableSortLabel></MudTh>
             <MudTh>Notes</MudTh>
             <MudTh>Livre</MudTh>
             @if (AuthService.IsAuthenticated)
@@ -145,12 +145,16 @@
 
     private async Task<TableData<Recipe>> LoadServerData(TableState state, CancellationToken token)
     {
-    var page = state.Page + 1;
-    var pageSize = state.PageSize;
-    int? rating = (ratingFilter == "all" || string.IsNullOrWhiteSpace(ratingFilter)) ? null : (int.TryParse(ratingFilter, out var r) ? r : null);
-    int? bookId = (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) ? null : (int.TryParse(bookFilter, out var b) ? b : null);
-    int? authorId = (authorFilter == "all" || string.IsNullOrWhiteSpace(authorFilter)) ? null : (int.TryParse(authorFilter, out var a) ? a : null);
-    var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, authorId, page, pageSize);
+        var page = state.Page + 1;
+        var pageSize = state.PageSize;
+        int? rating = (ratingFilter == "all" || string.IsNullOrWhiteSpace(ratingFilter)) ? null : (int.TryParse(ratingFilter, out var r) ? r : null);
+        int? bookId = (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) ? null : (int.TryParse(bookFilter, out var b) ? b : null);
+        int? authorId = (authorFilter == "all" || string.IsNullOrWhiteSpace(authorFilter)) ? null : (int.TryParse(authorFilter, out var a) ? a : null);
+        
+        var sortLabel = state.SortLabel;
+        var sortDescending = state.SortDirection == SortDirection.Descending;
+        
+        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, authorId, page, pageSize, sortLabel, sortDescending);
         if (!result.IsSuccess)
             return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
         return new TableData<Recipe> { Items = result.Value.Items, TotalItems = result.Value.Total };
