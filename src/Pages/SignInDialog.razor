@@ -63,7 +63,7 @@
         catch (Exception ex)
         {
             // Log the actual exception for debugging but show user-friendly message
-            Logger.LogError(ex, "Login error for user {Email}", email);
+            Logger.LogError(ex, "Login error during sign-in attempt.");
             errorMessage = "Erreur de connexion. Veuillez vérifier vos identifiants et réessayer.";
         }
         finally
