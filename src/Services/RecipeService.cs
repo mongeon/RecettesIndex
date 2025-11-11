@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using RecettesIndex.Configuration;
 using RecettesIndex.Models;
 using RecettesIndex.Services.Abstractions;
 
@@ -13,8 +14,6 @@ public class RecipeService : IRecipeService
     private readonly ILogger<RecipeService>? _logger;
     private readonly ICacheService _cache;
     private readonly Supabase.Client _client;
-
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(3);
 
     public RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client client, ILogger<RecipeService>? logger = null)
     {
@@ -42,7 +41,7 @@ public class RecipeService : IRecipeService
         try
         {
             page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            pageSize = Math.Clamp(pageSize, PaginationConstants.MinPageSize, PaginationConstants.MaxPageSize);
 
             var ids = new HashSet<int>();
 
@@ -84,9 +83,9 @@ public class RecipeService : IRecipeService
             {
                 sortedModels = sortLabel.ToLower() switch
                 {
-                    "name" => sortDescending ? allModels.OrderByDescending(r => r.Name) : allModels.OrderBy(r => r.Name),
-                    "rating" => sortDescending ? allModels.OrderByDescending(r => r.Rating) : allModels.OrderBy(r => r.Rating),
-                    "created_at" => sortDescending ? allModels.OrderByDescending(r => r.CreationDate) : allModels.OrderBy(r => r.CreationDate),
+                    RecipeSortConstants.Name => sortDescending ? allModels.OrderByDescending(r => r.Name) : allModels.OrderBy(r => r.Name),
+                    RecipeSortConstants.Rating => sortDescending ? allModels.OrderByDescending(r => r.Rating) : allModels.OrderBy(r => r.Rating),
+                    RecipeSortConstants.CreatedAt => sortDescending ? allModels.OrderByDescending(r => r.CreationDate) : allModels.OrderBy(r => r.CreationDate),
                     _ => allModels
                 };
             }
@@ -139,6 +138,10 @@ public class RecipeService : IRecipeService
         {
             var res = await _client.From<Recipe>().Insert(recipe);
             var created = res.Models?.FirstOrDefault() ?? recipe;
+            
+            // Invalidate related caches
+            InvalidateRelatedCaches();
+            
             return Result<Recipe>.Success(created);
         }
         catch (Exception ex)
@@ -160,6 +163,10 @@ public class RecipeService : IRecipeService
         {
             var res = await _client.From<Recipe>().Update(recipe);
             var updated = res.Models?.FirstOrDefault() ?? recipe;
+            
+            // Invalidate related caches
+            InvalidateRelatedCaches();
+            
             return Result<Recipe>.Success(updated);
         }
         catch (Exception ex)
@@ -180,6 +187,10 @@ public class RecipeService : IRecipeService
         try
         {
             await _client.From<Recipe>().Where(x => x.Id == id).Delete();
+            
+            // Invalidate related caches
+            InvalidateRelatedCaches();
+            
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -195,7 +206,7 @@ public class RecipeService : IRecipeService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Read-only list of all books.</returns>
     public Task<IReadOnlyList<Book>> GetBooksAsync(CancellationToken ct = default)
-        => _cache.GetOrCreateAsync("books:list", CacheTtl, async _ => await _q.GetBooksAsync(ct), ct);
+        => _cache.GetOrCreateAsync(CacheConstants.BooksListKey, CacheConstants.DefaultTtl, async _ => await _q.GetBooksAsync(ct), ct);
 
     /// <summary>
     /// Retrieves all authors, cached for improved performance.
@@ -203,5 +214,16 @@ public class RecipeService : IRecipeService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Read-only list of all authors.</returns>
     public Task<IReadOnlyList<Author>> GetAuthorsAsync(CancellationToken ct = default)
-        => _cache.GetOrCreateAsync("authors:list", CacheTtl, async _ => await _q.GetAuthorsAsync(ct), ct);
+        => _cache.GetOrCreateAsync(CacheConstants.AuthorsListKey, CacheConstants.DefaultTtl, async _ => await _q.GetAuthorsAsync(ct), ct);
+    
+    /// <summary>
+    /// Invalidates related caches when recipes are modified.
+    /// </summary>
+    private void InvalidateRelatedCaches()
+    {
+        // Note: Books and authors lists rarely change based on recipe modifications,
+        // but we invalidate them to ensure consistency if book/author relationships change
+        _cache.Remove(CacheConstants.BooksListKey);
+        _cache.Remove(CacheConstants.AuthorsListKey);
+    }
 }
