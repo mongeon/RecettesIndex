@@ -1,8 +1,10 @@
 @using MudBlazor
 @using RecettesIndex.Services
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.Extensions.Logging
 @inject AuthService AuthService
 @inject MudBlazor.IDialogService DialogService
+@inject ILogger<SignInDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -61,7 +63,7 @@
         catch (Exception ex)
         {
             // Log the actual exception for debugging but show user-friendly message
-            Console.WriteLine($"Login error: {ex.Message}");
+            Logger.LogError(ex, "Login error for user {Email}", email);
             errorMessage = "Erreur de connexion. Veuillez vérifier vos identifiants et réessayer.";
         }
         finally

@@ -1,6 +1,8 @@
 @using MudBlazor
 @using RecettesIndex.Models
+@using Microsoft.Extensions.Logging
 @inject Supabase.Client SupabaseClient
+@inject ILogger<AddBookDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -80,7 +82,7 @@
         catch (Exception ex)
         {
             errorMessage = $"Erreur: {ex.Message}";
-            Console.WriteLine($"Error adding book: {ex}");
+            Logger.LogError(ex, "Error adding book");
         }
     }
 
@@ -100,7 +102,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error creating book-author associations: {ex.Message}");
+            Logger.LogError(ex, "Error creating book-author associations for book {BookId}", bookId);
             throw;
         }
     }

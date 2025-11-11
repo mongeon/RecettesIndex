@@ -1,9 +1,11 @@
 @page "/books"
 @using MudBlazor
 @using RecettesIndex.Models
+@using Microsoft.Extensions.Logging
 @inject Supabase.Client SupabaseClient
 @inject RecettesIndex.Services.AuthService AuthService
 @inject MudBlazor.IDialogService DialogService
+@inject ILogger<Books> Logger
 
 <PageTitle>Livres</PageTitle>
 
@@ -133,7 +135,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading authors for book {book.Id}: {ex.Message}");
+            Logger.LogError(ex, "Error loading authors for book {BookId}", book.Id);
             book.Authors = new List<Author>();
         }
     }

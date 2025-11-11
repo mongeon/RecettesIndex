@@ -4,6 +4,9 @@ using RecettesIndex.Services.Abstractions;
 
 namespace RecettesIndex.Services;
 
+/// <summary>
+/// Service for managing recipe operations including search, CRUD operations, and related data retrieval.
+/// </summary>
 public class RecipeService : IRecipeService
 {
     private readonly IRecipesQuery _q;
@@ -21,6 +24,19 @@ public class RecipeService : IRecipeService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Searches for recipes based on various criteria with pagination and sorting support.
+    /// </summary>
+    /// <param name="term">Search term to filter by recipe name, book title, or author name.</param>
+    /// <param name="rating">Optional rating filter (1-5).</param>
+    /// <param name="bookId">Optional book ID filter.</param>
+    /// <param name="authorId">Optional author ID filter.</param>
+    /// <param name="page">Page number for pagination (1-based).</param>
+    /// <param name="pageSize">Number of items per page (clamped between 1-100).</param>
+    /// <param name="sortLabel">Column to sort by (name, rating, created_at).</param>
+    /// <param name="sortDescending">Whether to sort in descending order.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Result containing a tuple of recipe list and total count.</returns>
     public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, CancellationToken ct = default)
     {
         try
@@ -89,6 +105,12 @@ public class RecipeService : IRecipeService
         }
     }
 
+    /// <summary>
+    /// Retrieves a recipe by its unique identifier.
+    /// </summary>
+    /// <param name="id">The recipe ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Result containing the recipe if found, or a failure result.</returns>
     public async Task<Result<Recipe>> GetByIdAsync(int id, CancellationToken ct = default)
     {
         try
@@ -105,6 +127,12 @@ public class RecipeService : IRecipeService
         }
     }
 
+    /// <summary>
+    /// Creates a new recipe in the database.
+    /// </summary>
+    /// <param name="recipe">The recipe to create.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Result containing the created recipe with its generated ID.</returns>
     public async Task<Result<Recipe>> CreateAsync(Recipe recipe, CancellationToken ct = default)
     {
         try
@@ -120,6 +148,12 @@ public class RecipeService : IRecipeService
         }
     }
 
+    /// <summary>
+    /// Updates an existing recipe in the database.
+    /// </summary>
+    /// <param name="recipe">The recipe with updated values.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Result containing the updated recipe.</returns>
     public async Task<Result<Recipe>> UpdateAsync(Recipe recipe, CancellationToken ct = default)
     {
         try
@@ -135,6 +169,12 @@ public class RecipeService : IRecipeService
         }
     }
 
+    /// <summary>
+    /// Deletes a recipe from the database.
+    /// </summary>
+    /// <param name="id">The ID of the recipe to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Result indicating success or failure.</returns>
     public async Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default)
     {
         try
@@ -149,9 +189,19 @@ public class RecipeService : IRecipeService
         }
     }
 
+    /// <summary>
+    /// Retrieves all books, cached for improved performance.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of all books.</returns>
     public Task<IReadOnlyList<Book>> GetBooksAsync(CancellationToken ct = default)
         => _cache.GetOrCreateAsync("books:list", CacheTtl, async _ => await _q.GetBooksAsync(ct), ct);
 
+    /// <summary>
+    /// Retrieves all authors, cached for improved performance.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of all authors.</returns>
     public Task<IReadOnlyList<Author>> GetAuthorsAsync(CancellationToken ct = default)
         => _cache.GetOrCreateAsync("authors:list", CacheTtl, async _ => await _q.GetAuthorsAsync(ct), ct);
 }

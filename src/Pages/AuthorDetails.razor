@@ -3,10 +3,12 @@
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 @using Supabase.Postgrest
+@using Microsoft.Extensions.Logging
 @inject Supabase.Client SupabaseClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject AuthService AuthService
+@inject ILogger<AuthorDetails> Logger
 
 <PageTitle>Auteur - @(author?.FullName ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -212,7 +214,7 @@ else
         catch (Exception ex)
         {
             // Add error handling if needed
-            Console.WriteLine($"Error loading author: {ex.Message}");
+            Logger.LogError(ex, "Error loading author {AuthorId}", Id);
         }
         finally
         {

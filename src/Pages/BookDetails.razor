@@ -2,10 +2,12 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using Microsoft.Extensions.Logging
 @inject Supabase.Client SupabaseClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject AuthService AuthService
+@inject ILogger<BookDetails> Logger
 
 <PageTitle>Livre - @(book?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -157,7 +159,7 @@ else
         catch (Exception ex)
         {
             // Add error handling if needed
-            Console.WriteLine($"Error loading book: {ex.Message}");
+            Logger.LogError(ex, "Error loading book {BookId}", Id);
         }
         finally
         {
@@ -192,7 +194,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading authors for book {bookToLoad.Id}: {ex.Message}");
+            Logger.LogError(ex, "Error loading authors for book {BookId}", bookToLoad.Id);
             bookToLoad.Authors = new List<Author>();
         }
     }
