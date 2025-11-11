@@ -1,15 +1,22 @@
+using Microsoft.Extensions.Logging;
 using RecettesIndex.Models;
+using RecettesIndex.Services.Abstractions;
 using Supabase;
 
 namespace RecettesIndex.Services
 {
-    public class BookAuthorService
+    /// <summary>
+    /// Service for managing the many-to-many relationship between books and authors.
+    /// </summary>
+    public class BookAuthorService : IBookAuthorService
     {
         private readonly Client _supabaseClient;
+        private readonly ILogger<BookAuthorService> _logger;
 
-        public BookAuthorService(Client supabaseClient)
+        public BookAuthorService(Client supabaseClient, ILogger<BookAuthorService> logger)
         {
             _supabaseClient = supabaseClient;
+            _logger = logger;
         }
 
         /// <summary>
@@ -31,7 +38,7 @@ namespace RecettesIndex.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error creating book-author associations: {ex.Message}");
+                _logger.LogError(ex, "Error creating book-author associations for book {BookId}", bookId);
                 throw;
             }
         }
@@ -78,7 +85,7 @@ namespace RecettesIndex.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error updating book-author associations: {ex.Message}");
+                _logger.LogError(ex, "Error updating book-author associations for book {BookId}", bookId);
                 throw;
             }
         }
@@ -113,7 +120,7 @@ namespace RecettesIndex.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading authors for book {book.Id}: {ex.Message}");
+                _logger.LogError(ex, "Error loading authors for book {BookId}", book.Id);
                 book.Authors = new List<Author>();
             }
         }

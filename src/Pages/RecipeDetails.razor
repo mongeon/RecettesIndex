@@ -2,10 +2,12 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using Microsoft.Extensions.Logging
 @inject Supabase.Client SupabaseClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject AuthService AuthService
+@inject ILogger<RecipeDetails> Logger
 
 <PageTitle>Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -148,7 +150,7 @@ else
         catch (Exception ex)
         {
             // Add error handling if needed
-            Console.WriteLine($"Error loading recipe: {ex.Message}");
+            Logger.LogError(ex, "Error loading recipe {RecipeId}", Id);
         }
         finally
         {
