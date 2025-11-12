@@ -47,7 +47,18 @@ public static class PaginationConstants
 /// </summary>
 public static class RecipeSortConstants
 {
+    /// <summary>
+    /// Sort by recipe name.
+    /// </summary>
     public const string Name = "name";
+    
+    /// <summary>
+    /// Sort by recipe rating.
+    /// </summary>
     public const string Rating = "rating";
+    
+    /// <summary>
+    /// Sort by recipe creation date.
+    /// </summary>
     public const string CreatedAt = "created_at";
 }
