@@ -88,10 +88,10 @@ public class RecipeModelTests
         // Assert
         // The property itself doesn't enforce validation (by design)
         Assert.Equal(invalidRating, recipe.Rating);
-        
+
         // But validation attribute will catch invalid values during validation
         Assert.True(invalidRating < 1 || invalidRating > 5, "This rating should be outside the valid range");
-        
+
         // See RecipeValidationTests for actual validation testing
     }
 

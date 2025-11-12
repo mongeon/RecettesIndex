@@ -20,7 +20,7 @@ public class NotFoundException : Exception
     /// </summary>
     /// <param name="entityType">The type of the entity that was not found.</param>
     /// <param name="id">The identifier of the entity that was not found.</param>
-    public NotFoundException(string entityType, int id) 
+    public NotFoundException(string entityType, int id)
         : base($"{entityType} with ID {id} was not found")
     {
         EntityType = entityType;
@@ -32,7 +32,7 @@ public class NotFoundException : Exception
     /// </summary>
     /// <param name="entityType">The type of the entity that was not found.</param>
     /// <param name="id">The identifier of the entity that was not found.</param>
-    public NotFoundException(string entityType, string id) 
+    public NotFoundException(string entityType, string id)
         : base($"{entityType} with ID '{id}' was not found")
     {
         EntityType = entityType;

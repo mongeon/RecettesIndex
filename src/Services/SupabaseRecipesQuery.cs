@@ -12,7 +12,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
 {
     private readonly Client _client;
     private readonly ILogger<SupabaseRecipesQuery>? _logger;
-    
+
     public SupabaseRecipesQuery(Client client, ILogger<SupabaseRecipesQuery>? logger = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
@@ -45,7 +45,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
     public async Task<List<int>> GetRecipeIdsByBookIdsAsync(IReadOnlyCollection<int> bookIds, int? rating, CancellationToken ct = default)
     {
         if (bookIds.Count == 0) return new();
-        
+
         try
         {
             IPostgrestTable<Recipe> q = _client.From<Recipe>();
@@ -90,7 +90,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
     public async Task<IReadOnlyList<Recipe>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default)
     {
         if (ids.Count == 0) return Array.Empty<Recipe>();
-        
+
         try
         {
             var res = await _client.From<Recipe>().Filter("id", Operator.In, ids.ToList()).Get(cancellationToken: ct);
@@ -131,7 +131,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
     public async Task<List<int>> GetBookIdsByAuthorIdsAsync(IReadOnlyCollection<int> authorIds, CancellationToken ct = default)
     {
         if (authorIds.Count == 0) return new();
-        
+
         try
         {
             var res = await _client.From<BookAuthor>().Filter("author_id", Operator.In, authorIds.ToList()).Get(cancellationToken: ct);

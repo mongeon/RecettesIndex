@@ -41,11 +41,11 @@ public class RecipeRatingValidationTests
         // Assert
         // Model property still accepts the value (no property-level enforcement)
         Assert.Equal(invalidRating, recipe.Rating);
-        
+
         // But validation attribute will catch this during validation
-        Assert.True(invalidRating < 1 || invalidRating > 5, 
+        Assert.True(invalidRating < 1 || invalidRating > 5,
             $"Rating {invalidRating} should be outside the valid range of 1-5");
-        
+
         // Note: Use RecipeValidationTests for actual validation testing
     }
 
@@ -57,7 +57,7 @@ public class RecipeRatingValidationTests
 
         // Assert
         Assert.Equal(0, recipe.Rating);
-        
+
         // Note: Default value of 0 is outside valid range
         // Validation will fail until rating is set to 1-5
     }
@@ -71,10 +71,10 @@ public class RecipeRatingValidationTests
     public void Recipe_RatingValues_RepresentQualityLevels(int rating, string qualityLevel)
     {
         // Arrange
-        var recipe = new Recipe 
-        { 
+        var recipe = new Recipe
+        {
             Name = $"{qualityLevel} Recipe",
-            Rating = rating 
+            Rating = rating
         };
 
         // Act & Assert
@@ -105,7 +105,7 @@ public class RecipeRatingValidationTests
 
     [Theory]
     [InlineData(1, 1)]
-    [InlineData(2, 2)] 
+    [InlineData(2, 2)]
     [InlineData(3, 3)]
     [InlineData(4, 4)]
     [InlineData(5, 5)]
