@@ -8,7 +8,7 @@ public class ValidationException : Exception
     /// <summary>
     /// Gets the list of validation errors.
     /// </summary>
-    public List<string> Errors { get; set; } = new();
+    public List<string> Errors { get; init; } = new();
 
     /// <summary>
     /// Initializes a new instance of the ValidationException class with a specified error message.
