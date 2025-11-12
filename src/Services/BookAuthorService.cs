@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using RecettesIndex.Models;
 using RecettesIndex.Services.Abstractions;
+using RecettesIndex.Services.Exceptions;
 using Supabase;
 
 namespace RecettesIndex.Services
@@ -36,10 +37,15 @@ namespace RecettesIndex.Services
 
                 await _supabaseClient.From<BookAuthor>().Insert(bookAuthors);
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error creating book-author associations for book {BookId}", bookId);
+                throw new ServiceException("Network error. Please check your connection.", ex);
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating book-author associations for book {BookId}", bookId);
-                throw;
+                _logger.LogError(ex, "Unexpected error creating book-author associations for book {BookId}", bookId);
+                throw new ServiceException($"Failed to create book-author associations for book {bookId}", ex);
             }
         }
 
@@ -83,10 +89,15 @@ namespace RecettesIndex.Services
                     await _supabaseClient.From<BookAuthor>().Insert(bookAuthorsToAdd);
                 }
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error updating book-author associations for book {BookId}", bookId);
+                throw new ServiceException("Network error. Please check your connection.", ex);
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating book-author associations for book {BookId}", bookId);
-                throw;
+                _logger.LogError(ex, "Unexpected error updating book-author associations for book {BookId}", bookId);
+                throw new ServiceException($"Failed to update book-author associations for book {bookId}", ex);
             }
         }
 
@@ -118,9 +129,14 @@ namespace RecettesIndex.Services
                     book.Authors = new List<Author>();
                 }
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error loading authors for book {BookId}", book.Id);
+                book.Authors = new List<Author>();
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading authors for book {BookId}", book.Id);
+                _logger.LogError(ex, "Unexpected error loading authors for book {BookId}", book.Id);
                 book.Authors = new List<Author>();
             }
         }
