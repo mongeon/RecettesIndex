@@ -39,7 +39,7 @@ graph TB
         H[GitHub Actions CI/CD]
         I[GitHub MCP Server]
         J[xUnit Testing Framework]
-        K[109+ Unit Tests]
+        K[243 Unit Tests]
     end
     
     subgraph "Quality Assurance"
@@ -276,7 +276,7 @@ dotnet clean && dotnet build
 # Run with specific port
 dotnet run --urls "http://localhost:5030"
 
-# Run tests (comprehensive unit test suite - 109+ tests)
+# Run tests (comprehensive unit test suite - 243 tests)
 dotnet test
 
 # Run tests with detailed output

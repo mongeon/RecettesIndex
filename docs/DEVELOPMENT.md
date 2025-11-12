@@ -318,7 +318,7 @@ git commit -m "Fix rating validation bug
 
 ### Test Structure
 
-We maintain a comprehensive unit test suite with 109+ tests covering all business logic and validation rules. Tests are organized by functionality:
+We maintain a comprehensive unit test suite with **243 tests** covering all business logic and validation rules. Tests are organized by functionality:
 
 ```
 tests/
