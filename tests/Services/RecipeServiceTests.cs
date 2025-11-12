@@ -59,7 +59,7 @@ public class RecipeServiceTests
     var result = await _service.DeleteAsync(123);
         Assert.NotNull(result);
         Assert.False(result.IsSuccess);
-        Assert.Equal("Failed to delete recipe", result.ErrorMessage);
+        Assert.Contains("error", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

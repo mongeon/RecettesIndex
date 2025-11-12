@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
+using RecettesIndex.Configuration;
 using RecettesIndex.Models;
 using RecettesIndex.Services.Abstractions;
+using RecettesIndex.Services.Exceptions;
 
 namespace RecettesIndex.Services;
 
@@ -96,10 +98,20 @@ public class RecipeService : IRecipeService
             (IReadOnlyList<Recipe> Items, int Total) payload = (pagedModels, total);
             return Result<(IReadOnlyList<Recipe> Items, int Total)>.Success(payload);
         }
+        catch (ServiceException ex)
+        {
+            _logger?.LogError(ex, "Service error during recipe search");
+            return Result<(IReadOnlyList<Recipe> Items, int Total)>.Failure(ex.Message);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error during recipe search");
+            return Result<(IReadOnlyList<Recipe> Items, int Total)>.Failure("Network error. Please check your connection.");
+        }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Recipe search failed");
-            return Result<(IReadOnlyList<Recipe> Items, int Total)>.Failure("Failed to load recipes");
+            _logger?.LogError(ex, "Unexpected error during recipe search");
+            return Result<(IReadOnlyList<Recipe> Items, int Total)>.Failure("An unexpected error occurred while searching recipes");
         }
     }
 
@@ -115,13 +127,28 @@ public class RecipeService : IRecipeService
         {
             var list = await _q.GetRecipesByIdsAsync(new[] { id }, ct);
             var model = list.FirstOrDefault();
-            if (model is null) return Result<Recipe>.Failure("Not found");
+            if (model is null) throw new NotFoundException("Recipe", id);
             return Result<Recipe>.Success(model);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger?.LogWarning("Recipe not found: {RecipeId}", id);
+            return Result<Recipe>.Failure(ex.Message);
+        }
+        catch (ServiceException ex)
+        {
+            _logger?.LogError(ex, "Service error while getting recipe by id: {RecipeId}", id);
+            return Result<Recipe>.Failure(ex.Message);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while getting recipe by id: {RecipeId}", id);
+            return Result<Recipe>.Failure("Network error. Please check your connection.");
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Get recipe by id failed: {RecipeId}", id);
-            return Result<Recipe>.Failure("Failed to load recipe");
+            _logger?.LogError(ex, "Unexpected error while getting recipe by id: {RecipeId}", id);
+            return Result<Recipe>.Failure("An unexpected error occurred while loading the recipe");
         }
     }
 
@@ -143,10 +170,15 @@ public class RecipeService : IRecipeService
             
             return Result<Recipe>.Success(created);
         }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while creating recipe");
+            return Result<Recipe>.Failure("Network error. Please check your connection.");
+        }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Create recipe failed");
-            return Result<Recipe>.Failure("Failed to create recipe");
+            _logger?.LogError(ex, "Unexpected error while creating recipe");
+            return Result<Recipe>.Failure("An unexpected error occurred while creating the recipe");
         }
     }
 
@@ -168,10 +200,15 @@ public class RecipeService : IRecipeService
             
             return Result<Recipe>.Success(updated);
         }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while updating recipe: {RecipeId}", recipe.Id);
+            return Result<Recipe>.Failure("Network error. Please check your connection.");
+        }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Update recipe failed: {RecipeId}", recipe.Id);
-            return Result<Recipe>.Failure("Failed to update recipe");
+            _logger?.LogError(ex, "Unexpected error while updating recipe: {RecipeId}", recipe.Id);
+            return Result<Recipe>.Failure("An unexpected error occurred while updating the recipe");
         }
     }
 
@@ -192,10 +229,15 @@ public class RecipeService : IRecipeService
             
             return Result<bool>.Success(true);
         }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while deleting recipe: {RecipeId}", id);
+            return Result<bool>.Failure("Network error. Please check your connection.");
+        }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Delete recipe failed: {RecipeId}", id);
-            return Result<bool>.Failure("Failed to delete recipe");
+            _logger?.LogError(ex, "Unexpected error while deleting recipe: {RecipeId}", id);
+            return Result<bool>.Failure("An unexpected error occurred while deleting the recipe");
         }
     }
 
