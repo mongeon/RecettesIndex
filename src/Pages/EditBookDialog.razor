@@ -1,9 +1,10 @@
 @using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
-@using Microsoft.Extensions.Logging
-@inject Supabase.Client SupabaseClient
+@using Supabase
 @inject ILogger<EditBookDialog> Logger
+@inject Client SupabaseClient
 @code {
     [Parameter] public Book BookToEdit { get; set; } = new();
     [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }

@@ -1,14 +1,16 @@
 @page "/authors/{Id:int}"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 @using Supabase.Postgrest
-@using Microsoft.Extensions.Logging
-@inject Supabase.Client SupabaseClient
-@inject NavigationManager NavigationManager
-@inject IDialogService DialogService
+@using SupabaseClient = Supabase.Client
 @inject AuthService AuthService
+@inject IDialogService DialogService
 @inject ILogger<AuthorDetails> Logger
+@inject NavigationManager NavigationManager
+@inject SupabaseClient SupabaseClient
 
 <PageTitle>Auteur - @(author?.FullName ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />

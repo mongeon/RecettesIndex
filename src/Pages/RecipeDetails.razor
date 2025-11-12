@@ -1,13 +1,15 @@
 @page "/recipes/{Id:int}"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
-@using Microsoft.Extensions.Logging
-@inject Supabase.Client SupabaseClient
-@inject NavigationManager NavigationManager
-@inject IDialogService DialogService
+@using Supabase
 @inject AuthService AuthService
+@inject IDialogService DialogService
 @inject ILogger<RecipeDetails> Logger
+@inject NavigationManager NavigationManager
+@inject Client SupabaseClient
 
 <PageTitle>Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />

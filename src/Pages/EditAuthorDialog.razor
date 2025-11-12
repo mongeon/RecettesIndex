@@ -1,7 +1,8 @@
 @using Microsoft.AspNetCore.Components
 @using MudBlazor
 @using RecettesIndex.Models
-@inject Supabase.Client SupabaseClient
+@using Supabase
+@inject Client SupabaseClient
 @code {
     [Parameter] public Author AuthorToEdit { get; set; } = new();
     [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }

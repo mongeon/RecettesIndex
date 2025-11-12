@@ -1,8 +1,9 @@
+@using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
-@using Microsoft.Extensions.Logging
-@inject Supabase.Client SupabaseClient
+@using Supabase
 @inject ILogger<AddBookDialog> Logger
+@inject Client SupabaseClient
 
 <MudDialog>
     <DialogContent>

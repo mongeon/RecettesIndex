@@ -10,13 +10,13 @@ namespace RecettesIndex.Services;
 
 public class SupabaseRecipesQuery : IRecipesQuery
 {
-    private readonly Client _client;
-    private readonly ILogger<SupabaseRecipesQuery>? _logger;
-    
-    public SupabaseRecipesQuery(Client client, ILogger<SupabaseRecipesQuery>? logger = null)
+    private readonly Client _supabaseClient;
+    private readonly ILogger<SupabaseRecipesQuery> _logger;
+
+    public SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipesQuery> logger)
     {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-        _logger = logger;
+        _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<List<int>> GetRecipeIdsByNameAsync(string term, int? rating, CancellationToken ct = default)
@@ -24,7 +24,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
         try
         {
             var like = $"%{term}%";
-            IPostgrestTable<Recipe> q = _client.From<Recipe>();
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             q = q.Filter("name", Operator.ILike, like);
             if (rating is >= 1 and <= 5) q = q.Filter("rating", Operator.Equals, rating.Value);
             var res = await q.Get(cancellationToken: ct);
@@ -48,7 +48,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
         
         try
         {
-            IPostgrestTable<Recipe> q = _client.From<Recipe>();
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             q = q.Filter("book_id", Operator.In, bookIds.ToList());
             if (rating is >= 1 and <= 5) q = q.Filter("rating", Operator.Equals, rating.Value);
             var res = await q.Get(cancellationToken: ct);
@@ -70,7 +70,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
     {
         try
         {
-            IPostgrestTable<Recipe> q = _client.From<Recipe>();
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             if (rating is >= 1 and <= 5) q = q.Filter("rating", Operator.Equals, rating.Value);
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? new List<int>();
@@ -93,7 +93,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
         
         try
         {
-            var res = await _client.From<Recipe>().Filter("id", Operator.In, ids.ToList()).Get(cancellationToken: ct);
+            var res = await _supabaseClient.From<Recipe>().Filter("id", Operator.In, ids.ToList()).Get(cancellationToken: ct);
             return (IReadOnlyList<Recipe>)(res.Models ?? new List<Recipe>());
         }
         catch (HttpRequestException ex)
@@ -113,7 +113,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
         try
         {
             var like = $"%{term}%";
-            var res = await _client.From<Book>().Filter("title", Operator.ILike, like).Get(cancellationToken: ct);
+            var res = await _supabaseClient.From<Book>().Filter("title", Operator.ILike, like).Get(cancellationToken: ct);
             return res.Models?.Select(b => b.Id).Distinct().ToList() ?? new List<int>();
         }
         catch (HttpRequestException ex)
@@ -134,7 +134,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
         
         try
         {
-            var res = await _client.From<BookAuthor>().Filter("author_id", Operator.In, authorIds.ToList()).Get(cancellationToken: ct);
+            var res = await _supabaseClient.From<BookAuthor>().Filter("author_id", Operator.In, authorIds.ToList()).Get(cancellationToken: ct);
             return res.Models?.Select(ba => ba.BookId).Distinct().ToList() ?? new List<int>();
         }
         catch (HttpRequestException ex)
@@ -153,7 +153,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
     {
         try
         {
-            var res = await _client.From<BookAuthor>().Filter("author_id", Operator.Equals, authorId).Get(cancellationToken: ct);
+            var res = await _supabaseClient.From<BookAuthor>().Filter("author_id", Operator.Equals, authorId).Get(cancellationToken: ct);
             return res.Models?.Select(ba => ba.BookId).Distinct().ToList() ?? new List<int>();
         }
         catch (HttpRequestException ex)
@@ -173,8 +173,8 @@ public class SupabaseRecipesQuery : IRecipesQuery
         try
         {
             var like = $"%{term}%";
-            var first = await _client.From<Author>().Filter("first_name", Operator.ILike, like).Get(cancellationToken: ct);
-            var last = await _client.From<Author>().Filter("last_name", Operator.ILike, like).Get(cancellationToken: ct);
+            var first = await _supabaseClient.From<Author>().Filter("first_name", Operator.ILike, like).Get(cancellationToken: ct);
+            var last = await _supabaseClient.From<Author>().Filter("last_name", Operator.ILike, like).Get(cancellationToken: ct);
             var firstList = first.Models ?? new List<Author>();
             var lastList = last.Models ?? new List<Author>();
             return firstList.Concat(lastList).Select(a => a.Id).Distinct().ToList();
@@ -195,7 +195,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
     {
         try
         {
-            var res = await _client.From<Book>().Get(cancellationToken: ct);
+            var res = await _supabaseClient.From<Book>().Get(cancellationToken: ct);
             return (IReadOnlyList<Book>)(res.Models ?? new List<Book>());
         }
         catch (HttpRequestException ex)
@@ -214,7 +214,7 @@ public class SupabaseRecipesQuery : IRecipesQuery
     {
         try
         {
-            var res = await _client.From<Author>().Get(cancellationToken: ct);
+            var res = await _supabaseClient.From<Author>().Get(cancellationToken: ct);
             return (IReadOnlyList<Author>)(res.Models ?? new List<Author>());
         }
         catch (HttpRequestException ex)
@@ -229,4 +229,5 @@ public class SupabaseRecipesQuery : IRecipesQuery
         }
     }
 }
+
 

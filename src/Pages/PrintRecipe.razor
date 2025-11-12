@@ -1,8 +1,10 @@
 @page "/recipes/{id:int}/print"
+@using Microsoft.JSInterop
 @using MudBlazor
 @using RecettesIndex.Models
-@inject Supabase.Client SupabaseClient
+@using Supabase
 @inject IJSRuntime JSRuntime
+@inject Client SupabaseClient
 
 <PageTitle>Imprimer Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 

@@ -1,8 +1,8 @@
 @using Microsoft.AspNetCore.Components
 @using MudBlazor
 @using RecettesIndex.Models
-@inject Supabase.Client SupabaseClient
-@using System.Linq;
+@using Supabase
+@inject Client SupabaseClient
 @code {
     [Parameter] public Recipe RecipeToEdit { get; set; } = new();
 

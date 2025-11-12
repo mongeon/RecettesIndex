@@ -1,9 +1,11 @@
 @page "/authors"
 @using MudBlazor
 @using RecettesIndex.Models
-@inject Supabase.Client SupabaseClient
-@inject RecettesIndex.Services.AuthService AuthService
-@inject MudBlazor.IDialogService DialogService
+@using RecettesIndex.Services
+@using Supabase
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject Client SupabaseClient
 
 <PageTitle>Auteurs</PageTitle>
 
