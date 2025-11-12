@@ -9,12 +9,12 @@ public static class CacheConstants
     /// Default time-to-live for cache entries.
     /// </summary>
     public static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(3);
-    
+
     /// <summary>
     /// Cache key for books list.
     /// </summary>
     public const string BooksListKey = "books:list";
-    
+
     /// <summary>
     /// Cache key for authors list.
     /// </summary>
@@ -30,12 +30,12 @@ public static class PaginationConstants
     /// Minimum allowed page size.
     /// </summary>
     public const int MinPageSize = 1;
-    
+
     /// <summary>
     /// Maximum allowed page size to prevent excessive data loading.
     /// </summary>
     public const int MaxPageSize = 100;
-    
+
     /// <summary>
     /// Default page size for data grids and lists.
     /// </summary>
@@ -51,12 +51,12 @@ public static class RecipeSortConstants
     /// Sort by recipe name.
     /// </summary>
     public const string Name = "name";
-    
+
     /// <summary>
     /// Sort by recipe rating.
     /// </summary>
     public const string Rating = "rating";
-    
+
     /// <summary>
     /// Sort by recipe creation date.
     /// </summary>

@@ -15,45 +15,45 @@ namespace RecettesIndex.Models
         /// </summary>
         [PrimaryKey("id")]
         public int Id { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the name of the recipe.
         /// </summary>
         [Column("name")]
         [Required(ErrorMessage = "The Name field is required.")]
         public string Name { get; set; } = string.Empty;
-        
+
         /// <summary>
         /// Gets or sets the rating of the recipe (1-5 stars).
         /// </summary>
         [Column("rating")]
         [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
         public int Rating { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the creation date of the recipe.
         /// </summary>
         [Column("created_at")]
         public DateTime CreationDate { get; set; }
-        
+
         /// <summary>
         /// Gets or sets optional notes or modifications for the recipe.
         /// </summary>
         [Column("notes")]
         public string? Notes { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the ID of the book this recipe is from, if applicable.
         /// </summary>
         [Column("book_id")]
         public int? BookId { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the page number where the recipe can be found in the book.
         /// </summary>
         [Column("page")]
         public int? BookPage { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the book this recipe is associated with.
         /// </summary>
@@ -72,7 +72,7 @@ namespace RecettesIndex.Models
         /// </summary>
         [PrimaryKey("id")]
         public int Id { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the title of the book.
         /// </summary>
@@ -109,7 +109,7 @@ namespace RecettesIndex.Models
         /// </summary>
         [Column("first_name")]
         public string Name { get; set; } = string.Empty;
-        
+
         /// <summary>
         /// Gets or sets the last name of the author.
         /// </summary>

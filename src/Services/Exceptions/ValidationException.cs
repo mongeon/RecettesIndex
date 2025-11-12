@@ -14,7 +14,7 @@ public class ValidationException : Exception
     /// Initializes a new instance of the ValidationException class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the validation error.</param>
-    public ValidationException(string message) : base(message) 
+    public ValidationException(string message) : base(message)
     {
         Errors.Add(message);
     }

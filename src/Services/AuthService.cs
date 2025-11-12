@@ -6,7 +6,7 @@ namespace RecettesIndex.Services
     public class AuthService
     {
         private readonly ISupabaseAuthWrapper _authWrapper;
-        
+
         public AuthService(ISupabaseAuthWrapper authWrapper)
         {
             _authWrapper = authWrapper;
@@ -37,7 +37,7 @@ namespace RecettesIndex.Services
         /// Gets a value indicating whether a user is currently authenticated.
         /// </summary>
         public bool IsAuthenticated => _authWrapper.CurrentUser != null;
-        
+
         /// <summary>
         /// Gets the email address of the currently authenticated user, or null if not authenticated.
         /// </summary>
