@@ -197,7 +197,7 @@ public class CacheServiceTests
     {
         // Arrange
         var key = "cancel-key";
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         var tokenPassed = false;
 
         Task<string> Factory(CancellationToken ct)
