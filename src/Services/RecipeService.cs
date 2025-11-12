@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using RecettesIndex.Configuration;
 using RecettesIndex.Models;
 using RecettesIndex.Services.Abstractions;
 using RecettesIndex.Services.Exceptions;
