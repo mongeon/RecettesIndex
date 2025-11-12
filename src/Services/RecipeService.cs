@@ -73,10 +73,10 @@ public class RecipeService : IRecipeService
             }
 
             var total = ids.Count;
-            
+
             // Get all recipes for sorting
             var allModels = await _q.GetRecipesByIdsAsync(ids.ToList(), ct);
-            
+
             // Apply sorting
             IEnumerable<Recipe> sortedModels = allModels;
             if (!string.IsNullOrWhiteSpace(sortLabel))
@@ -89,11 +89,11 @@ public class RecipeService : IRecipeService
                     _ => allModels
                 };
             }
-            
+
             // Apply pagination after sorting
             var skip = (page - 1) * pageSize;
             var pagedModels = sortedModels.Skip(skip).Take(pageSize).ToList();
-            
+
             (IReadOnlyList<Recipe> Items, int Total) payload = (pagedModels, total);
             return Result<(IReadOnlyList<Recipe> Items, int Total)>.Success(payload);
         }
@@ -163,10 +163,10 @@ public class RecipeService : IRecipeService
         {
             var res = await _supabaseClient.From<Recipe>().Insert(recipe);
             var created = res.Models?.FirstOrDefault() ?? recipe;
-            
+
             // Invalidate related caches
             InvalidateRelatedCaches();
-            
+
             return Result<Recipe>.Success(created);
         }
         catch (HttpRequestException ex)
@@ -193,10 +193,10 @@ public class RecipeService : IRecipeService
         {
             var res = await _supabaseClient.From<Recipe>().Update(recipe);
             var updated = res.Models?.FirstOrDefault() ?? recipe;
-            
+
             // Invalidate related caches
             InvalidateRelatedCaches();
-            
+
             return Result<Recipe>.Success(updated);
         }
         catch (HttpRequestException ex)
@@ -225,7 +225,7 @@ public class RecipeService : IRecipeService
             
             // Invalidate related caches
             InvalidateRelatedCaches();
-            
+
             return Result<bool>.Success(true);
         }
         catch (HttpRequestException ex)
@@ -255,7 +255,7 @@ public class RecipeService : IRecipeService
     /// <returns>Read-only list of all authors.</returns>
     public Task<IReadOnlyList<Author>> GetAuthorsAsync(CancellationToken ct = default)
         => _cache.GetOrCreateAsync(CacheConstants.AuthorsListKey, CacheConstants.DefaultTtl, async _ => await _q.GetAuthorsAsync(ct), ct);
-    
+
     /// <summary>
     /// Invalidates related caches when recipes are modified.
     /// </summary>

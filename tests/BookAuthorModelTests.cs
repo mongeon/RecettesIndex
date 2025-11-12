@@ -100,10 +100,10 @@ public class BookAuthorModelTests
         // Assert
         Assert.Equal(1, bookAuthor1.BookId);
         Assert.Equal(1, bookAuthor1.AuthorId);
-        
+
         Assert.Equal(1, bookAuthor2.BookId);
         Assert.Equal(2, bookAuthor2.AuthorId);
-        
+
         Assert.Equal(2, bookAuthor3.BookId);
         Assert.Equal(1, bookAuthor3.AuthorId);
     }

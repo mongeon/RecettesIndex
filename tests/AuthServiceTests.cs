@@ -96,7 +96,7 @@ namespace RecettesIndex.Tests
             // Act & Assert
             var ex = await Assert.ThrowsAsync<Exception>(
                 async () => await _authService.SignInAsync(email, password));
-            
+
             Assert.Equal("Network error", ex.Message);
         }
 

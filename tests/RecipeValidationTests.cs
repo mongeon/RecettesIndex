@@ -22,10 +22,10 @@ public class RecipeValidationTests
     public void Recipe_ValidRating_PassesValidation(int validRating)
     {
         // Arrange
-        var recipe = new Recipe 
-        { 
+        var recipe = new Recipe
+        {
             Name = "Test Recipe",
-            Rating = validRating 
+            Rating = validRating
         };
 
         // Act
@@ -44,10 +44,10 @@ public class RecipeValidationTests
     public void Recipe_InvalidRating_FailsValidation(int invalidRating)
     {
         // Arrange
-        var recipe = new Recipe 
-        { 
+        var recipe = new Recipe
+        {
             Name = "Test Recipe",
-            Rating = invalidRating 
+            Rating = invalidRating
         };
 
         // Act
@@ -166,8 +166,8 @@ public class RecipeValidationTests
     public void Recipe_ValidationError_ContainsCorrectMemberName()
     {
         // Arrange
-        var recipe = new Recipe 
-        { 
+        var recipe = new Recipe
+        {
             Name = "Test Recipe",
             Rating = 0 // Invalid
         };

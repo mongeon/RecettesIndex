@@ -27,7 +27,7 @@ public class RecipeServiceTests
         // Therefore, for this initial PR, we validate control flow using a tiny derived class that exposes protected members is not applicable.
         // Compromise: construct RecipeService with real dependencies but won't execute calls; test failure path logic and parameter guards.
 
-    _client = new Supabase.Client("http://localhost", "public-anon-key", new SupabaseOptions());
+        _client = new Supabase.Client("http://localhost", "public-anon-key", new SupabaseOptions());
         _cache = new CacheService();
         _query = Substitute.For<IRecipesQuery>();
         _logger = Substitute.For<ILogger<RecipeService>>();
@@ -56,7 +56,7 @@ public class RecipeServiceTests
     public async Task DeleteAsync_ReturnsFailureOnException()
     {
         // Arrange: Client.Delete will throw (default NSubstitute behavior for unexpected calls), triggering failure handling
-    var result = await _service.DeleteAsync(123);
+        var result = await _service.DeleteAsync(123);
         Assert.NotNull(result);
         Assert.False(result.IsSuccess);
         Assert.Contains("error", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -65,10 +65,10 @@ public class RecipeServiceTests
     [Fact]
     public async Task GetBooksAndAuthors_UsesCache_NoThrow()
     {
-    _query.GetBooksAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<Book>());
-    _query.GetAuthorsAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<Author>());
-    var books = await _service.GetBooksAsync();
-    var authors = await _service.GetAuthorsAsync();
+        _query.GetBooksAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<Book>());
+        _query.GetAuthorsAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<Author>());
+        var books = await _service.GetBooksAsync();
+        var authors = await _service.GetAuthorsAsync();
         Assert.NotNull(books);
         Assert.NotNull(authors);
     }

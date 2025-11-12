@@ -80,10 +80,10 @@ public class CacheServiceTests
 
         // Act
         var result1 = await _cache.GetOrCreateAsync(key, shortTtl, Factory);
-        
+
         // Wait for cache to expire
         await Task.Delay(100);
-        
+
         var result2 = await _cache.GetOrCreateAsync(key, shortTtl, Factory);
 
         // Assert
