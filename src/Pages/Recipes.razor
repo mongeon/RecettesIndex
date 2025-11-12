@@ -1,9 +1,11 @@
 @page "/recipes"
-@using RecettesIndex.Models
 @using MudBlazor
-@inject RecettesIndex.Services.AuthService AuthService
-@inject RecettesIndex.Services.Abstractions.IRecipeService RecipeService
-@inject MudBlazor.IDialogService DialogService
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject IRecipeService RecipeService
 
 <PageTitle>Recettes</PageTitle>
 

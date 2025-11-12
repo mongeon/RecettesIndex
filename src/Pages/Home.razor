@@ -1,11 +1,13 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
-@inject Supabase.Client SupabaseClient
-@inject MudBlazor.IDialogService DialogService
-@inject NavigationManager NavigationManager
+@using Supabase
 @inject AuthService AuthService
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject Client SupabaseClient
 
 <PageTitle>Mes Recettes - Votre Collection de Recettes</PageTitle>
 

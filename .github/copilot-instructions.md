@@ -701,6 +701,114 @@ Discovery → Collection → Organization → Usage → Sharing
 
 ## Coding Standards
 
+### 📏 Code Standardization (Updated November 2025)
+
+The codebase follows strict standardization patterns enforced by `.editorconfig`:
+
+#### Namespace Declarations
+- **Always use file-scoped namespaces** (C# 10+):
+```csharp
+// ✅ Correct
+namespace RecettesIndex.Services;
+
+public class RecipeService : IRecipeService
+{
+    // Implementation
+}
+
+// ❌ Incorrect - Do not use block-scoped namespaces
+namespace RecettesIndex.Services
+{
+    public class RecipeService : IRecipeService
+    {
+        // Implementation
+    }
+}
+```
+
+#### Constructor Parameter Validation
+- **Always validate dependencies with ArgumentNullException**:
+```csharp
+// ✅ Correct
+public RecipeService(IRecipesQuery query, ICacheService cache, Client supabaseClient, ILogger<RecipeService> logger)
+{
+    _query = query ?? throw new ArgumentNullException(nameof(query));
+    _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+}
+
+// ❌ Incorrect - Missing null validation
+public RecipeService(IRecipesQuery query, ICacheService cache, Client supabaseClient, ILogger<RecipeService> logger)
+{
+    _query = query;
+    _cache = cache;
+    _supabaseClient = supabaseClient;
+    _logger = logger;
+}
+```
+
+#### Logger Parameters
+- **Loggers are always required, never optional**:
+```csharp
+// ✅ Correct
+public RecipeService(Client supabaseClient, ILogger<RecipeService> logger)
+
+// ❌ Incorrect - Do not make loggers optional
+public RecipeService(Client supabaseClient, ILogger<RecipeService>? logger = null)
+```
+
+#### Private Field Naming
+- **Use descriptive names for Supabase client**:
+```csharp
+// ✅ Correct
+private readonly Client _supabaseClient;
+
+// ❌ Incorrect - Too generic
+private readonly Client _client;
+```
+
+#### Razor Component Directives
+- **Standard ordering: @page → @using (alphabetical) → @inject (alphabetical)**:
+```razor
+@* ✅ Correct *@
+@page "/recipes"
+@using Microsoft.Extensions.Logging
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using Supabase
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject ILogger<Recipes> Logger
+@inject Client SupabaseClient
+
+@* ❌ Incorrect - Wrong order and fully-qualified names *@
+@page "/recipes"
+@using MudBlazor
+@inject Supabase.Client SupabaseClient
+@using RecettesIndex.Models
+@inject RecettesIndex.Services.AuthService AuthService
+@inject MudBlazor.IDialogService DialogService
+```
+
+- **Use @using directives with simple type names, not fully-qualified names**:
+```razor
+@* ✅ Correct *@
+@using Supabase
+@inject Client SupabaseClient
+
+@* ❌ Incorrect *@
+@inject Supabase.Client SupabaseClient
+```
+
+#### Coding Style Enforcement
+- All C# files follow `.editorconfig` rules
+- File-scoped namespaces: **required** (warning level)
+- Private fields: must use `_camelCase` (warning level)
+- Interfaces: must start with `I` (warning level)
+- Use `dotnet format` before committing to ensure compliance
+
 ### C# Conventions
 - Use nullable reference types throughout
 - Enable implicit usings

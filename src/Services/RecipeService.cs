@@ -11,16 +11,16 @@ namespace RecettesIndex.Services;
 public class RecipeService : IRecipeService
 {
     private readonly IRecipesQuery _q;
-    private readonly ILogger<RecipeService>? _logger;
+    private readonly ILogger<RecipeService> _logger;
     private readonly ICacheService _cache;
-    private readonly Supabase.Client _client;
+    private readonly Supabase.Client _supabaseClient;
 
-    public RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client client, ILogger<RecipeService>? logger = null)
+    public RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client supabaseClient, ILogger<RecipeService> logger)
     {
         _q = q ?? throw new ArgumentNullException(nameof(q));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-        _logger = logger;
+        _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -161,7 +161,7 @@ public class RecipeService : IRecipeService
     {
         try
         {
-            var res = await _client.From<Recipe>().Insert(recipe);
+            var res = await _supabaseClient.From<Recipe>().Insert(recipe);
             var created = res.Models?.FirstOrDefault() ?? recipe;
 
             // Invalidate related caches
@@ -191,7 +191,7 @@ public class RecipeService : IRecipeService
     {
         try
         {
-            var res = await _client.From<Recipe>().Update(recipe);
+            var res = await _supabaseClient.From<Recipe>().Update(recipe);
             var updated = res.Models?.FirstOrDefault() ?? recipe;
 
             // Invalidate related caches
@@ -221,8 +221,8 @@ public class RecipeService : IRecipeService
     {
         try
         {
-            await _client.From<Recipe>().Where(x => x.Id == id).Delete();
-
+            await _supabaseClient.From<Recipe>().Where(x => x.Id == id).Delete();
+            
             // Invalidate related caches
             InvalidateRelatedCaches();
 

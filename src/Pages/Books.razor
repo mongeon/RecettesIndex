@@ -1,11 +1,13 @@
 @page "/books"
+@using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
-@using Microsoft.Extensions.Logging
-@inject Supabase.Client SupabaseClient
-@inject RecettesIndex.Services.AuthService AuthService
-@inject MudBlazor.IDialogService DialogService
+@using RecettesIndex.Services
+@using Supabase
+@inject AuthService AuthService
+@inject IDialogService DialogService
 @inject ILogger<Books> Logger
+@inject Client SupabaseClient
 
 <PageTitle>Livres</PageTitle>
 

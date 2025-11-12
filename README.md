@@ -92,7 +92,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 
 ## 🧪 Testing
 
-This project maintains comprehensive unit test coverage with 109+ tests across all business logic:
+This project maintains comprehensive unit test coverage with **243 tests** across all business logic:
 
 ```bash
 # Run all tests
@@ -106,9 +106,11 @@ dotnet test --filter "RecipeModelTests"
 ```
 
 ### Test Coverage
-- ✅ **Model Validation**: Recipe rating constraints (1-5), data annotations
-- ✅ **Business Logic**: Author name formatting, book-recipe relationships
-- ✅ **Edge Cases**: Invalid inputs, boundary conditions, null handling
+- ✅ **Model Validation**: Recipe rating constraints (1-5), data annotations, relationship tests
+- ✅ **Service Layer**: BookAuthorService, RecipeService, SupabaseRecipesQuery, Result<T> pattern
+- ✅ **Business Logic**: Author name formatting, book-recipe relationships, caching
+- ✅ **Constants**: Service constants validation, pagination, sorting, cache configuration
+- ✅ **Edge Cases**: Invalid inputs, boundary conditions, null handling, error scenarios
 - ✅ **Data Relationships**: Book-Author-Recipe associations and mappings
 
 ## 📖 Documentation
