@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src\RecettesIndex.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests\RecettesIndex.Tests.csproj" />
+  </Folder>
+  <Properties Name="Configuration">
+    <Property Name="Debug|Any CPU" />
+    <Property Name="Release|Any CPU" />
+  </Properties>
+</Solution>
