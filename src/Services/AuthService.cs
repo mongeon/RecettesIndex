@@ -3,14 +3,9 @@ namespace RecettesIndex.Services;
 /// <summary>
 /// Service for managing user authentication operations.
 /// </summary>
-public class AuthService
+public class AuthService(ISupabaseAuthWrapper authWrapper)
 {
-    private readonly ISupabaseAuthWrapper _authWrapper;
-
-    public AuthService(ISupabaseAuthWrapper authWrapper)
-    {
-        _authWrapper = authWrapper ?? throw new ArgumentNullException(nameof(authWrapper));
-    }
+    private readonly ISupabaseAuthWrapper _authWrapper = authWrapper ?? throw new ArgumentNullException(nameof(authWrapper));
 
     /// <summary>
     /// Authenticates a user with email and password.

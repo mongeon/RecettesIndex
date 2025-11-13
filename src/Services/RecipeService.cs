@@ -8,20 +8,12 @@ namespace RecettesIndex.Services;
 /// <summary>
 /// Service for managing recipe operations including search, CRUD operations, and related data retrieval.
 /// </summary>
-public class RecipeService : IRecipeService
+public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client supabaseClient, ILogger<RecipeService> logger) : IRecipeService
 {
-    private readonly IRecipesQuery _q;
-    private readonly ILogger<RecipeService> _logger;
-    private readonly ICacheService _cache;
-    private readonly Supabase.Client _supabaseClient;
-
-    public RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client supabaseClient, ILogger<RecipeService> logger)
-    {
-        _q = q ?? throw new ArgumentNullException(nameof(q));
-        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IRecipesQuery _q = q ?? throw new ArgumentNullException(nameof(q));
+    private readonly ICacheService _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    private readonly Supabase.Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+    private readonly ILogger<RecipeService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Searches for recipes based on various criteria with pagination and sorting support.
@@ -61,7 +53,7 @@ public class RecipeService : IRecipeService
 
             if (bookId.HasValue)
             {
-                var idsByBook = await _q.GetRecipeIdsByBookIdsAsync(new[] { bookId.Value }, rating, ct);
+                var idsByBook = await _q.GetRecipeIdsByBookIdsAsync([bookId.Value], rating, ct);
                 ids.IntersectWith(idsByBook);
             }
 

@@ -9,16 +9,10 @@ namespace RecettesIndex.Services;
 /// <summary>
 /// Service for managing the many-to-many relationship between books and authors.
 /// </summary>
-public class BookAuthorService : IBookAuthorService
+public class BookAuthorService(Client supabaseClient, ILogger<BookAuthorService> logger) : IBookAuthorService
 {
-    private readonly Client _supabaseClient;
-    private readonly ILogger<BookAuthorService> _logger;
-
-    public BookAuthorService(Client supabaseClient, ILogger<BookAuthorService> logger)
-    {
-        _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+    private readonly ILogger<BookAuthorService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Creates associations between a book and multiple authors (for new books)
@@ -62,7 +56,7 @@ public class BookAuthorService : IBookAuthorService
                 .Where(x => x.BookId == bookId)
                 .Get();
 
-            var currentAuthorIds = currentAssociationsResponse.Models?.Select(x => x.AuthorId).ToHashSet() ?? new HashSet<int>();
+            var currentAuthorIds = currentAssociationsResponse.Models?.Select(x => x.AuthorId).ToHashSet() ?? [];
             var newAuthorIds = newAuthors.Select(x => x.Id).ToHashSet();
 
             // Find authors to remove and add
@@ -122,22 +116,22 @@ public class BookAuthorService : IBookAuthorService
                     .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
                     .Get();
 
-                book.Authors = authorsResponse.Models ?? new List<Author>();
+                book.Authors = authorsResponse.Models ?? [];
             }
             else
             {
-                book.Authors = new List<Author>();
+                book.Authors = [];
             }
         }
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "Network error loading authors for book {BookId}", book.Id);
-            book.Authors = new List<Author>();
+            book.Authors = [];
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error loading authors for book {BookId}", book.Id);
-            book.Authors = new List<Author>();
+            book.Authors = [];
         }
     }
 }

@@ -29,7 +29,7 @@
             <PagerContent>
                 <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
                                RowsPerPageString="Lignes par page:" 
-                               PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                               PageSizeOptions="[10, 25, 50, 100]" />
             </PagerContent>
             <HeaderContent>
                 <MudTh> <MudTableSortLabel SortBy="new Func<Book, object>(x=>x.Name)">Titre</MudTableSortLabel></MudTh>
@@ -66,13 +66,13 @@
 </MudPaper>
 
 @code {
-    private List<Book> books = new();
+    private List<Book> books = [];
     private bool loading = true;
-    private List<BreadcrumbItem> breadcrumbs = new()
-    {
+    private List<BreadcrumbItem> breadcrumbs =
+    [
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Livres", href: "/books", disabled: true)
-    };
+    ];
     private string searchTerm = string.Empty;
     private IEnumerable<Book> filteredBooks => string.IsNullOrWhiteSpace(searchTerm)
         ? books

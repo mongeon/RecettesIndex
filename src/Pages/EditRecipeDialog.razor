@@ -10,12 +10,12 @@
     public required IMudDialogInstance MudDialog { get; set; }
     private Recipe recipe = new();
     private string? errorMessage;
-    private List<Book> books = new();
+    private List<Book> books = [];
     private Book? selectedBook;
     protected override async Task OnInitializedAsync()
     {
         var response = await SupabaseClient.From<Book>().Get();
-        books = response.Models ?? new List<Book>();
+        books = response.Models ?? [];
         // Set the initial values for editing
         recipe = new Recipe
         {

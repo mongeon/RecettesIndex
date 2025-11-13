@@ -121,12 +121,12 @@ else
     private Recipe? recipe;
     private Book? book;
     private bool loading = true;
-    private List<BreadcrumbItem> breadcrumbs = new()
-    {
+    private List<BreadcrumbItem> breadcrumbs =
+    [
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Recettes", href: "/recipes"),
         new BreadcrumbItem("Détails", href: null, disabled: true)
-    };
+    ];
     
     protected override async Task OnInitializedAsync()
     {

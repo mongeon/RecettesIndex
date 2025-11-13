@@ -35,13 +35,13 @@
     private Recipe recipe = new() { CreationDate = DateTime.Now };
     private string? bookRef;
     private string? errorMessage;
-    private List<Book> books = new();
+    private List<Book> books = [];
     private Book? selectedBook;
 
     protected override async Task OnInitializedAsync()
     {
         var response = await SupabaseClient.From<Book>().Get();
-        books = response.Models ?? new List<Book>();
+        books = response.Models ?? [];
     }
 
     private async Task AddRecipe()
