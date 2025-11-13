@@ -2,14 +2,9 @@ using Supabase.Gotrue;
 
 namespace RecettesIndex.Services
 {
-    public class SupabaseAuthWrapper : ISupabaseAuthWrapper
+    public class SupabaseAuthWrapper(Supabase.Client client) : ISupabaseAuthWrapper
     {
-        private readonly Supabase.Client _client;
-
-        public SupabaseAuthWrapper(Supabase.Client client)
-        {
-            _client = client;
-        }
+        private readonly Supabase.Client _client = client;
 
         public async Task<Session?> SignIn(string email, string password)
         {

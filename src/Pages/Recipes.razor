@@ -42,7 +42,7 @@
         <PagerContent>
             <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}"
                            RowsPerPageString="Lignes par page:"
-                           PageSizeOptions="new int[] { 10, 20, 50 }" />
+                           PageSizeOptions="[10, 20, 50]" />
         </PagerContent>
         <HeaderContent>
             <MudTh><MudTableSortLabel T="Recipe" SortLabel="name">Nom</MudTableSortLabel></MudTh>
@@ -91,13 +91,13 @@
 
 @code {
     private MudTable<Recipe>? table;
-    private List<Book> books = new();
-    private List<Author> authors = new();
-    private List<BreadcrumbItem> breadcrumbs = new()
-    {
+    private List<Book> books = [];
+    private List<Author> authors = [];
+    private List<BreadcrumbItem> breadcrumbs =
+    [
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Recettes", href: "/recipes", disabled: true)
-    };
+    ];
     private string searchTerm = string.Empty;
     private string? ratingFilter;
     private string? bookFilter;

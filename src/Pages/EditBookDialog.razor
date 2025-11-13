@@ -10,17 +10,17 @@
     [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }
     private Book book = new();
     private string? errorMessage;
-    private List<Author> authors = new();
+    private List<Author> authors = [];
     private IEnumerable<Author> selectedAuthors = new HashSet<Author>();
     protected override async Task OnInitializedAsync()
     {
         var response = await SupabaseClient.From<Author>().Get();
-        authors = response.Models ?? new List<Author>();
+        authors = response.Models ?? [];
         book = new Book
         {
             Id = BookToEdit.Id,
             Name = BookToEdit.Name,
-            Authors = BookToEdit.Authors ?? new List<Author>()
+            Authors = BookToEdit.Authors ?? []
         };
         // Pre-select authors by finding matching objects in the loaded authors list
         selectedAuthors = authors.Where(a => book.Authors.Any(ba => ba.Id == a.Id)).ToHashSet();

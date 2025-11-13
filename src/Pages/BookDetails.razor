@@ -127,14 +127,14 @@ else
     
     private Book? book;
     private bool loading = true;
-    private List<BreadcrumbItem> breadcrumbs = new()
-    {
+    private List<BreadcrumbItem> breadcrumbs =
+    [
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Livres", href: "/books"),
         new BreadcrumbItem("Détails", href: null, disabled: true)
-    };
+    ];
     
-    private List<Recipe> relatedRecipes = new();
+    private List<Recipe> relatedRecipes = [];
     
     protected override async Task OnInitializedAsync()
     {
@@ -187,17 +187,17 @@ else
                     .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
                     .Get();
                 
-                bookToLoad.Authors = authorsResponse.Models ?? new List<Author>();
+                bookToLoad.Authors = authorsResponse.Models ?? [];
             }
             else
             {
-                bookToLoad.Authors = new List<Author>();
+                bookToLoad.Authors = [];
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading authors for book {BookId}", bookToLoad.Id);
-            bookToLoad.Authors = new List<Author>();
+            bookToLoad.Authors = [];
         }
     }
     
