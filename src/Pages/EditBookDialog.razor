@@ -20,7 +20,8 @@
         {
             Id = BookToEdit.Id,
             Name = BookToEdit.Name,
-            Authors = BookToEdit.Authors ?? []
+            Authors = BookToEdit.Authors ?? [],
+            CreationDate = BookToEdit.CreationDate
         };
         // Pre-select authors by finding matching objects in the loaded authors list
         selectedAuthors = authors.Where(a => book.Authors.Any(ba => ba.Id == a.Id)).ToHashSet();
@@ -34,7 +35,8 @@
             var bookToUpdate = new Book 
             { 
                 Id = book.Id,
-                Name = book.Name 
+                Name = book.Name,
+                CreationDate = book.CreationDate
             };
             
             var response = await SupabaseClient.From<Book>().Where(x => x.Id == book.Id).Update(bookToUpdate);
