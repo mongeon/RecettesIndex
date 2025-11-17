@@ -213,7 +213,25 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
-            await _supabaseClient.From<Recipe>().Where(x => x.Id == id).Delete();
+            _logger?.LogInformation("Attempting to delete recipe with ID: {RecipeId}", id);
+            
+            // First, verify the recipe exists
+            var existingRecipe = await _supabaseClient.From<Recipe>()
+                .Where(x => x.Id == id)
+                .Single();
+            
+            if (existingRecipe == null)
+            {
+                _logger?.LogWarning("Recipe with ID {RecipeId} not found", id);
+                return Result<bool>.Failure("Recipe not found");
+            }
+            
+            // Delete the recipe
+            await _supabaseClient.From<Recipe>()
+                .Where(x => x.Id == id)
+                .Delete();
+            
+            _logger?.LogInformation("Recipe {RecipeId} deleted successfully", id);
             
             // Invalidate related caches
             InvalidateRelatedCaches();
@@ -228,7 +246,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Unexpected error while deleting recipe: {RecipeId}", id);
-            return Result<bool>.Failure("An unexpected error occurred while deleting the recipe");
+            return Result<bool>.Failure($"An unexpected error occurred while deleting the recipe: {ex.Message}");
         }
     }
 
