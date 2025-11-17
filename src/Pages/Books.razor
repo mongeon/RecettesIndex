@@ -7,6 +7,7 @@
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ILogger<Books> Logger
+@inject ISnackbar Snackbar
 @inject Client SupabaseClient
 
 <PageTitle>Livres</PageTitle>
@@ -165,7 +166,61 @@
 
     private async Task DeleteBook(Book bookToDelete)
     {
-        await SupabaseClient.From<Book>().Where(x => x.Id == bookToDelete.Id).Delete();
-        await LoadBooks();
+        try
+        {
+            // Show confirmation dialog
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Confirmer la suppression",
+                $"Êtes-vous sûr de vouloir supprimer le livre '{bookToDelete.Name}' ? Cette action est irréversible.",
+                yesText: "Supprimer",
+                cancelText: "Annuler");
+
+            if (confirm != true)
+            {
+                return;
+            }
+
+            // Check if there are recipes associated with this book
+            var recipesResponse = await SupabaseClient.From<Recipe>()
+                .Where(x => x.BookId == bookToDelete.Id)
+                .Get();
+
+            if (recipesResponse.Models?.Any() == true)
+            {
+                await DialogService.ShowMessageBox(
+                    "Suppression impossible",
+                    $"Ce livre ne peut pas être supprimé car {recipesResponse.Models.Count} recette(s) y sont associées. Veuillez d'abord supprimer ou modifier ces recettes.",
+                    cancelText: "OK");
+                return;
+            }
+
+            // Delete book-author associations first
+            var bookAuthorsResponse = await SupabaseClient.From<BookAuthor>()
+                .Where(x => x.BookId == bookToDelete.Id)
+                .Get();
+
+            if (bookAuthorsResponse.Models?.Any() == true)
+            {
+                foreach (var bookAuthor in bookAuthorsResponse.Models)
+                {
+                    await SupabaseClient.From<BookAuthor>()
+                        .Where(x => x.BookId == bookAuthor.BookId && x.AuthorId == bookAuthor.AuthorId)
+                        .Delete();
+                }
+            }
+
+            // Delete the book
+            await SupabaseClient.From<Book>()
+                .Where(x => x.Id == bookToDelete.Id)
+                .Delete();
+
+            Snackbar.Add($"Le livre '{bookToDelete.Name}' a été supprimé avec succès.", Severity.Success);
+            await LoadBooks();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting book {BookId}", bookToDelete.Id);
+            Snackbar.Add("Une erreur s'est produite lors de la suppression du livre. Veuillez réessayer.", Severity.Error);
+        }
     }
 }

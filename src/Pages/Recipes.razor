@@ -6,6 +6,7 @@
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject IRecipeService RecipeService
+@inject ISnackbar Snackbar
 
 <PageTitle>Recettes</PageTitle>
 
@@ -138,10 +139,34 @@
 
     private async Task DeleteRecipe(Recipe recipeToDelete)
     {
-        var res = await RecipeService.DeleteAsync(recipeToDelete.Id);
-        if (res.IsSuccess)
+        try
         {
-            await Reload();
+            // Show confirmation dialog
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Confirmer la suppression",
+                $"Êtes-vous sûr de vouloir supprimer la recette '{recipeToDelete.Name}' ? Cette action est irréversible.",
+                yesText: "Supprimer",
+                cancelText: "Annuler");
+
+            if (confirm != true)
+            {
+                return;
+            }
+
+            var res = await RecipeService.DeleteAsync(recipeToDelete.Id);
+            if (res.IsSuccess)
+            {
+                Snackbar.Add($"La recette '{recipeToDelete.Name}' a été supprimée avec succès.", Severity.Success);
+                await Reload();
+            }
+            else
+            {
+                Snackbar.Add(res.ErrorMessage ?? "Une erreur s'est produite lors de la suppression de la recette.", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Une erreur s'est produite lors de la suppression de la recette. Veuillez réessayer.", Severity.Error);
         }
     }
 
