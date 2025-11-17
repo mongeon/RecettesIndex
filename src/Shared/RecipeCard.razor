@@ -1,0 +1,174 @@
+@using RecettesIndex.Models
+@inject NavigationManager NavigationManager
+
+<MudCard Elevation="3" Class="recipe-card" @onclick="NavigateToRecipe" Style="cursor: pointer; height: 100%;">
+    <!-- Recipe Image Placeholder -->
+    <div class="recipe-card-image">
+        @if (Recipe.Rating > 0)
+        {
+            <MudChip T="string" 
+                     Color="Color.Warning" 
+                     Size="Size.Small" 
+                     Class="rating-chip"
+                     Icon="@Icons.Material.Filled.Star">
+                @Recipe.Rating
+            </MudChip>
+        }
+        <div class="recipe-card-overlay">
+            <MudIcon Icon="@Icons.Material.Filled.Restaurant" Size="Size.Large" Color="Color.Surface" />
+        </div>
+    </div>
+
+    <!-- Recipe Content -->
+    <MudCardContent Class="pa-3">
+        <MudText Typo="Typo.h6" Class="recipe-card-title" Style="margin-bottom: 8px;">
+            @Recipe.Name
+        </MudText>
+
+        @if (Recipe.Book != null)
+        {
+            <MudStack Row Spacing="1" AlignItems="AlignItems.Center" Class="mb-2">
+                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Color="Color.Primary" />
+                <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 500;">
+                    @Recipe.Book.Name
+                </MudText>
+            </MudStack>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Recipe.Notes))
+        {
+            var preview = Recipe.Notes.Length > 80 ? Recipe.Notes.Substring(0, 80) + "..." : Recipe.Notes;
+            <MudText Typo="Typo.body2" 
+                     Color="Color.Secondary" 
+                     Class="recipe-card-notes">
+                @preview
+            </MudText>
+        }
+    </MudCardContent>
+
+    <!-- Recipe Footer -->
+    <MudCardActions Class="px-3 pb-3 pt-0">
+        <MudStack Row Justify="Justify.SpaceBetween" Style="width: 100%;" AlignItems="AlignItems.Center">
+            <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Color="Color.Secondary" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @Recipe.CreationDate.ToString("MMM dd, yyyy")
+                </MudText>
+            </MudStack>
+
+            @if (Recipe.BookPage.HasValue)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">
+                    Page @Recipe.BookPage
+                </MudChip>
+            }
+        </MudStack>
+    </MudCardActions>
+</MudCard>
+
+<style>
+    .recipe-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .recipe-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .recipe-card-image {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .recipe-card-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease;
+    }
+
+    .recipe-card:hover .recipe-card-overlay {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .rating-chip {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 1;
+        font-weight: bold;
+    }
+
+    .recipe-card-title {
+        font-weight: 600;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-height: 2.6em;
+    }
+
+    .recipe-card-notes {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.5;
+        min-height: 3em;
+        margin-top: 8px;
+    }
+
+    /* Different gradient colors for variety */
+    .recipe-card-image:nth-child(3n+1) {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .recipe-card-image:nth-child(3n+2) {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .recipe-card-image:nth-child(3n+3) {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 600px) {
+        .recipe-card-image {
+            height: 140px;
+        }
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// The recipe to display in the card.
+    /// </summary>
+    [Parameter]
+    public Recipe Recipe { get; set; } = default!;
+
+    /// <summary>
+    /// The index of the card for gradient variation.
+    /// </summary>
+    [Parameter]
+    public int Index { get; set; }
+
+    private void NavigateToRecipe()
+    {
+        NavigationManager.NavigateTo($"/recipes/{Recipe.Id}");
+    }
+}
