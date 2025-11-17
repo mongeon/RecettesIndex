@@ -29,9 +29,10 @@ graph TB
     
     subgraph "Service Layer"
         D[Recipe Service]
-        E[Book Service]
-        F[Author Service]
-        G[Auth Service]
+        E[BookAuthor Service]
+        F[Auth Service]
+        G[Cache Service]
+        H[SupabaseRecipesQuery]
     end
     
     subgraph "Backend Services"
@@ -222,8 +223,9 @@ graph LR
     
     subgraph "Testing Framework"
         H[xUnit]
-        I[243 Unit Tests]
-        J[Test Coverage]
+        I[318 Unit Tests]
+        J[bUnit Component Tests]
+        K[Test Coverage]
     end
     
     subgraph "Build Tools"
@@ -408,7 +410,7 @@ graph TD
 
 ### Test Structure Overview
 
-Our testing architecture ensures comprehensive coverage of business logic, validation rules, and data relationships with **243 unit tests** organized across multiple test files.
+Our testing architecture ensures comprehensive coverage of business logic, validation rules, data relationships, and component behavior with **318 unit tests** organized across multiple test files and categories.
 
 ```mermaid
 graph TB
@@ -417,44 +419,73 @@ graph TB
         A --> A2[AuthorModelTests.cs]
         A --> A3[BookModelTests.cs]
         A --> A4[BookAuthorModelTests.cs]
+        A --> A5[AdditionalModelValidationTests.cs]
         
         B[Validation Tests] --> B1[RecipeValidationTests.cs]
         B --> B2[RecipeRatingValidationTests.cs]
         
         C[Relationship Tests] --> C1[ModelRelationshipTests.cs]
+        
+        D[Service Tests] --> D1[RecipeServiceTests.cs]
+        D --> D2[BookAuthorServiceTests.cs]
+        D --> D3[CacheServiceTests.cs]
+        D --> D4[SupabaseRecipesQueryTests.cs]
+        D --> D5[ResultTests.cs]
+        D --> D6[ServiceConstantsTests.cs]
+        
+        E[Component Tests] --> E1[EditRecipeDialogTests.cs]
+        E --> E2[EditBookDialogTests.cs]
+        E --> E3[EditAuthorDialogTests.cs]
+        
+        F[Exception Tests] --> F1[CustomExceptionTests.cs]
+        
+        G[Integration Tests] --> G1[ModelIntegrationTests.cs]
+        
+        H[Auth Tests] --> H1[AuthServiceTests.cs]
+        H --> H2[SupabaseAuthWrapperTests.cs]
     end
     
     subgraph "Testing Framework"
-        D[xUnit Framework]
-        E[Theory Data-Driven Tests]
-        F[Arrange-Act-Assert Pattern]
-        G[Validation Context Testing]
+        I[xUnit Framework]
+        J[bUnit Component Testing]
+        K[NSubstitute Mocking]
+        L[Theory Data-Driven Tests]
+        M[Arrange-Act-Assert Pattern]
+        N[Validation Context Testing]
     end
     
     subgraph "CI/CD Integration"
-        H[GitHub Actions]
-        I[Automated Test Execution]
-        J[Test Results Reporting]
-        K[Deployment Gating]
+        O[GitHub Actions]
+        P[Automated Test Execution]
+        Q[Test Results Reporting]
+        R[Deployment Gating]
     end
     
-    A1 --> D
-    B1 --> E
-    C1 --> F
-    D --> H
-    E --> I
-    F --> J
-    G --> K
+    A1 --> I
+    E1 --> J
+    D1 --> K
+    B1 --> L
+    C1 --> M
+    A --> N
+    I --> O
+    J --> P
+    K --> Q
+    L --> R
 ```
 
 ### Test Coverage Areas
 
 | Test Category | Coverage | Test Files | Key Areas |
 |---------------|----------|------------|-----------|
-| **Model Validation** | Property validation, constraints | RecipeModelTests, AuthorModelTests, BookModelTests | DataAnnotations, business rules |
+| **Model Validation** | Property validation, constraints, relationships | RecipeModelTests, AuthorModelTests, BookModelTests, BookAuthorModelTests, AdditionalModelValidationTests | DataAnnotations, business rules, navigation properties |
 | **Rating Validation** | 1-5 star constraint testing | RecipeRatingValidationTests | Range validation, error messages |
-| **Relationships** | Model associations and navigation | ModelRelationshipTests, BookAuthorModelTests | Foreign keys, collections |
+| **Relationships** | Model associations and navigation | ModelRelationshipTests, ModelIntegrationTests | Foreign keys, collections, many-to-many |
 | **Business Logic** | Core functionality testing | RecipeValidationTests | Complete validation scenarios |
+| **Services** | Service layer operations | RecipeServiceTests, BookAuthorServiceTests, CacheServiceTests, SupabaseRecipesQueryTests, ResultTests, ServiceConstantsTests | CRUD operations, caching, queries, error handling |
+| **Components** | Blazor component behavior | EditRecipeDialogTests, EditBookDialogTests, EditAuthorDialogTests | CreationDate preservation, UI rendering with bUnit |
+| **Exceptions** | Custom exception validation | CustomExceptionTests | Exception properties, messages, inheritance |
+| **Authentication** | Auth service functionality | AuthServiceTests, SupabaseAuthWrapperTests | User authentication, session management |
+| **Integration** | Cross-cutting scenarios | ModelIntegrationTests | Recipe→Book→Author chains, relationship integrity |
 
 ### Validation Testing Strategy
 

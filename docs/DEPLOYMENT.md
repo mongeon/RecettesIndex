@@ -192,7 +192,31 @@ SUPABASE_ANON_KEY=your_supabase_anon_key
 **Setup:**
 
 1. **Create Azure Static Web App resource**
-2. **Configure GitHub Actions workflow:**
+
+2. **Configure routing for client-side navigation**
+
+Create `staticwebapp.config.json` in `wwwroot/`:
+
+```json
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/_framework/*", "/css/*", "/lib/*", "/icons/*", "*.{css,scss,js,png,gif,ico,jpg,svg,woff,woff2,ttf,eot}"]
+  },
+  "mimeTypes": {
+    ".dll": "application/octet-stream",
+    ".wasm": "application/wasm",
+    ".json": "application/json"
+  }
+}
+```
+
+This configuration ensures:
+- Deep linking works correctly for Blazor routes
+- Static assets are properly excluded from navigation fallback
+- Correct MIME types for WebAssembly files
+
+3. **Configure GitHub Actions workflow:**
 
 ```yaml
 # .github/workflows/azure-static-web-apps.yml

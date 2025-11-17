@@ -318,23 +318,42 @@ git commit -m "Fix rating validation bug
 
 ### Test Structure
 
-We maintain a comprehensive unit test suite with **243 tests** covering all business logic and validation rules. Tests are organized by functionality:
+We maintain a comprehensive unit test suite with **318 tests** covering all business logic, validation rules, services, components, and integration scenarios. Tests are organized by functionality:
 
 ```
 tests/
-├── RecipeModelTests.cs           # Recipe model validation tests
-├── AuthorModelTests.cs           # Author model and FullName property tests
-├── BookModelTests.cs             # Book model functionality tests
-├── BookAuthorModelTests.cs       # Junction table relationship tests
-├── RecipeValidationTests.cs      # DataAnnotation validation tests
-├── RecipeRatingValidationTests.cs # Rating constraint tests (1-5)
-├── ModelRelationshipTests.cs     # Cross-model relationship tests
-└── AuthServiceTests.cs           # Authentication service tests
+├── RecipeModelTests.cs                    # Recipe model validation tests
+├── AuthorModelTests.cs                    # Author model and FullName property tests
+├── BookModelTests.cs                      # Book model functionality tests
+├── BookAuthorModelTests.cs                # Junction table relationship tests
+├── RecipeValidationTests.cs               # DataAnnotation validation tests
+├── RecipeRatingValidationTests.cs         # Rating constraint tests (1-5)
+├── ModelRelationshipTests.cs              # Cross-model relationship tests
+├── AuthServiceTests.cs                    # Authentication service tests
+├── Models/
+│   └── AdditionalModelValidationTests.cs  # Comprehensive model validation
+├── Services/
+│   ├── RecipeServiceTests.cs              # Recipe service layer tests
+│   ├── BookAuthorServiceTests.cs          # BookAuthor service tests
+│   ├── CacheServiceTests.cs               # Caching functionality tests
+│   ├── SupabaseRecipesQueryTests.cs       # Query service tests
+│   ├── ResultTests.cs                     # Result<T> pattern tests
+│   ├── ServiceConstantsTests.cs           # Service constants tests
+│   ├── SupabaseAuthWrapperTests.cs        # Auth wrapper tests
+│   └── Exceptions/
+│       └── CustomExceptionTests.cs        # Custom exception validation
+├── Pages/
+│   ├── EditRecipeDialogTests.cs           # Recipe edit component tests
+│   ├── EditBookDialogTests.cs             # Book edit component tests
+│   └── EditAuthorDialogTests.cs           # Author edit component tests
+└── Integration/
+    └── ModelIntegrationTests.cs           # Integration scenario tests
 ```
 
 ### Testing Framework
 
 - **xUnit**: Primary testing framework
+- **bUnit**: Blazor component testing library
 - **NSubstitute**: Mocking library for dependencies
 - **Theory Tests**: Data-driven testing with `[InlineData]`
 - **Arrange-Act-Assert**: Standard test pattern

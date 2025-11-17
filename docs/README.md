@@ -38,14 +38,15 @@ graph TB
         G[VS Code + C# Dev Kit]
         H[GitHub Actions CI/CD]
         I[GitHub MCP Server]
-        J[xUnit Testing Framework]
-        K[243 Unit Tests]
+        J[xUnit + bUnit Testing]
+        K[318 Unit Tests]
     end
     
     subgraph "Quality Assurance"
         L[Automated Testing Pipeline]
         M[Code Validation]
         N[Rating Validation 1-5]
+        O[Deep Linking Support]
     end
 ```
 
@@ -83,8 +84,9 @@ graph LR
 ```
 RecettesIndex/
 ├── 📁 .github/
-│   └── 📁 workflows/          # GitHub Actions CI/CD pipelines
-│       └── azure-static-web-apps-*.yml # Automated testing & deployment
+│   ├── 📁 workflows/          # GitHub Actions CI/CD pipelines
+│   │   └── azure-static-web-apps-*.yml # Automated testing & deployment
+│   └── 📄 copilot-instructions.md # AI agent development guidelines
 ├── 📁 src/                    # Main application source
 │   ├── 📁 Configuration/      # App configuration files
 │   │   └── SupabaseConfig.cs
@@ -92,30 +94,64 @@ RecettesIndex/
 │   │   ├── MainLayout.razor
 │   │   └── NavMenu.razor
 │   ├── 📁 Models/             # Data models with validation
-│   │   └── Recette.cs         # Recipe, Book, Author models
+│   │   └── Recette.cs         # Recipe, Book, Author, BookAuthor models
 │   ├── 📁 Pages/              # Blazor pages and dialogs
 │   │   ├── Home.razor
 │   │   ├── Recipes.razor
 │   │   ├── Books.razor
 │   │   ├── Authors.razor
-│   │   └── *Dialog.razor
+│   │   ├── RecipeDetails.razor
+│   │   ├── BookDetails.razor
+│   │   ├── AuthorDetails.razor
+│   │   ├── PrintRecipe.razor
+│   │   └── *Dialog.razor      # Edit dialogs
 │   ├── 📁 Services/           # Business logic and data access
+│   │   ├── 📁 Abstractions/   # Service interfaces
+│   │   ├── 📁 Exceptions/     # Custom exceptions
 │   │   ├── AuthService.cs
-│   │   └── BookAuthorService.cs
+│   │   ├── BookAuthorService.cs
+│   │   ├── CacheService.cs
+│   │   ├── RecipeService.cs
+│   │   ├── SupabaseRecipesQuery.cs
+│   │   ├── SupabaseAuthWrapper.cs
+│   │   ├── Result.cs
+│   │   └── ServiceConstants.cs
+│   ├── 📁 Shared/             # Shared components
+│   │   ├── ActionBar.razor
+│   │   └── HeroSection.razor
 │   ├── 📁 wwwroot/            # Static assets
 │   │   ├── index.html
+│   │   ├── staticwebapp.config.json # Azure Static Web Apps routing
 │   │   ├── css/
 │   │   └── icons/
 │   ├── 📄 Program.cs          # Application entry point
 │   └── 📄 _Imports.razor      # Global using statements
-├── 📁 tests/                  # Comprehensive unit test suite
-│   ├── 📄 RecipeModelTests.cs           # Recipe model validation tests
-│   ├── 📄 AuthorModelTests.cs           # Author model and FullName tests
-│   ├── 📄 BookModelTests.cs             # Book model functionality tests
-│   ├── 📄 BookAuthorModelTests.cs       # Junction table relationship tests
-│   ├── 📄 RecipeValidationTests.cs      # DataAnnotation validation tests
-│   ├── 📄 RecipeRatingValidationTests.cs # Rating constraint tests (1-5)
-│   ├── 📄 ModelRelationshipTests.cs     # Cross-model relationship tests
+├── 📁 tests/                  # Comprehensive unit test suite (318 tests)
+│   ├── � Integration/        # Integration and relationship tests
+│   │   └── ModelIntegrationTests.cs
+│   ├── 📁 Models/             # Model validation tests
+│   │   └── AdditionalModelValidationTests.cs
+│   ├── 📁 Pages/              # Component tests (bUnit)
+│   │   ├── EditRecipeDialogTests.cs
+│   │   ├── EditBookDialogTests.cs
+│   │   └── EditAuthorDialogTests.cs
+│   ├── 📁 Services/           # Service layer tests
+│   │   ├── 📁 Exceptions/     # Exception tests
+│   │   │   └── CustomExceptionTests.cs
+│   │   ├── RecipeServiceTests.cs
+│   │   ├── BookAuthorServiceTests.cs
+│   │   ├── CacheServiceTests.cs
+│   │   ├── SupabaseRecipesQueryTests.cs
+│   │   ├── SupabaseAuthWrapperTests.cs
+│   │   ├── ResultTests.cs
+│   │   └── ServiceConstantsTests.cs
+│   ├── 📄 AuthorModelTests.cs
+│   ├── 📄 BookModelTests.cs
+│   ├── 📄 RecipeModelTests.cs
+│   ├── 📄 BookAuthorModelTests.cs
+│   ├── 📄 RecipeValidationTests.cs
+│   ├── 📄 RecipeRatingValidationTests.cs
+│   ├── 📄 ModelRelationshipTests.cs
 │   └── 📄 RecettesIndex.Tests.csproj    # Test project configuration
 ├── 📁 docs/                   # Project documentation
 │   ├── README.md              # Complete project overview
@@ -123,7 +159,7 @@ RecettesIndex/
 │   ├── ARCHITECTURE.md        # System design and decisions
 │   ├── DEVELOPMENT.md         # Development guidelines and setup
 │   └── DEPLOYMENT.md          # Deployment and hosting guide
-├── 📄 RecettesAI.sln          # Solution file
+├── 📄 RecettesAI.slnx         # Solution file
 └── 📄 README.md               # Quick start guide
 ```
 
@@ -154,20 +190,29 @@ RecettesIndex/
 
 ```mermaid
 erDiagram
-    Author ||--o{ Book : "writes"
+    Author ||--o{ BookAuthor : "has"
+    Book ||--o{ BookAuthor : "has"
+    BookAuthor }o--|| Author : "references"
+    BookAuthor }o--|| Book : "references"
     Book ||--o{ Recipe : "contains"
     
     Author {
         int id PK
-        string name
-        datetime creation_date
+        string first_name
+        string last_name
+        datetime created_at
     }
     
     Book {
         int id PK
         string title
+        datetime created_at
+    }
+    
+    BookAuthor {
+        int book_id FK
         int author_id FK
-        datetime creation_date
+        datetime created_at
     }
     
     Recipe {
@@ -176,8 +221,8 @@ erDiagram
         text notes
         int rating "1-5 stars with validation"
         int book_id FK
-        int page_number
-        datetime creation_date
+        int page
+        datetime created_at
     }
 ```
 
@@ -236,16 +281,24 @@ The application expects the following database schema in Supabase:
 -- Authors table
 CREATE TABLE authors (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    creation_date TIMESTAMP DEFAULT NOW()
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Books table
 CREATE TABLE books (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    author_id INTEGER REFERENCES authors(id),
-    creation_date TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Books-Authors junction table (many-to-many)
+CREATE TABLE books_authors (
+    book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
+    author_id INTEGER REFERENCES authors(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (book_id, author_id)
 );
 
 -- Recipes table
@@ -255,8 +308,8 @@ CREATE TABLE recettes (
     notes TEXT,
     rating INTEGER CHECK (rating >= 1 AND rating <= 5), -- Enforced validation
     book_id INTEGER REFERENCES books(id),
-    page_number INTEGER,
-    creation_date TIMESTAMP DEFAULT NOW()
+    page INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
@@ -276,7 +329,7 @@ dotnet clean && dotnet build
 # Run with specific port
 dotnet run --urls "http://localhost:5030"
 
-# Run tests (comprehensive unit test suite - 243 tests)
+# Run tests (comprehensive unit test suite - 318 tests)
 dotnet test
 
 # Run tests with detailed output
@@ -284,6 +337,9 @@ dotnet test --verbosity normal
 
 # Run specific test file
 dotnet test --filter "ClassName=RecipeModelTests"
+
+# Run tests with coverage
+dotnet test --collect:"XPlat Code Coverage"
 
 # Publish for deployment
 dotnet publish -c Release
