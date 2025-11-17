@@ -19,62 +19,325 @@
     }
     else
     {
-        <div class="print-header">
-            <h1>@recipe.Name</h1>
-            <div class="print-rating">
-                <span>Évaluation: </span>
-                <PizzaRating Value="@recipe.Rating" />
-            </div>
-        </div>
-
-        <div class="print-body">
-            @if (!string.IsNullOrWhiteSpace(recipe.Notes))
-            {
-                <div class="print-section">
-                    <h2>Notes</h2>
-                    <div class="print-notes">@recipe.Notes</div>
-                </div>
-            }
-
-            <div class="print-section">
-                <h2>Détails</h2>
-                <div class="print-details">
-                    <p><strong>Créée le:</strong> @recipe.CreationDate.ToShortDateString()</p>
-                    
-                    @if (book != null)
-                    {
-                        <p><strong>Livre:</strong> @book.Name</p>
-                        
-                        @if (recipe.BookPage.HasValue)
-                        {
-                            <p><strong>Page:</strong> @recipe.BookPage</p>
-                        }
-                        
-                        @if (book.Authors != null && book.Authors.Any())
-                        {
-                            <p><strong>Auteur(s):</strong> @string.Join(", ", book.Authors.Select(a => a.FullName))</p>
-                        }
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="print-footer">
-            <p>Imprimé depuis Mes Recettes le @DateTime.Now.ToString("d MMMM yyyy")</p>
-        </div>
-
+        <!-- Print Options (No Print) -->
         <div class="no-print">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="PrintPage" StartIcon="@Icons.Material.Filled.Print" Class="mt-4 mb-2">Imprimer</MudButton>
-            <MudButton Href="@($"/recipes/{id}")" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Class="ml-2 mt-4 mb-2">Retour à la recette</MudButton>
+            <MudPaper Elevation="2" Class="pa-4 mb-4">
+                <MudText Typo="Typo.h6" Class="mb-3">Options d'Impression</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCheckBox @bind-Value="showRating" 
+                                    Label="Afficher l'évaluation" 
+                                    Color="Color.Primary"
+                                    Disabled="@(recipe.Rating == 0 || recipe.Rating < 1)" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCheckBox @bind-Value="showNotes" 
+                                    Label="Afficher les notes" 
+                                    Color="Color.Primary"
+                                    Disabled="@(string.IsNullOrWhiteSpace(recipe.Notes))" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCheckBox @bind-Value="showBookInfo" 
+                                    Label="Afficher le livre" 
+                                    Color="Color.Primary"
+                                    Disabled="@(book == null)" />
+                    </MudItem>
+                </MudGrid>
+                <MudDivider Class="my-3" />
+                <MudStack Row Spacing="2">
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              OnClick="PrintPage" 
+                              StartIcon="@Icons.Material.Filled.Print">
+                        Imprimer
+                    </MudButton>
+                    <MudButton Href="@($"/recipes/{id}")" 
+                              Variant="Variant.Text" 
+                              StartIcon="@Icons.Material.Filled.ArrowBack">
+                        Retour à la recette
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </div>
+
+        <!-- Print Content -->
+        <div class="print-content">
+            <div class="print-header">
+                <h1>@recipe.Name</h1>
+                
+                @if (showRating && recipe.Rating > 0)
+                {
+                    <div class="print-rating">
+                        <span class="rating-label">Évaluation: </span>
+                        <span class="rating-stars">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= recipe.Rating)
+                                {
+                                    <span class="star filled">★</span>
+                                }
+                                else
+                                {
+                                    <span class="star empty">☆</span>
+                                }
+                            }
+                        </span>
+                        <span class="rating-number">(@recipe.Rating/5)</span>
+                    </div>
+                }
+            </div>
+
+            <div class="print-body">
+                @if (showBookInfo && book != null)
+                {
+                    <div class="print-section book-info">
+                        <h2>Source</h2>
+                        <div class="book-details">
+                            <p><strong>Livre:</strong> @book.Name</p>
+                            
+                            @if (recipe.BookPage.HasValue)
+                            {
+                                <p><strong>Page:</strong> @recipe.BookPage</p>
+                            }
+                            
+                            @if (book.Authors != null && book.Authors.Any())
+                            {
+                                <p><strong>Auteur(s):</strong> @string.Join(", ", book.Authors.Select(a => a.FullName))</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (showNotes && !string.IsNullOrWhiteSpace(recipe.Notes))
+                {
+                    <div class="print-section notes-section">
+                        <h2>Notes & Instructions</h2>
+                        <div class="print-notes">@recipe.Notes</div>
+                    </div>
+                }
+
+                <div class="print-section metadata">
+                    <p class="creation-date">
+                        <strong>Ajoutée le:</strong> @recipe.CreationDate.ToString("dd MMMM yyyy")
+                    </p>
+                </div>
+            </div>
+
+            <div class="print-footer">
+                <p>Imprimé depuis Mes Recettes le @DateTime.Now.ToString("dd MMMM yyyy à HH:mm")</p>
+            </div>
         </div>
     }
 </div>
+
+<style>
+    /* Enhanced print styles */
+    .print-content {
+        background: white;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+    }
+
+    .print-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 3px solid #333;
+        padding-bottom: 20px;
+    }
+
+    .print-header h1 {
+        margin-bottom: 15px;
+        font-size: 32px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .print-rating {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+    }
+
+    .rating-label {
+        font-weight: 600;
+        color: #666;
+    }
+
+    .rating-stars {
+        display: inline-flex;
+        gap: 2px;
+    }
+
+    .star {
+        font-size: 24px;
+        line-height: 1;
+    }
+
+    .star.filled {
+        color: #FFB400;
+    }
+
+    .star.empty {
+        color: #DDD;
+    }
+
+    .rating-number {
+        color: #666;
+        font-size: 16px;
+    }
+
+    .print-section {
+        margin-bottom: 30px;
+        page-break-inside: avoid;
+    }
+
+    .print-section h2 {
+        font-size: 24px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #EEE;
+        padding-bottom: 8px;
+        color: #444;
+        font-weight: 600;
+    }
+
+    .book-info {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #2196F3;
+    }
+
+    .book-details p {
+        margin-bottom: 10px;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .notes-section {
+        background-color: #fffef5;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #FFC107;
+    }
+
+    .print-notes {
+        white-space: pre-wrap;
+        line-height: 1.8;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .metadata {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .creation-date {
+        margin: 0;
+    }
+
+    .print-footer {
+        margin-top: 50px;
+        text-align: center;
+        font-size: 12px;
+        color: #999;
+        border-top: 1px solid #EEE;
+        padding-top: 20px;
+    }
+
+    /* Print-specific styles */
+    @@media print {
+        body {
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        .print-content {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .print-header {
+            border-bottom-color: #000;
+        }
+
+        .print-header h1 {
+            font-size: 28pt;
+            color: #000;
+        }
+
+        .print-section h2 {
+            font-size: 20pt;
+            border-bottom-color: #000;
+            color: #000;
+        }
+
+        .book-info,
+        .notes-section {
+            background-color: transparent !important;
+            border-left-color: #000 !important;
+        }
+
+        .book-details p,
+        .print-notes {
+            font-size: 11pt;
+            color: #000;
+        }
+
+        .print-section {
+            page-break-inside: avoid;
+            orphans: 3;
+            widows: 3;
+        }
+
+        .print-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-top-color: #000;
+        }
+
+        /* Ensure good contrast for printing */
+        .star.filled {
+            color: #000 !important;
+        }
+
+        .star.empty {
+            color: #666 !important;
+        }
+
+        /* Page breaks */
+        h1, h2 {
+            page-break-after: avoid;
+        }
+
+        /* Hide page numbers for cleaner output */
+        @@page {
+            margin: 2cm 1.5cm;
+        }
+    }
+</style>
 
 @code {
     [Parameter] public int id { get; set; }
     private Recipe? recipe;
     private Book? book;
     private bool loading = true;
+
+    // Print options
+    private bool showRating = true;
+    private bool showNotes = true;
+    private bool showBookInfo = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,6 +349,14 @@
         {
             var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
             book = bookResponse.Models?.FirstOrDefault();
+        }
+        
+        // Automatically disable options when data is not available
+        if (recipe != null)
+        {
+            if (recipe.Rating == 0 || recipe.Rating < 1) showRating = false;
+            if (string.IsNullOrWhiteSpace(recipe.Notes)) showNotes = false;
+            if (book == null) showBookInfo = false;
         }
         
         loading = false;
