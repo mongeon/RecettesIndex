@@ -24,7 +24,8 @@
             Rating = RecipeToEdit.Rating,
             Notes = RecipeToEdit.Notes,
             BookId = RecipeToEdit.BookId,
-            BookPage = RecipeToEdit.BookPage
+            BookPage = RecipeToEdit.BookPage,
+            CreationDate = RecipeToEdit.CreationDate
         };
         selectedBook = books.FirstOrDefault(b => b.Id == RecipeToEdit.BookId);
     }
