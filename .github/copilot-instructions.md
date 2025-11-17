@@ -1,23 +1,29 @@
 # AI Agent Instructions for Mes Recettes
 
-> **Version**: 3.0 | **Last Updated**: August 2025 | **Status**: Active | **AI-Optimized**: ✅
+> **Version**: 4.0 | **Last Updated**: November 16, 2025 | **Status**: Active | **AI-Optimized**: ✅
 
 ## 🤖 AI Agent Quick Reference
 
 ### Immediate Context
 - **Project Type**: Blazor WebAssembly (.NET 9.0) with Supabase backend
-- **Primary Language**: C# with Razor components
+- **Primary Language**: C# 12 with Razor components
 - **UI Framework**: MudBlazor (Material Design)
 - **Database**: PostgreSQL via Supabase
 - **Test Framework**: xUnit with NSubstitute
-- **Architecture**: Client-side SPA with repository pattern
+- **Architecture**: Client-side SPA with Query/Service pattern + in-memory caching
+- **Key Patterns**: Primary constructors, file-scoped namespaces, Result<T> pattern, CancellationToken support
 
 ### Key AI Decision Points
 1. **Always use MudBlazor components** - Never suggest HTML elements
 2. **Mandatory unit tests** - No code changes without comprehensive tests
-3. **Async/await patterns** - All I/O operations must be asynchronous
+3. **Async/await patterns** - All I/O operations must be asynchronous with CancellationToken support
 4. **GitHub MCP server** - Use for all GitHub operations (PRs, issues, etc.)
 5. **Feature branch workflow** - Never work on main branch directly
+6. **Primary constructors** - Use C# 12 primary constructors with null validation
+7. **Result<T> pattern** - All service methods return Result<T> for error handling
+8. **File-scoped namespaces** - Always use file-scoped namespace declarations
+9. **Constants organization** - Use dedicated constant classes (CacheConstants, PaginationConstants, etc.)
+10. **In-memory caching** - Use ICacheService for frequently accessed data (books, authors)
 
 ## Table of Contents
 - [🤖 AI Agent Quick Reference](#-ai-agent-quick-reference)
@@ -123,50 +129,70 @@ The application provides users with:
 }
 ```
 
-#### Service Template
+#### Service Template (C# 12 Primary Constructors)
 ```csharp
-public class ExampleService : IExampleService
+using Microsoft.Extensions.Logging;
+using RecettesIndex.Services.Abstractions;
+
+namespace RecettesIndex.Services;
+
+/// <summary>
+/// Service for managing example operations.
+/// </summary>
+public class ExampleService(
+    IExampleQuery query, 
+    ICacheService cache, 
+    Supabase.Client supabaseClient, 
+    ILogger<ExampleService> logger) : IExampleService
 {
-    private readonly SupabaseClient _supabaseClient;
-    private readonly ILogger<ExampleService> _logger;
+    private readonly IExampleQuery _query = query ?? throw new ArgumentNullException(nameof(query));
+    private readonly ICacheService _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    private readonly Supabase.Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+    private readonly ILogger<ExampleService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     
-    public ExampleService(SupabaseClient supabaseClient, ILogger<ExampleService> logger)
-    {
-        _supabaseClient = supabaseClient;
-        _logger = logger;
-    }
-    
-    public async Task<Result<T>> GetAsync(int id)
+    public async Task<Result<T>> GetAsync(int id, CancellationToken ct = default)
     {
         try
         {
-            var response = await _supabaseClient
-                .From<T>()
-                .Where(x => x.Id == id)
-                .Single();
-            
-            return Result<T>.Success(response);
+            var item = await _query.GetByIdAsync(id, ct);
+            return item != null 
+                ? Result<T>.Success(item) 
+                : Result<T>.Failure("Item not found");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get {Type} with id {Id}", typeof(T).Name, id);
-            return Result<T>.Failure($"Failed to load {typeof(T).Name}");
+            return Result<T>.Failure($"An error occurred while loading {typeof(T).Name}");
         }
     }
 }
 ```
 
-#### Test Template
+#### Test Template (with Query Pattern)
 ```csharp
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using RecettesIndex.Services;
+using RecettesIndex.Services.Abstractions;
+using Xunit;
+
+namespace RecettesIndex.Tests.Services;
+
 public class ExampleServiceTests
 {
-    private readonly IExampleService _service;
-    private readonly SupabaseClient _mockClient;
+    private readonly IExampleQuery _query;
+    private readonly ICacheService _cache;
+    private readonly Supabase.Client _client;
+    private readonly ILogger<ExampleService> _logger;
+    private readonly ExampleService _service;
     
     public ExampleServiceTests()
     {
-        _mockClient = Substitute.For<SupabaseClient>();
-        _service = new ExampleService(_mockClient, Substitute.For<ILogger<ExampleService>>());
+        _query = Substitute.For<IExampleQuery>();
+        _cache = new CacheService();
+        _client = new Supabase.Client("http://localhost", "test-key", new SupabaseOptions());
+        _logger = Substitute.For<ILogger<ExampleService>>();
+        _service = new ExampleService(_query, _cache, _client, _logger);
     }
     
     [Fact]
@@ -174,14 +200,29 @@ public class ExampleServiceTests
     {
         // Arrange
         var expected = new Example { Id = 1, Name = "Test" };
-        _mockClient.From<Example>().Returns(mockTable);
+        _query.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(expected);
         
         // Act
         var result = await _service.GetAsync(1);
         
         // Assert
         Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
         Assert.Equal(expected.Id, result.Value.Id);
+    }
+    
+    [Fact]
+    public async Task GetAsync_NotFound_ReturnsFailure()
+    {
+        // Arrange
+        _query.GetByIdAsync(999, Arg.Any<CancellationToken>()).Returns((Example?)null);
+        
+        // Act
+        var result = await _service.GetAsync(999);
+        
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("not found", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 }
 ```
@@ -208,103 +249,230 @@ public class ExampleServiceTests
 
 #### Models (Data Layer)
 ```csharp
-// Location: /src/Models/Recipe.cs
-[Table("recettes")]
-public class Recipe : BaseModel
+// Location: /src/Models/Recette.cs
+using Supabase.Postgrest.Attributes;
+using Supabase.Postgrest.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace RecettesIndex.Models
 {
-    [PrimaryKey("id")]
-    public int Id { get; set; }
-    
-    [Column("name")]
-    [Required(ErrorMessage = "Recipe name is required")]
-    [StringLength(200, ErrorMessage = "Name cannot exceed 200 characters")]
-    public string Name { get; set; } = string.Empty;
-    
-    [Column("ingredients")]
-    public string? Ingredients { get; set; }
-    
-    [Column("instructions")]
-    public string? Instructions { get; set; }
-    
-    [Column("rating")]
-    [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
-    public int? Rating { get; set; }
-    
-    [Column("notes")]
-    public string? Notes { get; set; }
-    
-    [Column("page_number")]
-    public int? PageNumber { get; set; }
-    
-    [Column("book_id")]
-    public int? BookId { get; set; }
-    
-    // Navigation properties
-    public Book? Book { get; set; }
+    /// <summary>
+    /// Represents a recipe in the application.
+    /// </summary>
+    [Table("recettes")]
+    public class Recipe : BaseModel
+    {
+        /// <summary>
+        /// Gets or sets the unique identifier for the recipe.
+        /// </summary>
+        [PrimaryKey("id")]
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the recipe.
+        /// </summary>
+        [Column("name")]
+        [Required(ErrorMessage = "The Name field is required.")]
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the rating of the recipe (1-5 stars).
+        /// </summary>
+        [Column("rating")]
+        [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
+        public int Rating { get; set; }
+
+        /// <summary>
+        /// Gets or sets the creation date of the recipe.
+        /// </summary>
+        [Column("created_at")]
+        public DateTime CreationDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets optional notes or modifications for the recipe.
+        /// </summary>
+        [Column("notes")]
+        public string? Notes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the book this recipe is from, if applicable.
+        /// </summary>
+        [Column("book_id")]
+        public int? BookId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the page number where the recipe can be found in the book.
+        /// </summary>
+        [Column("page")]
+        public int? BookPage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the book this recipe is associated with.
+        /// </summary>
+        [Reference(typeof(Book), joinType: ReferenceAttribute.JoinType.Left, true)]
+        public Book? Book { get; set; }
+    }
 }
 ```
 
-#### Services (Business Logic Layer)
+#### Services (Business Logic Layer with Query Pattern)
 ```csharp
-// Location: /src/Services/IRecipeService.cs
+// Location: /src/Services/Abstractions/IRecipeService.cs
+using RecettesIndex.Models;
+
+namespace RecettesIndex.Services.Abstractions;
+
 public interface IRecipeService
 {
-    Task<List<Recipe>> GetAllAsync();
-    Task<Recipe?> GetByIdAsync(int id);
-    Task<Recipe> CreateAsync(Recipe recipe);
-    Task<Recipe> UpdateAsync(Recipe recipe);
-    Task DeleteAsync(int id);
-    Task<List<Recipe>> SearchAsync(string searchTerm);
-    Task<List<Recipe>> GetByBookAsync(int bookId);
-    Task<List<Recipe>> GetByRatingAsync(int rating);
+    Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(
+        string? term, 
+        int? rating, 
+        int? bookId, 
+        int? authorId, 
+        int page, 
+        int pageSize, 
+        string? sortLabel = null, 
+        bool sortDescending = false, 
+        CancellationToken ct = default);
+    
+    Task<Result<Recipe>> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<Result<Recipe>> CreateAsync(Recipe recipe, CancellationToken ct = default);
+    Task<Result<Recipe>> UpdateAsync(Recipe recipe, CancellationToken ct = default);
+    Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default);
+    
+    // Helper data for filters
+    Task<IReadOnlyList<Book>> GetBooksAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Author>> GetAuthorsAsync(CancellationToken ct = default);
 }
 
 // Location: /src/Services/RecipeService.cs
-public class RecipeService : IRecipeService
+using Microsoft.Extensions.Logging;
+using RecettesIndex.Models;
+using RecettesIndex.Services.Abstractions;
+
+namespace RecettesIndex.Services;
+
+/// <summary>
+/// Service for managing recipe operations including search, CRUD operations, and related data retrieval.
+/// </summary>
+public class RecipeService(
+    IRecipesQuery q, 
+    ICacheService cache, 
+    Supabase.Client supabaseClient, 
+    ILogger<RecipeService> logger) : IRecipeService
 {
-    private readonly SupabaseClient _supabaseClient;
-    private readonly ILogger<RecipeService> _logger;
-    
-    public RecipeService(SupabaseClient supabaseClient, ILogger<RecipeService> logger)
-    {
-        _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-    
-    public async Task<List<Recipe>> GetAllAsync()
-    {
-        try
-        {
-            _logger.LogInformation("Fetching all recipes");
-            var response = await _supabaseClient
-                .From<Recipe>()
-                .Get();
-            
-            return response.Models ?? new List<Recipe>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to fetch recipes");
-            throw new ApplicationException("Failed to load recipes", ex);
-        }
-    }
-    
-    public async Task<Recipe?> GetByIdAsync(int id)
+    private readonly IRecipesQuery _q = q ?? throw new ArgumentNullException(nameof(q));
+    private readonly ICacheService _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    private readonly Supabase.Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+    private readonly ILogger<RecipeService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(
+        string? term, 
+        int? rating, 
+        int? bookId, 
+        int? authorId, 
+        int page, 
+        int pageSize, 
+        string? sortLabel = null, 
+        bool sortDescending = false, 
+        CancellationToken ct = default)
     {
         try
         {
-            var response = await _supabaseClient
-                .From<Recipe>()
-                .Where(r => r.Id == id)
-                .Single();
+            // Clamp pagination parameters
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, PaginationConstants.MinPageSize, PaginationConstants.MaxPageSize);
+
+            var ids = new HashSet<int>();
+
+            // Build search based on term
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                foreach (var id in await _q.GetRecipeIdsByNameAsync(term.Trim(), rating, ct)) 
+                    ids.Add(id);
                 
-            return response;
+                var bookIdsByTitle = await _q.GetBookIdsByTitleAsync(term.Trim(), ct);
+                foreach (var id in await _q.GetRecipeIdsByBookIdsAsync(bookIdsByTitle, rating, ct)) 
+                    ids.Add(id);
+                
+                var authorIds = await _q.GetAuthorIdsByNameAsync(term.Trim(), ct);
+                var bookIdsByAuthors = await _q.GetBookIdsByAuthorIdsAsync(authorIds, ct);
+                foreach (var id in await _q.GetRecipeIdsByBookIdsAsync(bookIdsByAuthors, rating, ct)) 
+                    ids.Add(id);
+            }
+            else
+            {
+                foreach (var id in await _q.GetAllRecipeIdsAsync(rating, ct)) 
+                    ids.Add(id);
+            }
+
+            // Apply filters
+            if (bookId.HasValue)
+            {
+                var idsByBook = await _q.GetRecipeIdsByBookIdsAsync([bookId.Value], rating, ct);
+                ids.IntersectWith(idsByBook);
+            }
+
+            if (authorId.HasValue)
+            {
+                var bookIds = await _q.GetBookIdsByAuthorAsync(authorId.Value, ct);
+                var idsByAuthor = await _q.GetRecipeIdsByBookIdsAsync(bookIds, rating, ct);
+                ids.IntersectWith(idsByAuthor);
+            }
+
+            var total = ids.Count;
+            var allModels = await _q.GetRecipesByIdsAsync(ids.ToList(), ct);
+
+            // Apply sorting
+            IEnumerable<Recipe> sortedModels = allModels;
+            if (!string.IsNullOrWhiteSpace(sortLabel))
+            {
+                sortedModels = sortLabel.ToLower() switch
+                {
+                    RecipeSortConstants.Name => sortDescending 
+                        ? allModels.OrderByDescending(r => r.Name) 
+                        : allModels.OrderBy(r => r.Name),
+                    RecipeSortConstants.Rating => sortDescending 
+                        ? allModels.OrderByDescending(r => r.Rating) 
+                        : allModels.OrderBy(r => r.Rating),
+                    RecipeSortConstants.CreatedAt => sortDescending 
+                        ? allModels.OrderByDescending(r => r.CreationDate) 
+                        : allModels.OrderBy(r => r.CreationDate),
+                    _ => allModels
+                };
+            }
+
+            // Apply pagination
+            var items = sortedModels
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return Result<(IReadOnlyList<Recipe>, int)>.Success((items, total));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to fetch recipe with id {RecipeId}", id);
-            return null;
+            _logger.LogError(ex, "Error searching recipes");
+            return Result<(IReadOnlyList<Recipe>, int)>.Failure("An error occurred while searching recipes");
         }
+    }
+
+    public async Task<IReadOnlyList<Book>> GetBooksAsync(CancellationToken ct = default)
+    {
+        return await _cache.GetOrCreateAsync(
+            CacheConstants.BooksListKey,
+            CacheConstants.DefaultTtl,
+            async ct => await _q.GetBooksAsync(ct),
+            ct);
+    }
+
+    public async Task<IReadOnlyList<Author>> GetAuthorsAsync(CancellationToken ct = default)
+    {
+        return await _cache.GetOrCreateAsync(
+            CacheConstants.AuthorsListKey,
+            CacheConstants.DefaultTtl,
+            async ct => await _q.GetAuthorsAsync(ct),
+            ct);
     }
 }
 ```
@@ -584,18 +752,30 @@ erDiagram
     Book {
         int id PK
         string title
-        int authorId FK
-        datetime publishedDate
-        string isbn
-    }
-    Author {
-        int id PK
-        string firstName
-        string lastName
-        string biography
-    }
+## Project Structure
 ```
-
+/
+├── src/
+│   ├── Models/              # Data models (Recipe, Book, Author) - all in Recette.cs
+│   ├── Pages/               # Blazor pages and dialogs
+│   ├── Services/            # Business logic and data access
+│   │   ├── Abstractions/    # Service interfaces (IRecipeService, IRecipesQuery, etc.)
+│   │   ├── Exceptions/      # Custom exceptions
+│   │   ├── RecipeService.cs # Main recipe business logic
+│   │   ├── CacheService.cs  # In-memory caching
+│   │   ├── SupabaseRecipesQuery.cs # Data access queries
+│   │   ├── Result.cs        # Result<T> pattern implementation
+│   │   └── ServiceConstants.cs # Constants (Cache, Pagination, Sort)
+│   ├── Layout/              # App layout components
+│   ├── Configuration/       # App configuration
+│   ├── Shared/              # Shared components
+│   └── wwwroot/             # Static files and assets
+└── tests/                   # Unit and integration tests
+    ├── Services/            # Service layer tests
+    ├── Pages/               # Component tests
+    ├── Models/              # Model validation tests
+    └── Integration/         # Integration tests
+```
 ### Business Rules
 1. **Recipe Rating**: Must be between 1-5 stars (inclusive)
 2. **Author Names**: First and last name are required
@@ -693,25 +873,13 @@ Discovery → Collection → Organization → Usage → Sharing
 ├── wwwroot/         # Static files and assets
 └── Resources/       # Localization resources
 ```
-
-## Key Dependencies
-- **MudBlazor**: Material Design component library
-- **Supabase**: Backend-as-a-Service with PostgreSQL
-- **Microsoft.AspNetCore.Components.WebAssembly**: Blazor WebAssembly framework
-
-## Coding Standards
-
-### 📏 Code Standardization (Updated November 2025)
-
-The codebase follows strict standardization patterns enforced by `.editorconfig`:
-
 #### Namespace Declarations
 - **Always use file-scoped namespaces** (C# 10+):
 ```csharp
-// ✅ Correct
+// ✅ Correct - File-scoped namespace
 namespace RecettesIndex.Services;
 
-public class RecipeService : IRecipeService
+public class RecipeService(IRecipesQuery query, ILogger<RecipeService> logger) : IRecipeService
 {
     // Implementation
 }
@@ -724,8 +892,44 @@ namespace RecettesIndex.Services
         // Implementation
     }
 }
-```
 
+// ❌ Also Incorrect - Models should use block-scoped for multiple types
+#### Constructor Parameter Validation with Primary Constructors
+- **Always validate dependencies with ArgumentNullException** (using C# 12 primary constructors):
+```csharp
+// ✅ Correct - Primary constructor with null validation
+public class RecipeService(
+    IRecipesQuery query, 
+    ICacheService cache, 
+    Supabase.Client supabaseClient, 
+    ILogger<RecipeService> logger) : IRecipeService
+{
+    private readonly IRecipesQuery _query = query ?? throw new ArgumentNullException(nameof(query));
+    private readonly ICacheService _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    private readonly Supabase.Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+    private readonly ILogger<RecipeService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+}
+
+// ❌ Incorrect - Missing null validation
+public class RecipeService(IRecipesQuery query, ICacheService cache, Supabase.Client supabaseClient, ILogger<RecipeService> logger) : IRecipeService
+{
+    private readonly IRecipesQuery _query = query;
+    private readonly ICacheService _cache = cache;
+    private readonly Supabase.Client _supabaseClient = supabaseClient;
+    private readonly ILogger<RecipeService> _logger = logger;
+}
+
+// ❌ Also Incorrect - Old-style constructor (use primary constructors)
+public class RecipeService : IRecipeService
+{
+    private readonly IRecipesQuery _query;
+    
+    public RecipeService(IRecipesQuery query)
+    {
+        _query = query ?? throw new ArgumentNullException(nameof(query));
+    }
+}
+```
 #### Constructor Parameter Validation
 - **Always validate dependencies with ArgumentNullException**:
 ```csharp
@@ -734,15 +938,22 @@ public RecipeService(IRecipesQuery query, ICacheService cache, Client supabaseCl
 {
     _query = query ?? throw new ArgumentNullException(nameof(query));
     _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-    _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
-    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-}
+#### Private Field Naming
+- **Use descriptive names for Supabase client and follow naming conventions**:
+```csharp
+// ✅ Correct - Fully qualified with descriptive name
+private readonly Supabase.Client _supabaseClient;
 
-// ❌ Incorrect - Missing null validation
-public RecipeService(IRecipesQuery query, ICacheService cache, Client supabaseClient, ILogger<RecipeService> logger)
-{
-    _query = query;
-    _cache = cache;
+// ✅ Also Correct - With using directive
+using Supabase;
+private readonly Client _supabaseClient;
+
+// ❌ Incorrect - Too generic
+private readonly Client _client;
+
+// ❌ Incorrect - Wrong casing
+private readonly Supabase.Client supabaseClient;
+``` _cache = cache;
     _supabaseClient = supabaseClient;
     _logger = logger;
 }
@@ -787,12 +998,17 @@ private readonly Client _client;
 @page "/recipes"
 @using MudBlazor
 @inject Supabase.Client SupabaseClient
-@using RecettesIndex.Models
-@inject RecettesIndex.Services.AuthService AuthService
-@inject MudBlazor.IDialogService DialogService
-```
-
-- **Use @using directives with simple type names, not fully-qualified names**:
+### C# Conventions
+- Use nullable reference types throughout
+- Enable implicit usings
+- Follow PascalCase for public members, _camelCase for private fields
+- Use async/await for all I/O operations with CancellationToken support
+- Implement proper disposal patterns for resources
+- **Use C# 12 primary constructors** for all new services
+- **Use file-scoped namespaces** for all files (except Models/Recette.cs which has multiple types)
+- **Use Result<T> pattern** for all service method return values
+- **Add XML documentation comments** to all public members
+- **Organize constants** in dedicated static classes (CacheConstants, PaginationConstants, RecipeSortConstants)not fully-qualified names**:
 ```razor
 @* ✅ Correct *@
 @using Supabase
@@ -824,19 +1040,40 @@ private readonly Client _client;
 // Event callbacks
 [Parameter] public EventCallback<Recipe> OnRecipeSelected { get; set; }
 
-// Dependency injection
-[Inject] private SupabaseClient SupabaseClient { get; set; } = null!;
+// Dependency injection with @inject directive
+@inject IRecipeService RecipeService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
-// Lifecycle methods
+// Lifecycle methods with async/await and CancellationToken
 protected override async Task OnInitializedAsync()
 {
-    // Initialization logic
+    await LoadDataAsync();
+}
+
+// Server-side data loading for MudTable
+private async Task<TableData<Recipe>> LoadServerData(TableState state, CancellationToken ct)
+{
+    var result = await RecipeService.SearchAsync(
+        searchTerm, 
+        ratingFilter, 
+        bookFilter, 
+        authorFilter, 
+        state.Page + 1, 
+        state.PageSize, 
+        state.SortLabel, 
+        state.SortDirection == SortDirection.Descending,
+        ct);
+    
+    return result.IsSuccess 
+        ? new TableData<Recipe> { Items = result.Value.Items, TotalItems = result.Value.Total }
+        : new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
 }
 ```
 
 ### Database Patterns
 ```csharp
-// Model definition
+// Model definition with comprehensive attributes
 [Table("recettes")]
 public class Recipe : BaseModel
 {
@@ -844,13 +1081,218 @@ public class Recipe : BaseModel
     public int Id { get; set; }
     
     [Column("name")]
+    [Required(ErrorMessage = "The Name field is required.")]
     public string Name { get; set; } = string.Empty;
+    
+    [Column("rating")]
+    [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
+    public int Rating { get; set; }
+    
+    [Column("book_id")]
+    public int? BookId { get; set; }
+### UI Patterns
+- Use MudBlazor components exclusively for UI
+- Implement consistent dialog patterns for CRUD operations
+- Use MudTable with server-side data loading (ServerData parameter)
+- Implement proper loading states and error handling
+- Use MudSnackbar for user notifications
+- Apply consistent spacing with MudStack and Class properties
+
+### Result<T> Pattern for Error Handling
+```csharp
+// Service methods return Result<T>
+public async Task<Result<Recipe>> GetByIdAsync(int id, CancellationToken ct = default)
+{
+    try
+    {
+        var recipe = await _q.GetRecipeByIdAsync(id, ct);
+        return recipe != null 
+            ? Result<Recipe>.Success(recipe) 
+            : Result<Recipe>.Failure("Recipe not found");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Failed to get recipe {Id}", id);
+        return Result<Recipe>.Failure("An error occurred while loading the recipe");
+    }
 }
 
-// Data access
-var recipes = await SupabaseClient
+// Consumers check IsSuccess
+var result = await RecipeService.GetByIdAsync(id);
+### Example Component Structure (Server-Side Data Loading)
+```razor
+@page "/recipes"
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
+@inject IRecipeService RecipeService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Recettes</PageTitle>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5">Recettes</MudText>
+    
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        <MudTextField T="string" 
+                      Value="@searchTerm" 
+                      ValueChanged="OnSearchChanged" 
+                      Placeholder="Rechercher des recettes..." 
+                      Adornment="Adornment.Start" 
+                      AdornmentIcon="@Icons.Material.Filled.Search" />
+        
+        <MudSelect T="string" 
+                   Value="@ratingFilter" 
+                   ValueChanged="OnRatingChanged" 
+                   Clearable="true" 
+                   Dense="true" 
+                   Label="Évaluation">
+            <MudSelectItem T="string" Value='@("all")'>Toutes</MudSelectItem>
+            <MudSelectItem T="string" Value='@("5")'>5 étoiles</MudSelectItem>
+        </MudSelect>
+    </MudStack>
+    
+    <MudTable T="Recipe" 
+              ServerData="LoadServerData" 
+              Hover="true" 
+              Dense="true" 
+              RowsPerPage="20" 
+              @ref="table">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel T="Recipe" SortLabel="name">Nom</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="Recipe" SortLabel="rating">Évaluation</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+## Error Handling
+- Always wrap async operations in try-catch blocks
+- Use Result<T> pattern for service methods to encapsulate success/failure
+- Provide user-friendly error messages via Result<T>.Failure()
+- Log errors with structured logging (ILogger)
+- Display errors to users via MudSnackbar with Severity.Error
+- Never throw exceptions from services - return Result<T>.Failure instead
+- Handle CancellationToken properly in all async methods
+
+### Error Handling Pattern
+```csharp
+// Service layer
+public async Task<Result<Recipe>> UpdateAsync(Recipe recipe, CancellationToken ct = default)
+{
+    try
+    {
+        // Validation
+        if (string.IsNullOrWhiteSpace(recipe.Name))
+            return Result<Recipe>.Failure("Recipe name is required");
+        
+        // Operation
+        var updated = await _supabaseClient
+            .From<Recipe>()
+            .Update(recipe);
+        
+        return Result<Recipe>.Success(updated);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Failed to update recipe {Id}", recipe.Id);
+        return Result<Recipe>.Failure("An error occurred while updating the recipe");
+    }
+}
+
+// UI layer
+private async Task SaveRecipe()
+{
+    var result = await RecipeService.UpdateAsync(recipe);
+    if (result.IsSuccess)
+    {
+        Snackbar.Add("Recipe updated successfully!", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(result.Value));
+    }
+    else
+    {
+        Snackbar.Add(result.ErrorMessage, Severity.Error);
+    }
+}
+```ormat="Affichage {first_item}-{last_item} sur {all_items}" />
+        </PagerContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private MudTable<Recipe>? table;
+    private string searchTerm = string.Empty;
+    private string ratingFilter = "all";
+    
+    private async Task<TableData<Recipe>> LoadServerData(TableState state, CancellationToken ct)
+    {
+        int? rating = ratingFilter == "all" ? null : int.Parse(ratingFilter);
+        
+        var result = await RecipeService.SearchAsync(
+            searchTerm,
+            rating,
+            null, // bookId
+            null, // authorId
+            state.Page + 1,
+            state.PageSize,
+            state.SortLabel,
+            state.SortDirection == SortDirection.Descending,
+## Performance Considerations
+- Use async patterns consistently with CancellationToken support
+- Implement server-side pagination for MudTable (ServerData parameter)
+- Use in-memory caching (ICacheService) for frequently accessed reference data
+- Apply proper filtering at the query level before loading into memory
+- Use IReadOnlyList<T> for collections that won't be modified
+- Consider using HashSet<int> for efficient ID-based filtering
+- Invalidate cache entries when underlying data changes
+- Use MudTable instead of MudDataGrid for better performance with large datasets
+- Clamp pagination parameters to prevent excessive data loading (PaginationConstants)
+            { 
+                Items = result.Value.Items, 
+                TotalItems = result.Value.Total 
+            };
+        }
+        
+        Snackbar.Add(result.ErrorMessage, Severity.Error);
+        return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
+    }
+    
+    private async Task OnSearchChanged(string value)
+    {
+### NSubstitute Testing Patterns (Updated)
+```csharp
+// Basic substitution for interfaces
+var mockQuery = Substitute.For<IRecipesQuery>();
+
+// Setup method returns with CancellationToken
+mockQuery.GetRecipeByIdAsync(1, Arg.Any<CancellationToken>()).Returns(new Recipe { Id = 1 });
+
+// Verify method calls
+mockQuery.Received(1).GetRecipeByIdAsync(1, Arg.Any<CancellationToken>());
+
+// Throw exceptions
+mockQuery.GetRecipeByIdAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+    .Throws(new Exception("Database error"));
+
+// Use real implementations where appropriate
+var cache = new CacheService(); // Simple in-memory cache, no need to mock
+
+// For Supabase.Client (sealed class), use real instance with fake URL
+var client = new Supabase.Client("http://localhost", "test-key", new SupabaseOptions());
+```Query pattern for data access (separates query logic from business logic)
+public interface IRecipesQuery
+{
+    Task<List<int>> GetAllRecipeIdsAsync(int? rating, CancellationToken ct);
+    Task<List<int>> GetRecipeIdsByNameAsync(string term, int? rating, CancellationToken ct);
+    Task<List<Recipe>> GetRecipesByIdsAsync(List<int> ids, CancellationToken ct);
+    Task<IReadOnlyList<Book>> GetBooksAsync(CancellationToken ct);
+    Task<IReadOnlyList<Author>> GetAuthorsAsync(CancellationToken ct);
+}
+
+// Supabase data access implementation
+var response = await _supabaseClient
     .From<Recipe>()
-    .Get();
+    .Where(r => r.Id == id)
+    .Single();
 ```
 
 ### UI Patterns
@@ -892,11 +1334,96 @@ var recipes = await SupabaseClient
         {
             // Handle error
         }
-        finally
+### Testing Complex Dependencies
+When testing services that depend on complex external libraries (like Supabase.Client), follow these patterns:
+- **Query pattern**: Separate query logic into IRecipesQuery interface for easier mocking
+- **Real instances**: Use real Supabase.Client instances with dummy URLs for constructor satisfaction
+- **Focus on logic**: Test business logic, parameter validation, and error handling rather than Supabase internals
+- **Simple implementations**: Use real CacheService (simple in-memory) instead of mocking
+- **Integration tests**: Create separate integration tests for actual Supabase interactions
+
+### Current Testing Architecture
+```csharp
+public class RecipeServiceTests
+{
+    private readonly IRecipesQuery _query;        // Mock this
+    private readonly ICacheService _cache;        // Use real CacheService
+    private readonly Supabase.Client _client;     // Real instance with dummy URL
+    private readonly ILogger<RecipeService> _logger; // Mock this
+    private readonly RecipeService _service;
+    
+    public RecipeServiceTests()
+    {
+        _query = Substitute.For<IRecipesQuery>();
+        _cache = new CacheService(); // Real implementation
+        _client = new Supabase.Client("http://localhost", "test-key", new SupabaseOptions());
+        _logger = Substitute.For<ILogger<RecipeService>>();
+        _service = new RecipeService(_query, _cache, _client, _logger);
+### Service Implementation (Updated Pattern)
+```csharp
+// Use Query pattern to separate data access
+public interface IRecipesQuery
+{
+    Task<List<int>> GetAllRecipeIdsAsync(int? rating, CancellationToken ct);
+    Task<List<Recipe>> GetRecipesByIdsAsync(List<int> ids, CancellationToken ct);
+}
+
+// Service uses query abstraction and caching
+public class RecipeService(
+    IRecipesQuery query, 
+    ICacheService cache,
+    Supabase.Client supabaseClient, 
+    ILogger<RecipeService> logger) : IRecipeService
+{
+    private readonly IRecipesQuery _query = query ?? throw new ArgumentNullException(nameof(query));
+    private readonly ICacheService _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    private readonly Supabase.Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
+    private readonly ILogger<RecipeService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    
+    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(
+        string? term, 
+        int? rating, 
+        int? bookId, 
+        int? authorId, 
+        int page, 
+        int pageSize, 
+        string? sortLabel = null, 
+        bool sortDescending = false, 
+        CancellationToken ct = default)
+    {
+        try
         {
-            loading = false;
+            // Clamp parameters
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, PaginationConstants.MinPageSize, PaginationConstants.MaxPageSize);
+            
+            // Use query abstraction
+            var ids = await _query.GetAllRecipeIdsAsync(rating, ct);
+            var recipes = await _query.GetRecipesByIdsAsync(ids, ct);
+            
+            // Business logic for sorting, pagination
+            var sorted = ApplySorting(recipes, sortLabel, sortDescending);
+            var paginated = sorted.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            
+            return Result<(IReadOnlyList<Recipe>, int)>.Success((paginated, recipes.Count));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching recipes");
+            return Result<(IReadOnlyList<Recipe>, int)>.Failure("An error occurred while searching recipes");
         }
     }
+    
+    public async Task<IReadOnlyList<Book>> GetBooksAsync(CancellationToken ct = default)
+    {
+        return await _cache.GetOrCreateAsync(
+            CacheConstants.BooksListKey,
+            CacheConstants.DefaultTtl,
+            async ct => await _query.GetBooksAsync(ct),
+            ct);
+    }
+}
+```
 }
 ```
 
