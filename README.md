@@ -92,7 +92,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 
 ## 🧪 Testing
 
-This project maintains comprehensive unit test coverage with **243 tests** across all business logic:
+This project maintains comprehensive unit test coverage with **318 tests** across all business logic:
 
 ```bash
 # Run all tests
@@ -107,11 +107,14 @@ dotnet test --filter "RecipeModelTests"
 
 ### Test Coverage
 - ✅ **Model Validation**: Recipe rating constraints (1-5), data annotations, relationship tests
-- ✅ **Service Layer**: BookAuthorService, RecipeService, SupabaseRecipesQuery, Result<T> pattern
+- ✅ **Service Layer**: BookAuthorService, RecipeService, CacheService, SupabaseRecipesQuery, Result<T> pattern
 - ✅ **Business Logic**: Author name formatting, book-recipe relationships, caching
 - ✅ **Constants**: Service constants validation, pagination, sorting, cache configuration
+- ✅ **Custom Exceptions**: NotFoundException, ServiceException, ValidationException
+- ✅ **Component Tests**: Edit dialogs for Recipe, Book, and Author with creation date preservation
+- ✅ **Integration Tests**: Complete relationship chains and data integrity
 - ✅ **Edge Cases**: Invalid inputs, boundary conditions, null handling, error scenarios
-- ✅ **Data Relationships**: Book-Author-Recipe associations and mappings
+- ✅ **Data Relationships**: Book-Author-Recipe associations and many-to-many mappings
 
 ## 📖 Documentation
 
@@ -160,27 +163,34 @@ dotnet publish -c Release
 ```
 RecettesIndex/
 ├── 📁 .github/
-│   └── 📁 workflows/    # GitHub Actions CI/CD
+│   ├── 📁 workflows/    # GitHub Actions CI/CD
+│   └── 📄 copilot-instructions.md # AI agent development guidelines
 ├── 📁 src/             # Main application source
 │   ├── 📁 Configuration/ # App configuration
 │   ├── 📁 Layout/       # App layout components
 │   ├── 📁 Models/       # Data models with validation
 │   ├── 📁 Pages/        # Blazor pages and dialogs
 │   ├── 📁 Services/     # Business logic services
+│   │   ├── 📁 Abstractions/ # Service interfaces
+│   │   ├── 📁 Exceptions/ # Custom exception types
+│   │   ├── RecipeService.cs
+│   │   ├── BookAuthorService.cs
+│   │   ├── CacheService.cs
+│   │   └── SupabaseRecipesQuery.cs
+│   ├── 📁 Shared/       # Shared components
 │   ├── 📁 wwwroot/      # Static assets
+│   │   └── staticwebapp.config.json # Azure Static Web Apps config
 │   ├── 📄 Program.cs    # App entry point
 │   └── 📄 _Imports.razor # Global imports
-├── 📁 tests/           # Unit test project
-│   ├── 📄 AuthorModelTests.cs      # Author model tests
-│   ├── 📄 BookModelTests.cs        # Book model tests
-│   ├── 📄 BookAuthorModelTests.cs  # Junction table tests
-│   ├── 📄 RecipeModelTests.cs      # Recipe model tests
-│   ├── 📄 RecipeValidationTests.cs # Validation tests
-│   ├── 📄 RecipeRatingValidationTests.cs # Rating tests
-│   ├── 📄 ModelRelationshipTests.cs # Relationship tests
+├── 📁 tests/           # Unit test project (318 tests)
+│   ├── � Integration/  # Integration tests
+│   ├── � Models/       # Model tests
+│   ├── � Pages/        # Component tests
+│   ├── � Services/     # Service layer tests
+│   │   └── � Exceptions/ # Exception tests
 │   └── 📄 RecettesIndex.Tests.csproj # Test project file
 ├── 📁 docs/            # Project documentation  
-└── 📄 RecettesAI.sln   # Solution file
+└── 📄 RecettesAI.slnx  # Solution file
 ```
 
 ## 🤝 Contributing
