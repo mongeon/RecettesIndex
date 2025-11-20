@@ -4,6 +4,7 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Components
 @using Supabase
 @inject AuthService AuthService
 @inject IDialogService DialogService
@@ -111,6 +112,43 @@ else
                 </MudCardContent>
             </MudCard>
         </MudItem>
+        
+        <!-- Related Recipes Section -->
+        @if (relatedRecipes.Any())
+        {
+            <MudItem xs="12" Class="mt-4">
+                <MudText Typo="Typo.h5" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Class="mr-2" />
+                    Recettes Similaires
+                </MudText>
+                <MudGrid Spacing="3">
+                    @foreach (var relatedRecipe in relatedRecipes)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="2">
+                            <RecipeCard Recipe="@relatedRecipe"
+                                       Book="@relatedRecipe.Book"
+                                       IsAuthenticated="@AuthService.IsAuthenticated"
+                                       OnView="@HandleViewRelatedRecipe"
+                                       OnEdit="@(async (r) => await Task.CompletedTask)"
+                                       OnDelete="@(async (r) => await Task.CompletedTask)"
+                                       OnPrint="@HandlePrintRelatedRecipe" />
+                        </MudItem>
+                    }
+                </MudGrid>
+                
+                @if (HasMoreRelatedRecipes())
+                {
+                    <div class="d-flex justify-center mt-4">
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Primary"
+                                  StartIcon="@Icons.Material.Filled.ArrowForward"
+                                  Href="@GetMoreRecipesUrl()">
+                            Voir plus de recettes similaires
+                        </MudButton>
+                    </div>
+                }
+            </MudItem>
+        }
     </MudGrid>
 }
 
@@ -121,14 +159,27 @@ else
     private Recipe? recipe;
     private Book? book;
     private bool loading = true;
+    private List<Recipe> relatedRecipes = new();
     private List<BreadcrumbItem> breadcrumbs =
     [
-        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Accueil", href: "/" ),
         new BreadcrumbItem("Recettes", href: "/recipes"),
         new BreadcrumbItem("Détails", href: null, disabled: true)
     ];
     
     protected override async Task OnInitializedAsync()
+    {
+        await LoadRecipeData();
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // This is called when the route parameters change (e.g., navigating from recipe 1 to recipe 2)
+        // We need to reload the data when the Id changes
+        await LoadRecipeData();
+    }
+    
+    private async Task LoadRecipeData()
     {
         loading = true;
         
@@ -147,6 +198,9 @@ else
                     var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
                     book = bookResponse.Models?.FirstOrDefault();
                 }
+                
+                // Load related recipes
+                await LoadRelatedRecipes();
             }
         }
         catch (Exception ex)
@@ -160,6 +214,118 @@ else
         }
     }
     
+    private async Task LoadRelatedRecipes()
+    {
+        if (recipe == null) return;
+        
+        try
+        {
+            // Load all recipes to calculate similarity
+            var allRecipesResponse = await SupabaseClient.From<Recipe>().Get();
+            var allRecipes = allRecipesResponse.Models ?? new List<Recipe>();
+            
+            // Calculate similarity scores
+            var scoredRecipes = allRecipes
+                .Where(r => r.Id != recipe.Id) // Exclude current recipe
+                .Select(r => new
+                {
+                    Recipe = r,
+                    Score = CalculateSimilarityScore(r)
+                })
+                .Where(x => x.Score > 0) // Only include recipes with some similarity
+                .OrderByDescending(x => x.Score)
+                .Take(6)
+                .Select(x => x.Recipe)
+                .ToList();
+            
+            relatedRecipes = scoredRecipes;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading related recipes for {RecipeId}", Id);
+            relatedRecipes = new List<Recipe>();
+        }
+    }
+    
+    private int CalculateSimilarityScore(Recipe candidate)
+    {
+        if (recipe == null) return 0;
+        
+        int score = 0;
+        
+        // Same book (highest priority) - 100 points
+        if (candidate.BookId.HasValue && candidate.BookId == recipe.BookId)
+        {
+            score += 100;
+        }
+        
+        // Same author (medium priority) - 50 points
+        if (book != null && candidate.Book != null)
+        {
+            var currentAuthorIds = book.Authors?.Select(a => a.Id).ToHashSet() ?? new HashSet<int>();
+            var candidateAuthorIds = candidate.Book.Authors?.Select(a => a.Id).ToHashSet() ?? new HashSet<int>();
+            
+            if (currentAuthorIds.Any() && candidateAuthorIds.Any() && currentAuthorIds.Overlaps(candidateAuthorIds))
+            {
+                score += 50;
+            }
+        }
+        
+        // Similar rating (low priority) - 10-20 points
+        if (recipe.Rating > 0 && candidate.Rating > 0)
+        {
+            var ratingDifference = Math.Abs(recipe.Rating - candidate.Rating);
+            
+            if (ratingDifference == 0)
+            {
+                score += 20; // Exact same rating
+            }
+            else if (ratingDifference == 1)
+            {
+                score += 10; // One star difference
+            }
+            // No points for 2+ star difference
+        }
+        
+        return score;
+    }
+    
+    private bool HasMoreRelatedRecipes()
+    {
+        // Check if there are potentially more related recipes
+        // For now, show button if we have 6 recipes (indicating there might be more)
+        return relatedRecipes.Count >= 6 && recipe?.BookId != null;
+    }
+    
+    private string GetMoreRecipesUrl()
+    {
+        // Link to recipes page filtered by same book
+        if (recipe?.BookId != null)
+        {
+            return $"/recipes?bookId={recipe.BookId}";
+        }
+        
+        return "/recipes";
+    }
+    
+    private void NavigateToRecipe(int recipeId)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipeId}");
+    }
+    
+    private async Task HandleViewRelatedRecipe(Recipe relatedRecipe)
+    {
+        // Navigate to the related recipe
+        NavigationManager.NavigateTo($"/recipes/{relatedRecipe.Id}");
+        await Task.CompletedTask;
+    }
+    
+    private async Task HandlePrintRelatedRecipe(Recipe relatedRecipe)
+    {
+        // Navigate to print view
+        NavigationManager.NavigateTo($"/recipes/{relatedRecipe.Id}/print");
+        await Task.CompletedTask;
+    }
     
     private async Task OpenEditDialog()
     {

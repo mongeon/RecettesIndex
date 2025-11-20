@@ -473,6 +473,9 @@
             // Load view preference from localStorage first
             await LoadViewPreference();
             
+            // Read query parameters from URL
+            await ReadQueryParameters();
+            
             // Load recipes and filter data
             await LoadRecipes();
             await LoadFilterCounts();
@@ -494,7 +497,36 @@
             isLoading = false;
         }
     }
-
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // Read query parameters when URL changes
+        await ReadQueryParameters();
+    }
+    
+    private async Task ReadQueryParameters()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        
+        // Check for bookId parameter
+        var bookIdParam = query["bookId"];
+        if (!string.IsNullOrEmpty(bookIdParam) && int.TryParse(bookIdParam, out var bookId))
+        {
+            bookFilter = bookId.ToString();
+            showAllRecipes = false;
+            
+            // Reload data if already initialized
+            if (books.Any())
+            {
+                if (isCardView)
+                    await LoadCardViewData();
+                else
+                    await Reload();
+            }
+        }
+    }
+    
     private async Task LoadViewPreference()
     {
         try
