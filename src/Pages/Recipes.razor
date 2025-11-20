@@ -3,16 +3,33 @@
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
+@using RecettesIndex.Components
+@using Microsoft.JSInterop
 @inject AuthService AuthService
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
 <PageTitle>Recettes</PageTitle>
 
 <MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Recettes</MudText>
-    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <div>
+            <MudText Typo="Typo.h5">Recettes</MudText>
+            <MudBreadcrumbs Items="breadcrumbs" Class="mt-2" />
+        </div>
+        
+        <!-- View Toggle Button -->
+        <MudToggleIconButton @bind-Toggled="isCardView"
+                            Icon="@Icons.Material.Filled.ViewList"
+                            ToggledIcon="@Icons.Material.Filled.ViewModule"
+                            Color="Color.Primary"
+                            Title="@(isCardView ? "Vue liste" : "Vue grille")"
+                            ToggledTitle="@(isCardView ? "Vue liste" : "Vue grille")"
+                            Size="Size.Large" />
+    </MudStack>
     
     <!-- Quick Filter Buttons -->
     <MudStack Row Wrap="Wrap.Wrap" Spacing="2" Class="mb-3">
@@ -146,64 +163,160 @@
         </MudPaper>
     }
 
-    <MudTable T="Recipe" ServerData="LoadServerData" Hover="true" Elevation="1" Dense="true" RowsPerPage="20" @ref="table">
-        <PagerContent>
-            <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}"
-                           RowsPerPageString="Lignes par page:"
-                           PageSizeOptions="[10, 20, 50]" />
-        </PagerContent>
-        <HeaderContent>
-            <MudTh><MudTableSortLabel T="Recipe" SortLabel="name">Nom</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="Recipe" SortLabel="rating">Évaluation</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel T="Recipe" SortLabel="created_at">Créée le</MudTableSortLabel></MudTh>
-            <MudTh>Notes</MudTh>
-            <MudTh>Livre</MudTh>
-            @if (AuthService.IsAuthenticated)
-            {
-                <MudTh>Actions</MudTh>
-            }
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Nom">
-                <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
-            </MudTd>
-            <MudTd DataLabel="Évaluation">
-                <PizzaRating Value="@context.Rating" />
-            </MudTd>
-            <MudTd DataLabel="Créée le">@context.CreationDate.ToShortDateString()</MudTd>
-            <MudTd DataLabel="Notes">
-                @if (!string.IsNullOrWhiteSpace(context.Notes))
+    <!-- Loading State with Skeleton -->
+    @if (isLoading)
+    {
+        @if (isCardView)
+        {
+            <MudGrid Spacing="3" Class="mt-4">
+                @for (int i = 0; i < 8; i++)
                 {
-                    var preview = context.Notes.Length > 50 ? context.Notes.Substring(0, 50) + "..." : context.Notes;
-                    <MudTooltip Text="@context.Notes">
-                        <MudText Typo="Typo.body2">@preview</MudText>
-                    </MudTooltip>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <RecipeCardSkeleton />
+                    </MudItem>
                 }
-            </MudTd>
-            <MudTd DataLabel="Livre">
-                @if (context.BookId != null)
+            </MudGrid>
+        }
+        else
+        {
+            <div class="mt-4">
+                @for (int i = 0; i < 5; i++)
                 {
-                    var book = books.FirstOrDefault(b => b.Id == context.BookId);
-                    if (book != null)
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="60px" Class="mb-2" Animation="Animation.Wave" />
+                }
+            </div>
+        }
+    }
+    else if (currentRecipes.Count == 0)
+    {
+        <!-- Empty State -->
+        <EmptyState Icon="@Icons.Material.Filled.RestaurantMenu"
+                    IconColor="Color.Secondary"
+                    Title="@GetEmptyStateTitle()"
+                    Message="@GetEmptyStateMessage()"
+                    ShowAction="@(!HasActiveFilters())"
+                    ActionText="Ajouter une recette"
+                    ActionIcon="@Icons.Material.Filled.Add"
+                    OnActionClick="ShowAddDialog"
+                    SecondaryActionText="@(HasActiveFilters() ? "Réinitialiser les filtres" : null)"
+                    OnSecondaryActionClick="ClearAllFilters" />
+    }
+    else
+    {
+        <!-- Card View -->
+        @if (isCardView)
+        {
+            <MudGrid Spacing="3" Class="mt-4">
+                @foreach (var recipe in currentRecipes)
+                {
+                    var book = books.FirstOrDefault(b => b.Id == recipe.BookId);
+                    <MudItem xs="12" sm="6" md="4" lg="3" Style="animation: fadeIn 0.3s ease-out;">
+                        <RecipeCard Recipe="@recipe"
+                                   Book="@book"
+                                   IsAuthenticated="@AuthService.IsAuthenticated"
+                                   OnView="ViewRecipe"
+                                   OnEdit="ShowEditDialog"
+                                   OnDelete="DeleteRecipe"
+                                   OnPrint="PrintRecipe" />
+                    </MudItem>
+                }
+            </MudGrid>
+            
+            <!-- Pagination for Card View -->
+            <div class="d-flex justify-center mt-4">
+                <MudPagination Count="@totalPages" 
+                              SelectedChanged="OnPageChanged" 
+                              Selected="@currentPage"
+                              Color="Color.Primary"
+                              ShowFirstButton="true"
+                              ShowLastButton="true" />
+            </div>
+        }
+        else
+        {
+            <!-- Table View -->
+            <MudTable T="Recipe" ServerData="LoadServerData" Hover="true" Elevation="1" Dense="true" RowsPerPage="20" @ref="table" Class="recipe-table">
+                <PagerContent>
+                    <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}"
+                                   RowsPerPageString="Lignes par page:"
+                                   PageSizeOptions="[10, 20, 50]" />
+                </PagerContent>
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel T="Recipe" SortLabel="name">Nom</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel T="Recipe" SortLabel="rating">Évaluation</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel T="Recipe" SortLabel="created_at">Créée le</MudTableSortLabel></MudTh>
+                    <MudTh>Notes</MudTh>
+                    <MudTh>Livre</MudTh>
+                    @if (AuthService.IsAuthenticated)
                     {
-                        <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
+                        <MudTh>Actions</MudTh>
                     }
-                }
-            </MudTd>
-            @if (AuthService.IsAuthenticated)
-            {
-                <MudTd>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
-                    <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Supprimer</MudButton>
-                </MudTd>
-            }
-        </RowTemplate>
-    </MudTable>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Nom">
+                        <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
+                    </MudTd>
+                    <MudTd DataLabel="Évaluation">
+                        <PizzaRating Value="@context.Rating" />
+                    </MudTd>
+                    <MudTd DataLabel="Créée le">@context.CreationDate.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="Notes">
+                        @if (!string.IsNullOrWhiteSpace(context.Notes))
+                        {
+                            var preview = context.Notes.Length > 50 ? context.Notes.Substring(0, 50) + "..." : context.Notes;
+                            <MudTooltip Text="@context.Notes">
+                                <MudText Typo="Typo.body2">@preview</MudText>
+                            </MudTooltip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Livre">
+                        @if (context.BookId != null)
+                        {
+                            var book = books.FirstOrDefault(b => b.Id == context.BookId);
+                            if (book != null)
+                            {
+                                <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
+                            }
+                        }
+                    </MudTd>
+                    @if (AuthService.IsAuthenticated)
+                    {
+                        <MudTd>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Supprimer</MudButton>
+                        </MudTd>
+                    }
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+    
     @if (AuthService.IsAuthenticated)
     {
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter une recette</MudButton>
     }
 </MudPaper>
+
+<style>
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .recipe-table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    .recipe-table tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+    }
+</style>
 
 @code {
     private MudTable<Recipe>? table;
@@ -231,18 +344,107 @@
     private int unratedCount = 0;
     private Dictionary<int, int> bookRecipeCounts = new();
     private Dictionary<int, int> authorRecipeCounts = new();
+    
+    // Card view state
+    private bool _isCardView = false;
+    private bool isCardView 
+    { 
+        get => _isCardView;
+        set
+        {
+            if (_isCardView != value)
+            {
+                _isCardView = value;
+                _ = OnViewModeChanged();
+            }
+        }
+    }
+    
+    private async Task OnViewModeChanged()
+    {
+        await SaveViewPreference();
+        
+        if (isCardView)
+        {
+            currentPage = 1;
+            await LoadCardViewData();
+        }
+        else
+        {
+            await Reload();
+        }
+    }
+    
+    private bool isLoading = true;
+    private List<Recipe> currentRecipes = new();
+    private int currentPage = 1;
+    private int pageSize = 12;
+    private int totalPages = 0;
+    private const string ViewModeKey = "recipeViewMode";
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadRecipes();
-        await LoadFilterCounts();
+        try
+        {
+            // Load view preference from localStorage first
+            await LoadViewPreference();
+            
+            // Load recipes and filter data
+            await LoadRecipes();
+            await LoadFilterCounts();
+            
+            // Load data based on view mode
+            if (isCardView)
+            {
+                await LoadCardViewData();
+            }
+            else
+            {
+                // For table view, set loading to false since table handles its own loading
+                isLoading = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error if needed
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadViewPreference()
+    {
+        try
+        {
+            var viewMode = await JSRuntime.InvokeAsync<string>("localStorage.getItem", ViewModeKey);
+            _isCardView = viewMode == "card"; // Set directly to avoid triggering OnViewModeChanged
+        }
+        catch
+        {
+            _isCardView = false;
+        }
+    }
+    
+    private async Task SaveViewPreference()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", ViewModeKey, isCardView ? "card" : "table");
+        }
+        catch
+        {
+            // Silently fail if localStorage is not available
+        }
     }
 
     private async Task LoadRecipes()
     {
         books = (await RecipeService.GetBooksAsync())?.ToList() ?? new();
         authors = (await RecipeService.GetAuthorsAsync())?.ToList() ?? new();
-        await Reload();
+        
+        if (!isCardView)
+        {
+            await Reload();
+        }
     }
 
     private async Task LoadFilterCounts()
@@ -274,6 +476,69 @@
         }
     }
 
+    private async Task LoadCardViewData()
+    {
+        isLoading = true;
+        try
+        {
+            // Apply filters
+            int? rating = GetRatingFilter();
+            int? bookId = GetBookIdFilter();
+            int? authorId = GetAuthorIdFilter();
+            
+            var result = await RecipeService.SearchAsync(
+                searchTerm,
+                rating,
+                bookId,
+                authorId,
+                currentPage,
+                pageSize,
+                "created_at",
+                true
+            );
+            
+            if (result.IsSuccess)
+            {
+                currentRecipes = result.Value.Items.ToList();
+                totalPages = (int)Math.Ceiling(result.Value.Total / (double)pageSize);
+            }
+            else
+            {
+                currentRecipes = new();
+                totalPages = 0;
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private int? GetRatingFilter()
+    {
+        if (quickFilterUnrated)
+            return null; // Handle unrated in post-processing
+        if (quickFilterRating.HasValue && quickFilterRating.Value != 4)
+            return quickFilterRating.Value;
+        if (ratingFilter != "all" && !string.IsNullOrWhiteSpace(ratingFilter))
+            return int.TryParse(ratingFilter, out var r) ? r : null;
+        return null;
+    }
+    
+    private int? GetBookIdFilter()
+    {
+        return (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) 
+            ? null 
+            : (int.TryParse(bookFilter, out var b) ? b : null);
+    }
+    
+    private int? GetAuthorIdFilter()
+    {
+        return (authorFilter == "all" || string.IsNullOrWhiteSpace(authorFilter)) 
+            ? null 
+            : (int.TryParse(authorFilter, out var a) ? a : null);
+    }
+
     private int GetRecipeCountForBook(int bookId) => bookRecipeCounts.GetValueOrDefault(bookId, 0);
     private int GetRecipeCountForAuthor(int authorId) => authorRecipeCounts.GetValueOrDefault(authorId, 0);
 
@@ -284,6 +549,20 @@
             || (bookFilter != null && bookFilter != "all") 
             || (authorFilter != null && authorFilter != "all");
     }
+    
+    private string GetEmptyStateTitle()
+    {
+        if (HasActiveFilters())
+            return "Aucune recette trouvée";
+        return "Aucune recette pour le moment";
+    }
+    
+    private string GetEmptyStateMessage()
+    {
+        if (HasActiveFilters())
+            return "Essayez de modifier vos filtres ou réinitialisez-les pour voir toutes les recettes.";
+        return "Commencez par ajouter votre première recette pour construire votre collection personnelle.";
+    }
 
     private async Task ShowAll()
     {
@@ -291,7 +570,12 @@
         quickFilterRating = null;
         quickFilterUnrated = false;
         ratingFilter = null;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ApplyQuickFilter(int rating)
@@ -299,8 +583,13 @@
         showAllRecipes = false;
         quickFilterRating = rating;
         quickFilterUnrated = false;
-        ratingFilter = rating >= 4 ? null : rating.ToString(); // For 4+, we'll filter in code
-        await Reload();
+        ratingFilter = rating >= 4 ? null : rating.ToString();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ShowUnrated()
@@ -309,7 +598,12 @@
         quickFilterRating = null;
         quickFilterUnrated = true;
         ratingFilter = null;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ClearAllFilters()
@@ -321,13 +615,23 @@
         showAllRecipes = true;
         quickFilterRating = null;
         quickFilterUnrated = false;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ClearSearch()
     {
         searchTerm = string.Empty;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ClearRating()
@@ -336,19 +640,34 @@
         quickFilterRating = null;
         quickFilterUnrated = false;
         showAllRecipes = true;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ClearBook()
     {
         bookFilter = null;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ClearAuthor()
     {
         authorFilter = null;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task ShowAddDialog()
@@ -359,6 +678,13 @@
         {
             await LoadRecipes();
             await LoadFilterCounts();
+            
+            if (isCardView)
+            {
+                await LoadCardViewData();
+            }
+            
+            Snackbar.Add("Recette ajoutée avec succès!", Severity.Success);
         }
     }
 
@@ -371,6 +697,13 @@
         {
             await LoadRecipes();
             await LoadFilterCounts();
+            
+            if (isCardView)
+            {
+                await LoadCardViewData();
+            }
+            
+            Snackbar.Add("Recette modifiée avec succès!", Severity.Success);
         }
     }
 
@@ -393,7 +726,16 @@
             if (res.IsSuccess)
             {
                 Snackbar.Add($"La recette '{recipeToDelete.Name}' a été supprimée avec succès.", Severity.Success);
-                await Reload();
+                
+                if (isCardView)
+                {
+                    await LoadCardViewData();
+                }
+                else
+                {
+                    await Reload();
+                }
+                
                 await LoadFilterCounts();
             }
             else
@@ -478,24 +820,61 @@
         showAllRecipes = false;
         quickFilterRating = null;
         quickFilterUnrated = false;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task OnBookChanged(string? value)
     {
         bookFilter = value;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task OnAuthorChanged(string? value)
     {
         authorFilter = value;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
     }
 
     private async Task OnSearchChanged(string value)
     {
         searchTerm = value;
-        await Reload();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+    
+    private async Task OnPageChanged(int page)
+    {
+        currentPage = page;
+        await LoadCardViewData();
+        StateHasChanged();
+    }
+    
+    private void ViewRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipe.Id}");
+    }
+    
+    private void PrintRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
     }
 }

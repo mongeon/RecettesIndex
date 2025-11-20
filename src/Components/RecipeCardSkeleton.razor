@@ -1,0 +1,79 @@
+@using MudBlazor
+
+<div class="skeleton-card">
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
+                 Height="180px" 
+                 Animation="Animation.Wave"
+                 Class="skeleton-card-image" />
+    
+    <div class="skeleton-card-content">
+        <MudSkeleton SkeletonType="SkeletonType.Text" 
+                     Height="28px" 
+                     Animation="Animation.Wave"
+                     Class="mb-2" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" 
+                     Width="60%" 
+                     Height="28px" 
+                     Animation="Animation.Wave"
+                     Class="mb-3" />
+        
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
+                     Width="40%" 
+                     Height="24px" 
+                     Animation="Animation.Wave"
+                     Class="mb-2" />
+        
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
+                     Width="70%" 
+                     Height="20px" 
+                     Animation="Animation.Wave"
+                     Class="mb-1" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
+                     Width="90%" 
+                     Height="20px" 
+                     Animation="Animation.Wave" />
+    </div>
+    
+    <div class="skeleton-card-actions">
+        <MudSkeleton SkeletonType="SkeletonType.Circle" 
+                     Width="40px" 
+                     Height="40px" 
+                     Animation="Animation.Wave" />
+        <MudSkeleton SkeletonType="SkeletonType.Circle" 
+                     Width="40px" 
+                     Height="40px" 
+                     Animation="Animation.Wave" />
+        <MudSkeleton SkeletonType="SkeletonType.Circle" 
+                     Width="40px" 
+                     Height="40px" 
+                     Animation="Animation.Wave" />
+    </div>
+</div>
+
+<style>
+    .skeleton-card {
+        background: white;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .skeleton-card-image {
+        border-radius: 0;
+    }
+    
+    .skeleton-card-content {
+        padding: 16px;
+    }
+    
+    .skeleton-card-actions {
+        padding: 8px 16px;
+        display: flex;
+        gap: 8px;
+        border-top: 1px solid #e0e0e0;
+    }
+</style>
+
+@code {
+    // No parameters needed for skeleton loader
+}

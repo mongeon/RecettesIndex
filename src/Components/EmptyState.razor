@@ -1,0 +1,112 @@
+@using MudBlazor
+
+<div class="empty-state-container">
+    <MudPaper Elevation="0" Class="pa-8 text-center empty-state">
+        <div class="empty-state-icon mb-4">
+            <MudIcon Icon="@Icon" 
+                     Size="Size.Large" 
+                     Color="@IconColor"
+                     Style="font-size: 96px;" />
+        </div>
+        
+        <MudText Typo="Typo.h5" Class="mb-2" Style="font-weight: 600;">
+            @Title
+        </MudText>
+        
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4" Style="max-width: 400px; margin: 0 auto;">
+            @Message
+        </MudText>
+        
+        @if (ShowAction)
+        {
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      Size="Size.Large"
+                      StartIcon="@ActionIcon"
+                      OnClick="OnActionClick">
+                @ActionText
+            </MudButton>
+        }
+        
+        @if (!string.IsNullOrWhiteSpace(SecondaryActionText))
+        {
+            <MudButton Variant="Variant.Outlined" 
+                      Color="Color.Default" 
+                      Size="Size.Medium"
+                      Class="mt-2"
+                      OnClick="OnSecondaryActionClick">
+                @SecondaryActionText
+            </MudButton>
+        }
+    </MudPaper>
+</div>
+
+<style>
+    .empty-state-container {
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .empty-state {
+        background: transparent !important;
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    .empty-state-icon {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @@keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.RestaurantMenu;
+    
+    [Parameter]
+    public Color IconColor { get; set; } = Color.Secondary;
+    
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+    
+    [Parameter, EditorRequired]
+    public string Message { get; set; } = string.Empty;
+    
+    [Parameter]
+    public bool ShowAction { get; set; } = true;
+    
+    [Parameter]
+    public string ActionText { get; set; } = "Commencer";
+    
+    [Parameter]
+    public string ActionIcon { get; set; } = Icons.Material.Filled.Add;
+    
+    [Parameter]
+    public EventCallback OnActionClick { get; set; }
+    
+    [Parameter]
+    public string? SecondaryActionText { get; set; }
+    
+    [Parameter]
+    public EventCallback OnSecondaryActionClick { get; set; }
+}

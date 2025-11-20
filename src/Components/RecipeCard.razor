@@ -1,0 +1,219 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+
+<MudCard Elevation="2" Class="recipe-card" Style="height: 100%; display: flex; flex-direction: column;">
+    <div class="recipe-card-image" style="@GetCardImageStyle()">
+        <!-- Fun emoji/icon display -->
+        <div class="recipe-visual">
+            <MudIcon Icon="@GetRecipeIcon()" Size="Size.Large" Style="font-size: 72px; color: rgba(255,255,255,0.9);" />
+        </div>
+        
+        <div class="recipe-rating-overlay">
+            @if (Recipe.Rating > 0)
+            {
+                <MudChip T="string" Size="Size.Small" Color="@GetRatingColor()" Icon="@Icons.Material.Filled.LocalPizza">
+                    @Recipe.Rating
+                </MudChip>
+            }
+            else
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Dark" Icon="@Icons.Material.Filled.HelpOutline">
+                    Non évaluée
+                </MudChip>
+            }
+        </div>
+    </div>
+    
+    <MudCardContent Class="flex-grow-1" Style="padding-bottom: 8px;">
+        <MudText Typo="Typo.h6" Class="recipe-card-title" Style="margin-bottom: 8px; min-height: 48px;">
+            @Recipe.Name
+        </MudText>
+        
+        @if (Recipe.Rating > 0)
+        {
+            <div style="margin-bottom: 8px;">
+                <PizzaRating Value="@Recipe.Rating" ReadOnly="true" Size="Size.Small" />
+            </div>
+        }
+        
+        @if (Book != null)
+        {
+            <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.MenuBook" Color="Color.Default">
+                @Book.Name
+            </MudChip>
+        }
+        
+        @if (!string.IsNullOrWhiteSpace(Recipe.Notes))
+        {
+            var preview = Recipe.Notes.Length > 80 ? Recipe.Notes.Substring(0, 80) + "..." : Recipe.Notes;
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2" Style="font-size: 0.875rem; line-height: 1.4;">
+                @preview
+            </MudText>
+        }
+    </MudCardContent>
+    
+    <MudDivider />
+    
+    <MudCardActions Class="d-flex justify-space-between pa-2">
+        <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
+            <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                          Color="Color.Primary"
+                          Size="Size.Small"
+                          OnClick="@(() => OnView.InvokeAsync(Recipe))"
+                          Title="Voir les détails" />
+            
+            <MudIconButton Icon="@Icons.Material.Filled.Print" 
+                          Color="Color.Default"
+                          Size="Size.Small"
+                          OnClick="@(() => OnPrint.InvokeAsync(Recipe))"
+                          Title="Imprimer" />
+            
+            @if (IsAuthenticated)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                              Color="Color.Secondary"
+                              Size="Size.Small"
+                              OnClick="@(() => OnEdit.InvokeAsync(Recipe))"
+                              Title="Modifier" />
+                
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                              Color="Color.Error"
+                              Size="Size.Small"
+                              OnClick="@(() => OnDelete.InvokeAsync(Recipe))"
+                              Title="Supprimer" />
+            }
+        </MudButtonGroup>
+        
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.75rem;">
+            @Recipe.CreationDate.ToString("dd MMM yyyy")
+        </MudText>
+    </MudCardActions>
+</MudCard>
+
+<style>
+    .recipe-card {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .recipe-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
+    }
+    
+    .recipe-card:hover .recipe-visual {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .recipe-card-image {
+        height: 180px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-secondary) 100%);
+        overflow: hidden;
+    }
+    
+    .recipe-visual {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .recipe-rating-overlay {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+    
+    .recipe-card-title {
+        font-weight: 600;
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired]
+    public Recipe Recipe { get; set; } = null!;
+    
+    [Parameter]
+    public Book? Book { get; set; }
+    
+    [Parameter]
+    public bool IsAuthenticated { get; set; }
+    
+    [Parameter]
+    public EventCallback<Recipe> OnView { get; set; }
+    
+    [Parameter]
+    public EventCallback<Recipe> OnEdit { get; set; }
+    
+    [Parameter]
+    public EventCallback<Recipe> OnDelete { get; set; }
+    
+    [Parameter]
+    public EventCallback<Recipe> OnPrint { get; set; }
+    
+    private Color GetRatingColor() => Recipe.Rating switch
+    {
+        5 => Color.Success,
+        4 => Color.Info,
+        3 => Color.Warning,
+        2 => Color.Default,
+        1 => Color.Error,
+        _ => Color.Dark
+    };
+    
+    private string GetCardImageStyle()
+    {
+        var gradient = Recipe.Rating switch
+        {
+            5 => "linear-gradient(135deg, #4CAF50 0%, #81C784 100%)",
+            4 => "linear-gradient(135deg, #2196F3 0%, #64B5F6 100%)",
+            3 => "linear-gradient(135deg, #FF9800 0%, #FFB74D 100%)",
+            2 => "linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)",
+            1 => "linear-gradient(135deg, #F44336 0%, #E57373 100%)",
+            _ => "linear-gradient(135deg, #757575 0%, #9E9E9E 100%)"
+        };
+        
+        return $"height: 180px; position: relative; display: flex; align-items: center; justify-content: center; background: {gradient}; overflow: hidden;";
+    }
+    
+    private string GetRecipeIcon()
+    {
+        // Use recipe name hash to deterministically assign an icon
+        var hash = Math.Abs(Recipe.Name.GetHashCode());
+        
+        // Array of fun food-related Material Design icons
+        var foodIcons = new[]
+        {
+            Icons.Material.Filled.Restaurant,      // Fork & knife
+            Icons.Material.Filled.LocalPizza,      // Pizza
+            Icons.Material.Filled.LunchDining,     // Burger
+            Icons.Material.Filled.Cake,            // Cake
+            Icons.Material.Filled.Icecream,        // Ice cream
+            Icons.Material.Filled.LocalBar,        // Cocktail
+            Icons.Material.Filled.Coffee,          // Coffee
+            Icons.Material.Filled.EmojiFoodBeverage, // Hot drink
+            Icons.Material.Filled.Egg,             // Egg
+            Icons.Material.Filled.BakeryDining,    // Bread
+            Icons.Material.Filled.RamenDining,     // Ramen
+            Icons.Material.Filled.Fastfood,        // Fast food
+            Icons.Material.Filled.DinnerDining,    // Dinner plate
+            Icons.Material.Filled.BreakfastDining, // Breakfast
+            Icons.Material.Filled.BrunchDining,    // Brunch
+            Icons.Material.Filled.SoupKitchen,     // Soup
+            Icons.Material.Filled.SetMeal,         // Set meal
+            Icons.Material.Filled.RiceBowl,        // Rice bowl
+            Icons.Material.Filled.FreeBreakfast,   // Toast
+            Icons.Material.Filled.Tapas            // Tapas
+        };
+        
+        // Select icon based on hash (ensures same recipe always gets same icon)
+        return foodIcons[hash % foodIcons.Length];
+    }
+}
