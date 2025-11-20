@@ -1119,87 +1119,99 @@ public async Task SetBookColor(int bookId, string colorHex)
 
 ### **Phase 1: Quick Wins** (1-2 days) ✅ **START HERE**
 
-**Priority 1A - Card View Toggle**:
-- [ ] Create `RecipeCard.razor` component
-- [ ] Add view toggle button to `Recipes.razor`
-- [ ] Implement localStorage for view preference
-- [ ] Add responsive grid layout
-- [ ] Implement placeholder image system
+**Priority 1A - Card View Toggle** ✅ **COMPLETED**
+- [x] Create `RecipeCard.razor` component
+- [x] Add view toggle button to `Recipes.razor`
+- [x] Implement localStorage for view preference
+- [x] Add responsive grid layout
+- [x] Implement placeholder image system (fun food icons)
 
-**Priority 1B - Enhanced Visual Feedback**:
-- [ ] Replace loading spinners with skeleton loaders
-- [ ] Create empty state component
-- [ ] Add hover effects to cards and table rows
-- [ ] Implement success/error toast improvements
-- [ ] Add transition animations
+**Priority 1B - Enhanced Visual Feedback** ✅ **COMPLETED**
+- [x] Replace loading spinners with skeleton loaders
+- [x] Create empty state component
+- [x] Add hover effects to cards and table rows
+- [x] Implement success/error toast improvements
+- [x] Add transition animations
 
-**Priority 1C - Rating Color Coding**:
-- [ ] Update `PizzaRating` component with colors
-- [ ] Apply color coding to cards and badges
-- [ ] Add color legend to dashboard
+**Priority 1C - Rating Color Coding** ⭐ **NEXT - HIGH PRIORITY** (30 min)
+- [ ] Apply color coding to table rows based on rating
+- [ ] Add color legend/key to dashboard
+- [ ] Update filter chips with rating colors
+- [ ] Add rating color indicators to print view
 
-**Priority 1D - Mobile Responsive Fixes**:
-- [ ] Test on mobile devices
-- [ ] Adjust touch target sizes
-- [ ] Optimize filter panel for mobile
+**Priority 1D - Mobile Responsive Fixes** ⭐ **RECOMMENDED NEXT** (1 hour)
+- [ ] Test on mobile devices (real device or emulator)
+- [ ] Adjust touch target sizes (minimum 44x44px)
+- [ ] Optimize filter panel for mobile (collapsible by default)
 - [ ] Add bottom margin for mobile navigation
+- [ ] Fix card grid spacing on mobile
+- [ ] Test gestures and interactions
 
 ---
 
-### **Phase 2: User Experience** (3-4 days)
+### **Phase 2: User Experience** (3-4 days) - **UP NEXT**
 
-**Priority 2A - Collapsible Filter Panel**:
-- [ ] Create `MudExpansionPanel` for filters
-- [ ] Add filter presets (5-star, unrated, recent)
-- [ ] Implement saved filter preferences
+**Priority 2A - Collapsible Filter Panel** 🎯 **RECOMMENDED** (2 hours)
+- [ ] Wrap filters in `MudExpansionPanel`
+- [ ] Add filter presets (5-star, unrated, recent, random)
+- [ ] Implement saved filter preferences in localStorage
 - [ ] Add "Clear all filters" functionality
+- [ ] Make panel collapsed by default on mobile
 
-**Priority 2B - Related Recipes Section**:
-- [ ] Calculate related recipes (same book, author, rating)
-- [ ] Display in recipe details page
+**Priority 2B - Related Recipes Section** (2 hours)
+- [ ] Calculate related recipes algorithm (same book, author, similar rating)
+- [ ] Add "Related Recipes" section to recipe details page
+- [ ] Display 4-6 related recipe cards
 - [ ] Add "More like this" recommendations
+- [ ] Link to filtered results
 
-**Priority 2C - Recent Recipes in Navigation**:
-- [ ] Implement `LocalStorageService`
-- [ ] Track recently viewed recipes
-- [ ] Display in navigation dropdown
-- [ ] Limit to 5 most recent
+**Priority 2C - Recent Recipes in Navigation** (1.5 hours)
+- [ ] Create `LocalStorageService` class
+- [ ] Track recently viewed recipes (last 5)
+- [ ] Add dropdown menu in NavMenu
+- [ ] Display with icons and creation dates
+- [ ] Clear recent recipes option
 
-**Priority 2D - LocalStorage Favorites**:
-- [ ] Add favorite toggle button
+**Priority 2D - LocalStorage Favorites** (2 hours)
+- [ ] Add favorite toggle button (heart icon) to cards
 - [ ] Store favorites in localStorage
-- [ ] Display favorite badge/icon
-- [ ] Create "My Favorites" filter
+- [ ] Display favorite badge/icon on cards
+- [ ] Create "My Favorites" filter preset
+- [ ] Show favorites count in navigation
 
 ---
 
 ### **Phase 3: Advanced Features** (5-7 days)
 
 **Priority 3A - Interactive Dashboard Charts**:
-- [ ] Install chart library (if needed)
-- [ ] Create recipe trend chart (time series)
-- [ ] Create rating distribution pie chart
-- [ ] Add book usage visualization
+- [ ] Choose chart library (MudBlazor.Charts or ApexCharts)
+- [ ] Create recipe trend chart (recipes added over time)
+- [ ] Create rating distribution pie/donut chart
+- [ ] Add book usage bar chart or heatmap
 - [ ] Implement click-to-filter functionality
+- [ ] Add chart legends and tooltips
 
 **Priority 3B - Global Search Functionality**:
-- [ ] Create unified search component
+- [ ] Create unified search component in AppBar
 - [ ] Implement search across recipes, books, authors
 - [ ] Add search suggestions/autocomplete
 - [ ] Implement keyboard shortcut (Ctrl+K)
-- [ ] Add search history
+- [ ] Add search history (localStorage)
+- [ ] Display results with icons and categories
 
 **Priority 3C - Print Template Options**:
-- [ ] Create multiple print layouts
-- [ ] Add template selector
-- [ ] Implement batch printing
-- [ ] Add QR code generation (optional)
+- [ ] Create multiple print layouts (compact, detailed, index card)
+- [ ] Add template selector in print view
+- [ ] Implement batch printing (select multiple recipes)
+- [ ] Add QR code generation (optional - requires package)
+- [ ] Font size and scaling controls
 
 **Priority 3D - Export Features**:
 - [ ] Copy recipe link functionality
 - [ ] Share to clipboard (formatted text)
 - [ ] Generate shopping list from notes
-- [ ] Export multiple recipes
+- [ ] Export multiple recipes as text/markdown
+- [ ] Export to PDF (using print functionality)
 
 ---
 
