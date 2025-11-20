@@ -33,24 +33,31 @@
     
     <!-- Quick Filter Buttons -->
     <MudStack Row Wrap="Wrap.Wrap" Spacing="2" Class="mb-3">
-        <MudChip T="string" Color="@(showAllRecipes ? Color.Primary : Color.Default)" 
+        <MudChip T="string" 
+                 Color="@(showAllRecipes ? Color.Primary : Color.Default)" 
                  OnClick="ShowAll" 
                  Label="true">
             Toutes (@totalCount)
         </MudChip>
-        <MudChip T="string" Color="@(quickFilterRating == 5 ? Color.Success : Color.Default)" 
+        <MudChip T="string" 
+                 Color="@(quickFilterRating == 5 ? Color.Success : Color.Default)" 
+                 Style="@(quickFilterRating == 5 ? "background-color: #4CAF50 !important; color: white !important;" : "")"
                  OnClick="() => ApplyQuickFilter(5)" 
                  Label="true" 
                  Icon="@Icons.Material.Filled.LocalPizza">
             5 Étoiles (@fiveStarCount)
         </MudChip>
-        <MudChip T="string" Color="@(quickFilterRating == 4 ? Color.Info : Color.Default)" 
+        <MudChip T="string" 
+                 Color="@(quickFilterRating == 4 ? Color.Info : Color.Default)" 
+                 Style="@(quickFilterRating == 4 ? "background-color: #2196F3 !important; color: white !important;" : "")"
                  OnClick="() => ApplyQuickFilter(4)" 
                  Label="true"
                  Icon="@Icons.Material.Filled.LocalPizza">
             4+ Étoiles (@fourPlusStarCount)
         </MudChip>
-        <MudChip T="string" Color="@(quickFilterUnrated ? Color.Dark : Color.Default)" 
+        <MudChip T="string" 
+                 Color="@(quickFilterUnrated ? Color.Dark : Color.Default)" 
+                 Style="@(quickFilterUnrated ? "background-color: #757575 !important; color: white !important;" : "")"
                  OnClick="ShowUnrated" 
                  Label="true"
                  Icon="@Icons.Material.Filled.HelpOutline">

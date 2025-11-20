@@ -84,6 +84,9 @@
                         </span>
                         <span class="rating-number">(@recipe.Rating/5)</span>
                     </div>
+                    
+                    <!-- Color Indicator Bar -->
+                    <div class="rating-color-bar" style="@GetRatingColorBarStyle(recipe.Rating)"></div>
                 }
             </div>
 
@@ -188,6 +191,14 @@
         color: #666;
         font-size: 16px;
     }
+    
+    .rating-color-bar {
+        height: 6px;
+        width: 100px;
+        margin: 10px auto 0;
+        border-radius: 3px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
 
     .print-section {
         margin-bottom: 30px;
@@ -246,6 +257,13 @@
         color: #999;
         border-top: 1px solid #EEE;
         padding-top: 20px;
+    }
+
+    .rating-color-bar {
+        height: 8px;
+        border-radius: 4px;
+        margin-top: 10px;
+        transition: background-color 0.3s;
     }
 
     /* Print-specific styles */
@@ -365,5 +383,20 @@
     private async Task PrintPage()
     {
         await JSRuntime.InvokeVoidAsync("print");
+    }
+    
+    private string GetRatingColorBarStyle(int rating)
+    {
+        var color = rating switch
+        {
+            5 => "#4CAF50", // Green
+            4 => "#2196F3", // Blue
+            3 => "#FF9800", // Orange
+            2 => "#9E9E9E", // Gray
+            1 => "#F44336", // Red
+            _ => "#757575"  // Dark Gray
+        };
+        
+        return $"background-color: {color};";
     }
 }
