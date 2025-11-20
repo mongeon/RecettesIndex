@@ -72,6 +72,19 @@
                         Distribution des Notes
                     </MudText>
                     
+                    <!-- Color Legend -->
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+                        <MudText Typo="Typo.caption" Style="font-weight: 500;">Légende des couleurs:</MudText>
+                        <MudStack Row Wrap="Wrap.Wrap" Spacing="1" Class="mt-1">
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.LocalPizza">5⭐</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.LocalPizza">4⭐</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.LocalPizza">3⭐</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default" Icon="@Icons.Material.Filled.LocalPizza">2⭐</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.LocalPizza">1⭐</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Dark" Icon="@Icons.Material.Filled.HelpOutline">Non évalué</MudChip>
+                        </MudStack>
+                    </MudAlert>
+                    
                     @foreach (var rating in statistics.RatingDistribution.OrderByDescending(r => r.Key))
                     {
                         var percentage = statistics.TotalRecipes > 0 

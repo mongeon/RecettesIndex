@@ -38,18 +38,19 @@
                  Label="true">
             Toutes (@totalCount)
         </MudChip>
-        <MudChip T="string" Color="@(quickFilterRating == 5 ? Color.Warning : Color.Default)" 
+        <MudChip T="string" Color="@(quickFilterRating == 5 ? Color.Success : Color.Default)" 
                  OnClick="() => ApplyQuickFilter(5)" 
                  Label="true" 
-                 Icon="@Icons.Material.Filled.Star">
+                 Icon="@Icons.Material.Filled.LocalPizza">
             5 Étoiles (@fiveStarCount)
         </MudChip>
         <MudChip T="string" Color="@(quickFilterRating == 4 ? Color.Info : Color.Default)" 
                  OnClick="() => ApplyQuickFilter(4)" 
-                 Label="true">
+                 Label="true"
+                 Icon="@Icons.Material.Filled.LocalPizza">
             4+ Étoiles (@fourPlusStarCount)
         </MudChip>
-        <MudChip T="string" Color="@(quickFilterUnrated ? Color.Secondary : Color.Default)" 
+        <MudChip T="string" Color="@(quickFilterUnrated ? Color.Dark : Color.Default)" 
                  OnClick="ShowUnrated" 
                  Label="true"
                  Icon="@Icons.Material.Filled.HelpOutline">
@@ -85,11 +86,11 @@
                    Label="Évaluation" 
                    Class="min-w-200">
             <MudSelectItem T="string" Value='@("all")'>Toutes</MudSelectItem>
-            <MudSelectItem T="string" Value='@("1")'>⭐ 1</MudSelectItem>
-            <MudSelectItem T="string" Value='@("2")'>⭐ 2</MudSelectItem>
-            <MudSelectItem T="string" Value='@("3")'>⭐ 3</MudSelectItem>
-            <MudSelectItem T="string" Value='@("4")'>⭐ 4</MudSelectItem>
-            <MudSelectItem T="string" Value='@("5")'>⭐ 5</MudSelectItem>
+            <MudSelectItem T="string" Value='@("1")'>🍕 1</MudSelectItem>
+            <MudSelectItem T="string" Value='@("2")'>🍕 2</MudSelectItem>
+            <MudSelectItem T="string" Value='@("3")'>🍕 3</MudSelectItem>
+            <MudSelectItem T="string" Value='@("4")'>🍕 4</MudSelectItem>
+            <MudSelectItem T="string" Value='@("5")'>🍕 5</MudSelectItem>
         </MudSelect>
         <MudSelect T="string" 
                    Value="@bookFilter" 
@@ -253,14 +254,14 @@
                     }
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Nom">
+                    <MudTd DataLabel="Nom" Style="@GetRowStyle(context)">
                         <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
                     </MudTd>
-                    <MudTd DataLabel="Évaluation">
+                    <MudTd DataLabel="Évaluation" Style="@GetRowStyle(context)">
                         <PizzaRating Value="@context.Rating" />
                     </MudTd>
-                    <MudTd DataLabel="Créée le">@context.CreationDate.ToShortDateString()</MudTd>
-                    <MudTd DataLabel="Notes">
+                    <MudTd DataLabel="Créée le" Style="@GetRowStyle(context)">@context.CreationDate.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="Notes" Style="@GetRowStyle(context)">
                         @if (!string.IsNullOrWhiteSpace(context.Notes))
                         {
                             var preview = context.Notes.Length > 50 ? context.Notes.Substring(0, 50) + "..." : context.Notes;
@@ -269,7 +270,7 @@
                             </MudTooltip>
                         }
                     </MudTd>
-                    <MudTd DataLabel="Livre">
+                    <MudTd DataLabel="Livre" Style="@GetRowStyle(context)">
                         @if (context.BookId != null)
                         {
                             var book = books.FirstOrDefault(b => b.Id == context.BookId);
@@ -281,7 +282,7 @@
                     </MudTd>
                     @if (AuthService.IsAuthenticated)
                     {
-                        <MudTd>
+                        <MudTd Style="@GetRowStyle(context)">
                             <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
                             <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteRecipe(context)">Supprimer</MudButton>
                         </MudTd>
@@ -310,21 +311,38 @@
     }
     
     .recipe-table tbody tr {
-        transition: background-color 0.2s ease;
+        transition: background-color 0.2s ease, transform 0.1s ease;
     }
     
     .recipe-table tbody tr:hover {
-        background-color: rgba(0, 0, 0, 0.04);
+        transform: translateX(2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    
+    /* Rating-based row colors */
+    .rating-5-row { background-color: rgba(76, 175, 80, 0.08) !important; }
+    .rating-4-row { background-color: rgba(33, 150, 243, 0.08) !important; }
+    .rating-3-row { background-color: rgba(255, 152, 0, 0.08) !important; }
+    .rating-2-row { background-color: rgba(158, 158, 158, 0.08) !important; }
+    .rating-1-row { background-color: rgba(244, 67, 54, 0.08) !important; }
+    .rating-0-row { background-color: rgba(117, 117, 117, 0.05) !important; }
+    
+    /* Hover states for rating colors */
+    .recipe-table tbody tr.rating-5-row:hover { background-color: rgba(76, 175, 80, 0.15) !important; }
+    .recipe-table tbody tr.rating-4-row:hover { background-color: rgba(33, 150, 243, 0.15) !important; }
+    .recipe-table tbody tr.rating-3-row:hover { background-color: rgba(255, 152, 0, 0.15) !important; }
+    .recipe-table tbody tr.rating-2-row:hover { background-color: rgba(158, 158, 158, 0.15) !important; }
+    .recipe-table tbody tr.rating-1-row:hover { background-color: rgba(244, 67, 54, 0.15) !important; }
+    .recipe-table tbody tr.rating-0-row:hover { background-color: rgba(117, 117, 117, 0.12) !important; }
 </style>
 
 @code {
     private MudTable<Recipe>? table;
     private List<Book> books = [];
     private List<Author> authors = [];
-    private List<BreadcrumbItem> breadcrumbs =
+    private List<BreadcrumbItem> breadcrumbs =>
     [
-        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Accueil", href: ""),
         new BreadcrumbItem("Recettes", href: "/recipes", disabled: true)
     ];
     private string searchTerm = string.Empty;
@@ -876,5 +894,19 @@
     private void PrintRecipe(Recipe recipe)
     {
         NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
+    }
+
+    private string GetRowStyle(Recipe recipe)
+    {
+        // Apply subtle background color based on rating
+        return recipe.Rating switch
+        {
+            5 => "background-color: rgba(76, 175, 80, 0.08);",
+            4 => "background-color: rgba(33, 150, 243, 0.08);",
+            3 => "background-color: rgba(255, 152, 0, 0.08);",
+            2 => "background-color: rgba(158, 158, 158, 0.08);",
+            1 => "background-color: rgba(244, 67, 54, 0.08);",
+            _ => "background-color: rgba(117, 117, 117, 0.05);"
+        };
     }
 }
