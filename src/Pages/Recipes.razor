@@ -56,6 +56,21 @@
                  Icon="@Icons.Material.Filled.HelpOutline">
             Non évaluées (@unratedCount)
         </MudChip>
+        
+        <!-- New Presets -->
+        <MudChip T="string" Color="@(showRecentRecipes ? Color.Info : Color.Default)" 
+                 OnClick="ShowRecent" 
+                 Label="true"
+                 Icon="@Icons.Material.Filled.Schedule">
+            Récentes (30j)
+        </MudChip>
+        <MudChip T="string" Color="Color.Secondary" 
+                 OnClick="ShowRandom" 
+                 Label="true"
+                 Icon="@Icons.Material.Filled.Shuffle">
+            Surprise !
+        </MudChip>
+        
         @if (!string.IsNullOrWhiteSpace(searchTerm) || ratingFilter != null || bookFilter != null || authorFilter != null)
         {
             <MudChip T="string" Color="Color.Error" 
@@ -67,60 +82,103 @@
         }
     </MudStack>
     
-    <!-- Advanced Search and Filters -->
-    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
-        <MudTextField T="string" 
-                      Value="@searchTerm" 
-                      ValueChanged="OnSearchChanged" 
-                      Placeholder="Rechercher des recettes..." 
-                      Adornment="Adornment.Start" 
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      Clearable="true"
-                      Immediate="false"
-                      DebounceInterval="300" />
-        <MudSelect T="string" 
-                   Value="@ratingFilter" 
-                   ValueChanged="OnRatingChanged" 
-                   Clearable="true" 
-                   Dense="true" 
-                   Label="Évaluation" 
-                   Class="min-w-200">
-            <MudSelectItem T="string" Value='@("all")'>Toutes</MudSelectItem>
-            <MudSelectItem T="string" Value='@("1")'>🍕 1</MudSelectItem>
-            <MudSelectItem T="string" Value='@("2")'>🍕 2</MudSelectItem>
-            <MudSelectItem T="string" Value='@("3")'>🍕 3</MudSelectItem>
-            <MudSelectItem T="string" Value='@("4")'>🍕 4</MudSelectItem>
-            <MudSelectItem T="string" Value='@("5")'>🍕 5</MudSelectItem>
-        </MudSelect>
-        <MudSelect T="string" 
-                   Value="@bookFilter" 
-                   ValueChanged="OnBookChanged" 
-                   Clearable="true" 
-                   Dense="true" 
-                   Label="Livre" 
-                   Class="min-w-200">
-            <MudSelectItem T="string" Value='@("all")'>Tous (@books.Count)</MudSelectItem>
-            @foreach (var b in books)
-            {
-                var recipeCount = GetRecipeCountForBook(b.Id);
-                <MudSelectItem T="string" Value="@b.Id.ToString()">@b.Name (@recipeCount)</MudSelectItem>
-            }
-        </MudSelect>
-        <MudSelect T="string" 
-                   Value="@authorFilter" 
-                   ValueChanged="OnAuthorChanged" 
-                   Clearable="true" 
-                   Dense="true" 
-                   Label="Auteur" 
-                   Class="min-w-200">
-            <MudSelectItem T="string" Value='@("all")'>Tous (@authors.Count)</MudSelectItem>
-            @foreach (var a in authors)
-            {
-                var recipeCount = GetRecipeCountForAuthor(a.Id);
-                <MudSelectItem T="string" Value="@a.Id.ToString()">@a.FullName (@recipeCount)</MudSelectItem>
-            }
-        </MudSelect>
-    </MudStack>
+    <!-- Collapsible Advanced Filters -->
+    <MudExpansionPanels Class="mb-3">
+        <MudExpansionPanel Text="Filtres Avancés" 
+                          Icon="@Icons.Material.Filled.FilterList">
+            <TitleContent>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.FilterList" Class="mr-2" />
+                    <MudText>Filtres Avancés</MudText>
+                    @if (HasActiveFilters())
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">
+                            @GetActiveFilterCount()
+                        </MudChip>
+                    }
+                </div>
+            </TitleContent>
+            <ChildContent>
+                <!-- Search and Filter Controls -->
+                <MudStack Spacing="3" Class="mt-2">
+                    <!-- Search -->
+                    <MudTextField T="string" 
+                                  Value="@searchTerm" 
+                                  ValueChanged="OnSearchChanged" 
+                                  Placeholder="Rechercher des recettes..." 
+                                  Adornment="Adornment.Start" 
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Clearable="true"
+                                  Immediate="false"
+                                  DebounceInterval="300"
+                                  HelperText="Recherchez par nom de recette"
+                                  Variant="Variant.Outlined" />
+                    
+                    <!-- Filter Row -->
+                    <MudStack Row Spacing="2" Wrap="Wrap.Wrap">
+                        <MudSelect T="string" 
+                                   Value="@ratingFilter" 
+                                   ValueChanged="OnRatingChanged" 
+                                   Clearable="true" 
+                                   Label="Évaluation" 
+                                   Variant="Variant.Outlined"
+                                   Style="min-width: 200px;">
+                            <MudSelectItem T="string" Value='@("all")'>Toutes</MudSelectItem>
+                            <MudSelectItem T="string" Value='@("1")'>🍕 1</MudSelectItem>
+                            <MudSelectItem T="string" Value='@("2")'>🍕 2</MudSelectItem>
+                            <MudSelectItem T="string" Value='@("3")'>🍕 3</MudSelectItem>
+                            <MudSelectItem T="string" Value='@("4")'>🍕 4</MudSelectItem>
+                            <MudSelectItem T="string" Value='@("5")'>🍕 5</MudSelectItem>
+                        </MudSelect>
+                        
+                        <MudSelect T="string" 
+                                   Value="@bookFilter" 
+                                   ValueChanged="OnBookChanged" 
+                                   Clearable="true" 
+                                   Label="Livre" 
+                                   Variant="Variant.Outlined"
+                                   Style="min-width: 250px;">
+                            <MudSelectItem T="string" Value='@("all")'>Tous (@books.Count)</MudSelectItem>
+                            @foreach (var b in books)
+                            {
+                                var recipeCount = GetRecipeCountForBook(b.Id);
+                                <MudSelectItem T="string" Value="@b.Id.ToString()">@b.Name (@recipeCount)</MudSelectItem>
+                            }
+                        </MudSelect>
+                        
+                        <MudSelect T="string" 
+                                   Value="@authorFilter" 
+                                   ValueChanged="OnAuthorChanged" 
+                                   Clearable="true" 
+                                   Label="Auteur" 
+                                   Variant="Variant.Outlined"
+                                   Style="min-width: 250px;">
+                            <MudSelectItem T="string" Value='@("all")'>Tous (@authors.Count)</MudSelectItem>
+                            @foreach (var a in authors)
+                            {
+                                var recipeCount = GetRecipeCountForAuthor(a.Id);
+                                <MudSelectItem T="string" Value="@a.Id.ToString()">@a.FullName (@recipeCount)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudStack>
+                    
+                    <!-- Filter Actions -->
+                    @if (HasActiveFilters())
+                    {
+                        <MudStack Row Spacing="1" Class="mt-2">
+                            <MudButton Variant="Variant.Outlined" 
+                                      Color="Color.Error" 
+                                      Size="Size.Small"
+                                      StartIcon="@Icons.Material.Filled.Clear"
+                                      OnClick="ClearAllFilters">
+                                Tout effacer
+                            </MudButton>
+                        </MudStack>
+                    }
+                </MudStack>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 
     <!-- Active Filters Display -->
     @if (HasActiveFilters())
@@ -137,7 +195,7 @@
                 @if (ratingFilter != null && ratingFilter != "all")
                 {
                     <MudChip T="string" Size="Size.Small" OnClose="() => ClearRating()">
-                        Note: @ratingFilter ⭐
+                        Note: @ratingFilter 🍕
                     </MudChip>
                 }
                 @if (bookFilter != null && bookFilter != "all")
@@ -354,6 +412,7 @@
     private bool showAllRecipes = true;
     private int? quickFilterRating = null;
     private bool quickFilterUnrated = false;
+    private bool showRecentRecipes = false;
     
     // Filter counts
     private int totalCount = 0;
@@ -422,7 +481,7 @@
                 isLoading = false;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Log error if needed
             isLoading = false;
@@ -453,7 +512,281 @@
             // Silently fail if localStorage is not available
         }
     }
+    
+    private int GetActiveFilterCount()
+    {
+        int count = 0;
+        if (!string.IsNullOrWhiteSpace(searchTerm)) count++;
+        if (ratingFilter != null && ratingFilter != "all") count++;
+        if (bookFilter != null && bookFilter != "all") count++;
+        if (authorFilter != null && authorFilter != "all") count++;
+        return count;
+    }
+    
+    private async Task ShowRecent()
+    {
+        showAllRecipes = false;
+        showRecentRecipes = true;
+        quickFilterRating = null;
+        quickFilterUnrated = false;
+        ratingFilter = null;
+        bookFilter = null;
+        authorFilter = null;
+        searchTerm = string.Empty;
+        currentPage = 1;
+        
+        // This will filter recipes from the last 30 days
+        // We'll implement this in the search logic
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+    
+    private async Task ShowRandom()
+    {
+        try
+        {
+            // Get all recipes
+            var result = await RecipeService.SearchAsync(null, null, null, null, 1, 10000);
+            if (result.IsSuccess && result.Value.Items.Any())
+            {
+                // Pick a random recipe
+                var random = new Random();
+                var randomRecipe = result.Value.Items.OrderBy(x => random.Next()).First();
+                
+                // Navigate to it
+                NavigationManager.NavigateTo($"/recipes/{randomRecipe.Id}");
+                Snackbar.Add($"🎲 Surprise: {randomRecipe.Name}!", Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add("Aucune recette disponible", Severity.Warning);
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Erreur lors de la sélection aléatoire", Severity.Error);
+        }
+    }
+    
+    private async Task ShowAll()
+    {
+        showAllRecipes = true;
+        showRecentRecipes = false;
+        quickFilterRating = null;
+        quickFilterUnrated = false;
+        ratingFilter = null;
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
 
+    private async Task ApplyQuickFilter(int rating)
+    {
+        showAllRecipes = false;
+        showRecentRecipes = false;
+        quickFilterRating = rating;
+        quickFilterUnrated = false;
+        ratingFilter = rating >= 4 ? null : rating.ToString();
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
+    private async Task ShowUnrated()
+    {
+        showAllRecipes = false;
+        showRecentRecipes = false;
+        quickFilterRating = null;
+        quickFilterUnrated = true;
+        ratingFilter = null;
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
+    private async Task ClearAllFilters()
+    {
+        searchTerm = string.Empty;
+        ratingFilter = null;
+        bookFilter = null;
+        authorFilter = null;
+        showAllRecipes = true;
+        showRecentRecipes = false;
+        quickFilterRating = null;
+        quickFilterUnrated = false;
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
+    private async Task ClearRating()
+    {
+        ratingFilter = null;
+        quickFilterRating = null;
+        quickFilterUnrated = false;
+        showAllRecipes = true;
+        showRecentRecipes = false;
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+    
+    private class SavedFilters
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("searchTerm")]
+        public string? SearchTerm { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("ratingFilter")]
+        public string? RatingFilter { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("bookFilter")]
+        public string? BookFilter { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("authorFilter")]
+        public string? AuthorFilter { get; set; }
+    }
+    
+    private async Task LoadCardViewData()
+    {
+        isLoading = true;
+        try
+        {
+            // Apply filters
+            int? rating = GetRatingFilter();
+            int? bookId = GetBookIdFilter();
+            int? authorId = GetAuthorIdFilter();
+            
+            var result = await RecipeService.SearchAsync(
+                searchTerm,
+                rating,
+                bookId,
+                authorId,
+                currentPage,
+                pageSize,
+                "created_at",
+                true
+            );
+            
+            if (result.IsSuccess)
+            {
+                var items = result.Value.Items.ToList();
+                
+                // Apply recent filter if active
+                if (showRecentRecipes)
+                {
+                    var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+                    items = items.Where(r => r.CreationDate >= thirtyDaysAgo).ToList();
+                }
+                
+                currentRecipes = items;
+                totalPages = (int)Math.Ceiling(items.Count / (double)pageSize);
+            }
+            else
+            {
+                currentRecipes = new();
+                totalPages = 0;
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private async Task<TableData<Recipe>> LoadServerData(TableState state, CancellationToken token)
+    {
+        var page = state.Page + 1;
+        var pageSize = state.PageSize;
+        
+        // Apply quick filters
+        int? rating = null;
+        if (quickFilterUnrated)
+        {
+            // We'll handle unrated filter in post-processing
+        }
+        else if (quickFilterRating.HasValue)
+        {
+            if (quickFilterRating.Value == 4)
+            {
+                // For 4+, we'll filter in post-processing
+            }
+            else
+            {
+                // For exact rating (5, 3, 2, 1), pass to search
+                rating = quickFilterRating.Value;
+            }
+        }
+        else if (ratingFilter != "all" && !string.IsNullOrWhiteSpace(ratingFilter))
+        {
+            rating = int.TryParse(ratingFilter, out var r) ? r : null;
+        }
+        
+        int? bookId = (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) ? null : (int.TryParse(bookFilter, out var b) ? b : null);
+        int? authorId = (authorFilter == "all" || string.IsNullOrWhiteSpace(authorFilter)) ? null : (int.TryParse(authorFilter, out var a) ? a : null);
+        
+        var sortLabel = state.SortLabel;
+        var sortDescending = state.SortDirection == SortDirection.Descending;
+        
+        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, authorId, page, pageSize, sortLabel, sortDescending);
+        if (!result.IsSuccess)
+            return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
+        
+        var items = result.Value.Items;
+        var total = result.Value.Total;
+        
+        // Post-process for special filters
+        if (quickFilterUnrated)
+        {
+            items = items.Where(r => r.Rating == 0 || r.Rating < 1).ToList();
+            total = items.Count;
+        }
+        else if (quickFilterRating == 4)
+        {
+            // Only filter 4+ stars in post-processing
+            items = items.Where(r => r.Rating >= 4).ToList();
+            total = items.Count;
+        }
+        
+        // Apply recent filter if active
+        if (showRecentRecipes)
+        {
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+            items = items.Where(r => r.CreationDate >= thirtyDaysAgo).ToList();
+            total = items.Count;
+        }
+        
+        return new TableData<Recipe> { Items = items, TotalItems = total };
+    }
+    
     private async Task LoadRecipes()
     {
         books = (await RecipeService.GetBooksAsync())?.ToList() ?? new();
@@ -491,44 +824,6 @@
                 var count = allRecipes.Count(r => r.BookId.HasValue && authorBookIds.Contains(r.BookId.Value));
                 authorRecipeCounts[author.Id] = count;
             }
-        }
-    }
-
-    private async Task LoadCardViewData()
-    {
-        isLoading = true;
-        try
-        {
-            // Apply filters
-            int? rating = GetRatingFilter();
-            int? bookId = GetBookIdFilter();
-            int? authorId = GetAuthorIdFilter();
-            
-            var result = await RecipeService.SearchAsync(
-                searchTerm,
-                rating,
-                bookId,
-                authorId,
-                currentPage,
-                pageSize,
-                "created_at",
-                true
-            );
-            
-            if (result.IsSuccess)
-            {
-                currentRecipes = result.Value.Items.ToList();
-                totalPages = (int)Math.Ceiling(result.Value.Total / (double)pageSize);
-            }
-            else
-            {
-                currentRecipes = new();
-                totalPages = 0;
-            }
-        }
-        finally
-        {
-            isLoading = false;
         }
     }
     
@@ -580,90 +875,6 @@
         if (HasActiveFilters())
             return "Essayez de modifier vos filtres ou réinitialisez-les pour voir toutes les recettes.";
         return "Commencez par ajouter votre première recette pour construire votre collection personnelle.";
-    }
-
-    private async Task ShowAll()
-    {
-        showAllRecipes = true;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
-        ratingFilter = null;
-        currentPage = 1;
-        
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
-    }
-
-    private async Task ApplyQuickFilter(int rating)
-    {
-        showAllRecipes = false;
-        quickFilterRating = rating;
-        quickFilterUnrated = false;
-        ratingFilter = rating >= 4 ? null : rating.ToString();
-        currentPage = 1;
-        
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
-    }
-
-    private async Task ShowUnrated()
-    {
-        showAllRecipes = false;
-        quickFilterRating = null;
-        quickFilterUnrated = true;
-        ratingFilter = null;
-        currentPage = 1;
-        
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
-    }
-
-    private async Task ClearAllFilters()
-    {
-        searchTerm = string.Empty;
-        ratingFilter = null;
-        bookFilter = null;
-        authorFilter = null;
-        showAllRecipes = true;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
-        currentPage = 1;
-        
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
-    }
-
-    private async Task ClearSearch()
-    {
-        searchTerm = string.Empty;
-        currentPage = 1;
-        
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
-    }
-
-    private async Task ClearRating()
-    {
-        ratingFilter = null;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
-        showAllRecipes = true;
-        currentPage = 1;
-        
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
     }
 
     private async Task ClearBook()
@@ -765,63 +976,6 @@
         {
             Snackbar.Add("Une erreur s'est produite lors de la suppression de la recette. Veuillez réessayer.", Severity.Error);
         }
-    }
-
-    private async Task<TableData<Recipe>> LoadServerData(TableState state, CancellationToken token)
-    {
-        var page = state.Page + 1;
-        var pageSize = state.PageSize;
-        
-        // Apply quick filters
-        int? rating = null;
-        if (quickFilterUnrated)
-        {
-            // We'll handle unrated filter in post-processing
-        }
-        else if (quickFilterRating.HasValue)
-        {
-            if (quickFilterRating.Value == 4)
-            {
-                // For 4+, we'll filter in post-processing
-            }
-            else
-            {
-                // For exact rating (5, 3, 2, 1), pass to search
-                rating = quickFilterRating.Value;
-            }
-        }
-        else if (ratingFilter != "all" && !string.IsNullOrWhiteSpace(ratingFilter))
-        {
-            rating = int.TryParse(ratingFilter, out var r) ? r : null;
-        }
-        
-        int? bookId = (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) ? null : (int.TryParse(bookFilter, out var b) ? b : null);
-        int? authorId = (authorFilter == "all" || string.IsNullOrWhiteSpace(authorFilter)) ? null : (int.TryParse(authorFilter, out var a) ? a : null);
-        
-        var sortLabel = state.SortLabel;
-        var sortDescending = state.SortDirection == SortDirection.Descending;
-        
-        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, authorId, page, pageSize, sortLabel, sortDescending);
-        if (!result.IsSuccess)
-            return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
-        
-        var items = result.Value.Items;
-        var total = result.Value.Total;
-        
-        // Post-process for special filters
-        if (quickFilterUnrated)
-        {
-            items = items.Where(r => r.Rating == 0 || r.Rating < 1).ToList();
-            total = items.Count;
-        }
-        else if (quickFilterRating == 4)
-        {
-            // Only filter 4+ stars in post-processing
-            items = items.Where(r => r.Rating >= 4).ToList();
-            total = items.Count;
-        }
-        
-        return new TableData<Recipe> { Items = items, TotalItems = total };
     }
 
     private async Task Reload()
