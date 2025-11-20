@@ -1,11 +1,18 @@
 @using MudBlazor
 
-<MudRating SelectedValue="Value" SelectedValueChanged="OnValueChanged" MaxValue="5" FullIcon="@Icons.Material.Filled.LocalPizza" EmptyIcon="@Icons.Material.Outlined.LocalPizza" ReadOnly="@ReadOnly" />
+<MudRating SelectedValue="Value" 
+           SelectedValueChanged="OnValueChanged" 
+           MaxValue="5" 
+           FullIcon="@Icons.Material.Filled.LocalPizza" 
+           EmptyIcon="@Icons.Material.Outlined.LocalPizza" 
+           ReadOnly="@ReadOnly"
+           Size="@Size" />
 
 @code {
     [Parameter] public int Value { get; set; }
     [Parameter] public EventCallback<int> ValueChanged { get; set; }
     [Parameter] public bool ReadOnly { get; set; } = true;
+    [Parameter] public Size Size { get; set; } = Size.Medium;
 
     private async Task OnValueChanged(int value)
     {
