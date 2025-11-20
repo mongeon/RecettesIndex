@@ -1162,12 +1162,20 @@ public async Task SetBookColor(int bookId, string colorHex)
 
 **Note**: Panel state and saved filters persistence deferred due to MudBlazor event binding compatibility issues. Feature works perfectly without persistence - panel can be manually expanded/collapsed, just doesn't remember state between page loads.
 
-**Priority 2B - Related Recipes Section** (2 hours)
-- [ ] Calculate related recipes algorithm (same book, author, similar rating)
-- [ ] Add "Related Recipes" section to recipe details page
-- [ ] Display 4-6 related recipe cards
-- [ ] Add "More like this" recommendations
-- [ ] Link to filtered results
+**Priority 2B - Related Recipes Section** ✅ **COMPLETED** (2 hours)
+- [x] Calculate related recipes algorithm (same book, author, similar rating)
+- [x] Add "Related Recipes" section to recipe details page
+- [x] Display up to 6 related recipe cards
+- [x] Add "View more" button linking to filtered results
+- [x] Use RecipeCard component for consistent display
+
+**Algorithm scoring**:
+- Same book: 100 points (highest relevance)
+- Same author: 50 points (medium relevance)
+- Exact same rating: 20 points
+- One star difference: 10 points (low relevance)
+
+Displays top 6 most relevant recipes with clickable cards that navigate to recipe details.
 
 **Priority 2C - Recent Recipes in Navigation** (1.5 hours)
 - [ ] Create `LocalStorageService` class
