@@ -81,7 +81,7 @@
                  OnClick="ShowRecent" 
                  Label="true"
                  Icon="@Icons.Material.Filled.Schedule">
-            Récentes (30j)
+            Ajoutées récemment (30j)
         </MudChip>
         <MudChip T="string" Color="Color.Secondary" 
                  OnClick="ShowRandom" 
@@ -408,6 +408,36 @@
     private Dictionary<int, int> bookRecipeCounts = new();
     private Dictionary<int, int> authorRecipeCounts = new();
     
+    // Memoized active filter count
+    private int? _cachedActiveFilterCount = null;
+    
+    private int GetActiveFilterCount()
+    {
+        // Return cached value if available
+        if (_cachedActiveFilterCount.HasValue)
+        {
+            return _cachedActiveFilterCount.Value;
+        }
+        
+        // Calculate and cache
+        int count = 0;
+        if (!string.IsNullOrWhiteSpace(searchTerm)) count++;
+        if (ratingFilter != null && ratingFilter != "all") count++;
+        if (bookFilter != null && bookFilter != "all") count++;
+        if (authorFilter != null && authorFilter != "all") count++;
+        
+        _cachedActiveFilterCount = count;
+        return count;
+    }
+    
+    /// <summary>
+    /// Invalidates the cached filter count when filters change.
+    /// </summary>
+    private void InvalidateFilterCountCache()
+    {
+        _cachedActiveFilterCount = null;
+    }
+    
     // Card view state
     private bool _isCardView = false;
     private bool isCardView 
@@ -534,16 +564,6 @@
         }
     }
     
-    private int GetActiveFilterCount()
-    {
-        int count = 0;
-        if (!string.IsNullOrWhiteSpace(searchTerm)) count++;
-        if (ratingFilter != null && ratingFilter != "all") count++;
-        if (bookFilter != null && bookFilter != "all") count++;
-        if (authorFilter != null && authorFilter != "all") count++;
-        return count;
-    }
-    
     private async Task ShowRecent()
     {
         showAllRecipes = false;
@@ -569,13 +589,24 @@
     {
         try
         {
-            // Get all recipes
-            var result = await RecipeService.SearchAsync(null, null, null, null, 1, 10000);
+            // First, get the total count without loading all recipes
+            var countResult = await RecipeService.SearchAsync(null, null, null, null, 1, 1);
+            if (!countResult.IsSuccess || countResult.Value.Total == 0)
+            {
+                Snackbar.Add("Aucune recette disponible", Severity.Warning);
+                return;
+            }
+            
+            // Pick a random index based on total count
+            var random = new Random();
+            var randomIndex = random.Next(0, countResult.Value.Total);
+            var randomPage = (randomIndex / 1) + 1; // Page number for single-item fetch
+            
+            // Fetch only the specific random recipe
+            var result = await RecipeService.SearchAsync(null, null, null, null, randomPage, 1);
             if (result.IsSuccess && result.Value.Items.Any())
             {
-                // Pick a random recipe
-                var random = new Random();
-                var randomRecipe = result.Value.Items.OrderBy(x => random.Next()).First();
+                var randomRecipe = result.Value.Items.First();
                 
                 // Navigate to it
                 NavigationManager.NavigateTo($"/recipes/{randomRecipe.Id}");
@@ -592,7 +623,7 @@
             Snackbar.Add("Erreur lors de la sélection aléatoire", Severity.Error);
         }
     }
-    
+
     private async Task ShowAll()
     {
         showAllRecipes = true;
@@ -681,6 +712,7 @@
         quickFilterUnrated = false;
         currentPage = 1;
         showFavorites = false;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -692,6 +724,7 @@
     {
         searchTerm = string.Empty;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -707,6 +740,7 @@
         showAllRecipes = true;
         showRecentRecipes = false;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -937,6 +971,7 @@
     {
         bookFilter = null;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -948,6 +983,7 @@
     {
         authorFilter = null;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -1050,6 +1086,7 @@
         quickFilterRating = null;
         quickFilterUnrated = false;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -1061,6 +1098,7 @@
     {
         bookFilter = value;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -1072,6 +1110,7 @@
     {
         authorFilter = value;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();
@@ -1083,6 +1122,7 @@
     {
         searchTerm = value;
         currentPage = 1;
+        InvalidateFilterCountCache();
         
         if (isCardView)
             await LoadCardViewData();

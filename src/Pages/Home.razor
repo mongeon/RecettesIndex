@@ -1,13 +1,16 @@
-﻿@page "/"
+@page "/"
 @using Microsoft.AspNetCore.Components
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Components
 @using Supabase
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject Client SupabaseClient
+@inject LocalStorageService LocalStorage
+@inject ISnackbar Snackbar
 
 <PageTitle>Mes Recettes - Votre Collection de Recettes</PageTitle>
 
@@ -71,7 +74,7 @@
 
     <!-- Newest Recipes Section -->
     <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">
-        <MudIcon Icon="@Icons.Material.Filled.NewReleases" Class="mr-2" /> Recettes Récentes
+        <MudIcon Icon="@Icons.Material.Filled.NewReleases" Class="mr-2" /> Nouvelles Recettes
     </MudText>
     
     @if (loadingNewest)
@@ -89,42 +92,18 @@
         <div class="d-none d-sm-flex overflow-auto pb-4 gap-4 flex-nowrap mb-6 recipe-scroll">
             @foreach (var recipe in newestRecipes)
             {
-                <MudCard Elevation="2" Class="recipe-card flex-shrink-0" Style="width: 320px; cursor: pointer;" @onclick="() => ShowRecipeDetails(recipe)">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Style="margin-bottom: 0;">@recipe.Name</MudText>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" />
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <div class="d-flex align-center mb-2">
-                            <PizzaRating Value="@recipe.Rating" />
-                            <MudText Typo="Typo.body2" Class="ml-2">@recipe.Rating/5</MudText>
-                        </div>
-                        @if (!string.IsNullOrEmpty(recipe.Notes) && recipe.Notes.Length > 100)
-                        {
-                            <MudText Typo="Typo.body2" Style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-                                @recipe.Notes.Substring(0, 100)...
-                            </MudText>
-                        }
-                        else if (!string.IsNullOrEmpty(recipe.Notes))
-                        {
-                            <MudText Typo="Typo.body2" Style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-                                @recipe.Notes
-                            </MudText>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">Aucune note disponible</MudText>
-                        }
-                    </MudCardContent>
-                    <MudCardActions Class="d-flex justify-space-between">
-                        <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">Nouveau</MudChip>
-                        <MudText Typo="Typo.caption">@recipe.CreationDate.ToString("MMM d, yyyy")</MudText>
-                    </MudCardActions>
-                </MudCard>
+                var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
+                <div class="flex-shrink-0" style="width: 320px;">
+                    <RecipeCard Recipe="@recipe"
+                               Book="@book"
+                               IsAuthenticated="@AuthService.IsAuthenticated"
+                               IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
+                               OnView="@((r) => ShowRecipeDetails(r))"
+                               OnEdit="@(async (r) => await Task.CompletedTask)"
+                               OnDelete="@(async (r) => await Task.CompletedTask)"
+                               OnPrint="@((r) => PrintRecipe(r))"
+                               OnToggleFavorite="@ToggleFavorite" />
+                </div>
             }
         </div>
 
@@ -133,43 +112,17 @@
             <MudGrid>
                 @foreach (var recipe in newestRecipes)
                 {
+                    var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
                     <MudItem xs="12">
-                        <MudCard Elevation="2" Class="recipe-card" @onclick="() => ShowRecipeDetails(recipe)">
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudText Typo="Typo.h6" Style="margin-bottom: 0;">@recipe.Name</MudText>
-                                </CardHeaderContent>
-                                <CardHeaderActions>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" />
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardContent>
-                                <div class="d-flex align-center mb-2">
-                                    <PizzaRating Value="@recipe.Rating" />
-                                    <MudText Typo="Typo.body2" Class="ml-2">@recipe.Rating/5</MudText>
-                                </div>
-                                @if (!string.IsNullOrEmpty(recipe.Notes) && recipe.Notes.Length > 100)
-                                {
-                                    <MudText Typo="Typo.body2" Class="recipe-notes-mobile">
-                                        @recipe.Notes.Substring(0, 100)...
-                                    </MudText>
-                                }
-                                else if (!string.IsNullOrEmpty(recipe.Notes))
-                                {
-                                    <MudText Typo="Typo.body2" Class="recipe-notes-mobile">
-                                        @recipe.Notes
-                                    </MudText>
-                                }
-                                else
-                                {
-                                    <MudText Typo="Typo.body2" Color="Color.Default" Style="opacity: 0.6">Aucune note disponible</MudText>
-                                }
-                            </MudCardContent>
-                            <MudCardActions Class="d-flex justify-space-between">
-                                <MudChip Color="Color.Primary" Size="Size.Small" Label="true" T="string">Nouveau</MudChip>
-                                <MudText Typo="Typo.caption">@recipe.CreationDate.ToString("MMM d, yyyy")</MudText>
-                            </MudCardActions>
-                        </MudCard>
+                        <RecipeCard Recipe="@recipe"
+                                   Book="@book"
+                                   IsAuthenticated="@AuthService.IsAuthenticated"
+                                   IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
+                                   OnView="@((r) => ShowRecipeDetails(r))"
+                                   OnEdit="@(async (r) => await Task.CompletedTask)"
+                                   OnDelete="@(async (r) => await Task.CompletedTask)"
+                                   OnPrint="@((r) => PrintRecipe(r))"
+                                   OnToggleFavorite="@ToggleFavorite" />
                     </MudItem>
                 }
             </MudGrid>
@@ -336,6 +289,7 @@
     private List<Recipe> randomRecipes = new();
     private Dictionary<int, Color> recipeColors = new(); // Store colors for each recipe
     private List<Book> allBooks = new();
+    private List<int> favoriteRecipeIds = new();
     private bool loadingNewest = true;
     private bool loadingRandom = true;
     private int totalRecipesCount = 0;
@@ -344,6 +298,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Load favorites first
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
         await LoadNewestRecipes();
         await LoadRandomRecipes();
         await LoadBooks();
@@ -372,8 +329,20 @@
         {
             var response = await SupabaseClient.From<Recipe>().Get();
             var allRecipes = response.Models ?? new List<Recipe>();
+            
+            // Use Fisher-Yates shuffle for efficient random selection
             var rnd = new Random();
-            randomRecipes = allRecipes.OrderBy(x => rnd.Next()).Take(5).ToList();
+            var count = Math.Min(5, allRecipes.Count);
+            randomRecipes = new List<Recipe>(count);
+            
+            // Fisher-Yates shuffle to select random recipes
+            for (int i = 0; i < count; i++)
+            {
+                int randomIndex = rnd.Next(i, allRecipes.Count);
+                randomRecipes.Add(allRecipes[randomIndex]);
+                // Swap to avoid re-selecting
+                (allRecipes[randomIndex], allRecipes[i]) = (allRecipes[i], allRecipes[randomIndex]);
+            }
             
             // Assign colors to each recipe once when loading
             var colors = new[] { Color.Primary, Color.Secondary, Color.Tertiary, Color.Info };
@@ -440,6 +409,28 @@
         // Navigate to the recipe details page instead of showing a dialog
         var uri = $"/recipes/{recipe.Id}";
         NavigationManager.NavigateTo(uri);
+    }
+    
+    private void PrintRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
+    }
+    
+    private async Task ToggleFavorite(Recipe recipe)
+    {
+        await LocalStorage.ToggleFavoriteAsync(recipe.Id);
+        
+        // Refresh favorites list
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
+        StateHasChanged();
+        
+        // Show toast notification
+        var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
+        Snackbar.Add(
+            isFavorite ? $"'{recipe.Name}' ajouté aux favoris ❤️" : $"'{recipe.Name}' retiré des favoris",
+            isFavorite ? Severity.Success : Severity.Info
+        );
     }
 
     private async Task ShowAddRecipeDialog()
