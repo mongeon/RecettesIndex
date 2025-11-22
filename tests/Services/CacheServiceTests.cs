@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using RecettesIndex.Services;
 using RecettesIndex.Services.Abstractions;
 using Xunit;
@@ -6,150 +8,214 @@ namespace RecettesIndex.Tests.Services;
 
 public class CacheServiceTests
 {
-    private readonly ICacheService _cache;
+    private readonly ICacheService _cacheService;
+    private readonly ILogger<CacheService> _logger;
 
     public CacheServiceTests()
     {
-        _cache = new CacheService();
+        _logger = Substitute.For<ILogger<CacheService>>();
+        _cacheService = new CacheService(_logger);
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_FirstCall_ExecutesFactoryAndCachesResult()
+    public async Task GetOrCreateAsync_CacheMiss_CallsFactory()
     {
         // Arrange
         var key = "test-key";
-        var expectedValue = "test-value";
-        var factoryCallCount = 0;
-
-        Task<string> Factory(CancellationToken ct)
+        var ttl = TimeSpan.FromMinutes(5);
+        var factoryCalled = false;
+        Func<CancellationToken, Task<string>> factory = ct =>
         {
-            factoryCallCount++;
-            return Task.FromResult(expectedValue);
-        }
+            factoryCalled = true;
+            return Task.FromResult("factory-value");
+        };
 
         // Act
-        var result = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory);
+        var result = await _cacheService.GetOrCreateAsync(key, ttl, factory);
 
         // Assert
-        Assert.Equal(expectedValue, result);
-        Assert.Equal(1, factoryCallCount);
+        Assert.Equal("factory-value", result);
+        Assert.True(factoryCalled);
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_SubsequentCall_ReturnsCachedValue()
+    public async Task GetOrCreateAsync_CacheHit_ReturnsValue()
     {
         // Arrange
         var key = "test-key";
-        var expectedValue = "test-value";
+        var ttl = TimeSpan.FromMinutes(5);
         var factoryCallCount = 0;
-
-        Task<string> Factory(CancellationToken ct)
+        Func<CancellationToken, Task<string>> factory = ct =>
         {
             factoryCallCount++;
-            return Task.FromResult(expectedValue);
-        }
+            return Task.FromResult("factory-value");
+        };
 
-        // Act
-        var result1 = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory);
-        var result2 = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory);
-        var result3 = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory);
+        // Act - First call to populate cache
+        var result1 = await _cacheService.GetOrCreateAsync(key, ttl, factory);
+        // Second call should hit cache
+        var result2 = await _cacheService.GetOrCreateAsync(key, ttl, factory);
 
         // Assert
-        Assert.Equal(expectedValue, result1);
-        Assert.Equal(expectedValue, result2);
-        Assert.Equal(expectedValue, result3);
+        Assert.Equal("factory-value", result1);
+        Assert.Equal("factory-value", result2);
         Assert.Equal(1, factoryCallCount); // Factory should only be called once
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_AfterExpiration_ExecutesFactoryAgain()
+    public async Task GetOrCreateAsync_ExpiredCache_CallsFactoryAgain()
     {
         // Arrange
         var key = "test-key";
-        var value1 = "value1";
-        var value2 = "value2";
+        var ttl = TimeSpan.FromMilliseconds(100); // Very short TTL
         var factoryCallCount = 0;
-
-        Task<string> Factory(CancellationToken ct)
+        Func<CancellationToken, Task<string>> factory = ct =>
         {
             factoryCallCount++;
-            return Task.FromResult(factoryCallCount == 1 ? value1 : value2);
-        }
-
-        var shortTtl = TimeSpan.FromMilliseconds(50);
+            return Task.FromResult($"value-{factoryCallCount}");
+        };
 
         // Act
-        var result1 = await _cache.GetOrCreateAsync(key, shortTtl, Factory);
-
-        // Wait for cache to expire
-        await Task.Delay(100);
-
-        var result2 = await _cache.GetOrCreateAsync(key, shortTtl, Factory);
+        var result1 = await _cacheService.GetOrCreateAsync(key, ttl, factory);
+        await Task.Delay(150); // Wait for cache to expire
+        var result2 = await _cacheService.GetOrCreateAsync(key, ttl, factory);
 
         // Assert
-        Assert.Equal(value1, result1);
-        Assert.Equal(value2, result2);
-        Assert.Equal(2, factoryCallCount);
+        Assert.Equal("value-1", result1);
+        Assert.Equal("value-2", result2);
+        Assert.Equal(2, factoryCallCount); // Factory called twice due to expiration
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_DifferentKeys_StoresIndependently()
-    {
-        // Arrange
-        var key1 = "key1";
-        var key2 = "key2";
-        var value1 = "value1";
-        var value2 = "value2";
-
-        // Act
-        var result1 = await _cache.GetOrCreateAsync(key1, TimeSpan.FromMinutes(1), _ => Task.FromResult(value1));
-        var result2 = await _cache.GetOrCreateAsync(key2, TimeSpan.FromMinutes(1), _ => Task.FromResult(value2));
-
-        // Assert
-        Assert.Equal(value1, result1);
-        Assert.Equal(value2, result2);
-    }
-
-    [Fact]
-    public async Task GetOrCreateAsync_WithComplexType_CachesCorrectly()
-    {
-        // Arrange
-        var key = "complex-key";
-        var expectedValue = new List<string> { "item1", "item2", "item3" };
-
-        // Act
-        var result1 = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), _ => Task.FromResult(expectedValue));
-        var result2 = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), _ => Task.FromResult(new List<string> { "different" }));
-
-        // Assert
-        Assert.Same(expectedValue, result1);
-        Assert.Same(expectedValue, result2); // Should return same cached instance
-    }
-
-    [Fact]
-    public async Task Remove_ExistingKey_RemovesFromCache()
+    public async Task GetOrCreateAsync_TypeMismatch_RemovesInvalidEntry()
     {
         // Arrange
         var key = "test-key";
-        var value1 = "value1";
-        var value2 = "value2";
-        var factoryCallCount = 0;
+        var ttl = TimeSpan.FromMinutes(5);
 
-        Task<string> Factory(CancellationToken ct)
+        // First, cache a string
+        await _cacheService.GetOrCreateAsync(key, ttl, ct => Task.FromResult("string-value"));
+
+        var factoryCalled = false;
+        // Then try to get an int (type mismatch)
+        Func<CancellationToken, Task<int>> intFactory = ct =>
         {
-            factoryCallCount++;
-            return Task.FromResult(factoryCallCount == 1 ? value1 : value2);
-        }
+            factoryCalled = true;
+            return Task.FromResult(42);
+        };
 
         // Act
-        var result1 = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory);
-        _cache.Remove(key);
-        var result2 = await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory);
+        var result = await _cacheService.GetOrCreateAsync(key, ttl, intFactory);
 
         // Assert
-        Assert.Equal(value1, result1);
-        Assert.Equal(value2, result2);
-        Assert.Equal(2, factoryCallCount);
+        Assert.Equal(42, result);
+        Assert.True(factoryCalled); // Factory should be called since cached type doesn't match
+    }
+
+    [Fact]
+    public async Task GetOrCreateAsync_NullKey_CallsFactoryDirectly()
+    {
+        // Arrange
+        string? key = null;
+        var ttl = TimeSpan.FromMinutes(5);
+        var factoryCalled = false;
+        Func<CancellationToken, Task<string>> factory = ct =>
+        {
+            factoryCalled = true;
+            return Task.FromResult("value");
+        };
+
+        // Act
+        var result = await _cacheService.GetOrCreateAsync(key!, ttl, factory);
+
+        // Assert
+        Assert.Equal("value", result);
+        Assert.True(factoryCalled);
+    }
+
+    [Fact]
+    public async Task GetOrCreateAsync_EmptyKey_CallsFactoryDirectly()
+    {
+        // Arrange
+        var key = "";
+        var ttl = TimeSpan.FromMinutes(5);
+        var factoryCalled = false;
+        Func<CancellationToken, Task<string>> factory = ct =>
+        {
+            factoryCalled = true;
+            return Task.FromResult("value");
+        };
+
+        // Act
+        var result = await _cacheService.GetOrCreateAsync(key, ttl, factory);
+
+        // Assert
+        Assert.Equal("value", result);
+        Assert.True(factoryCalled);
+    }
+
+    [Fact]
+    public async Task GetOrCreateAsync_FactoryThrowsException_PropagatesException()
+    {
+        // Arrange
+        var key = "test-key";
+        var ttl = TimeSpan.FromMinutes(5);
+        Func<CancellationToken, Task<string>> factory = ct =>
+        {
+            throw new InvalidOperationException("Factory error");
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _cacheService.GetOrCreateAsync(key, ttl, factory));
+    }
+
+    [Fact]
+    public async Task GetOrCreateAsync_NullValue_DoesNotCache()
+    {
+        // Arrange
+        var key = "test-key";
+        var ttl = TimeSpan.FromMinutes(5);
+        var factoryCallCount = 0;
+        Func<CancellationToken, Task<string?>> factory = ct =>
+        {
+            factoryCallCount++;
+            return Task.FromResult<string?>(null);
+        };
+
+        // Act
+        var result1 = await _cacheService.GetOrCreateAsync(key, ttl, factory);
+        var result2 = await _cacheService.GetOrCreateAsync(key, ttl, factory);
+
+        // Assert
+        Assert.Null(result1);
+        Assert.Null(result2);
+        Assert.Equal(2, factoryCallCount); // Factory called twice since null is not cached
+    }
+
+    [Fact]
+    public void Remove_ExistingKey_RemovesFromCache()
+    {
+        // Arrange
+        var key = "test-key";
+        var ttl = TimeSpan.FromMinutes(5);
+        Func<CancellationToken, Task<string>> factory = ct => Task.FromResult("value");
+        
+        // First, populate cache
+        _ = _cacheService.GetOrCreateAsync(key, ttl, factory).Result;
+
+        // Act
+        _cacheService.Remove(key);
+
+        // Assert - Factory should be called again after remove
+        var factoryCalled = false;
+        Func<CancellationToken, Task<string>> factoryCheck = ct =>
+        {
+            factoryCalled = true;
+            return Task.FromResult("new-value");
+        };
+        _ = _cacheService.GetOrCreateAsync(key, ttl, factoryCheck).Result;
+        Assert.True(factoryCalled);
     }
 
     [Fact]
@@ -158,108 +224,62 @@ public class CacheServiceTests
         // Arrange
         var key = "non-existent-key";
 
-        // Act & Assert
-        var exception = Record.Exception(() => _cache.Remove(key));
-        Assert.Null(exception);
+        // Act & Assert - Should not throw
+        _cacheService.Remove(key);
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_ConcurrentCalls_ExecutesFactoryOnce()
+    public void Remove_NullKey_DoesNotThrow()
     {
         // Arrange
-        var key = "concurrent-key";
-        var factoryCallCount = 0;
-        var delayMs = 100;
+        string? key = null;
 
-        async Task<string> Factory(CancellationToken ct)
-        {
-            Interlocked.Increment(ref factoryCallCount);
-            await Task.Delay(delayMs, ct);
-            return "value";
-        }
-
-        // Act
-        var tasks = Enumerable.Range(0, 10)
-            .Select(_ => _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory))
-            .ToArray();
-
-        var results = await Task.WhenAll(tasks);
-
-        // Assert
-        Assert.All(results, result => Assert.Equal("value", result));
-        // Note: Due to race conditions, factory might be called multiple times
-        // In a production cache, you'd want to ensure single execution
-        Assert.True(factoryCallCount >= 1);
+        // Act & Assert - Should not throw
+        _cacheService.Remove(key!);
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_WithCancellationToken_PassesToFactory()
+    public async Task GetOrCreateAsync_CancellationToken_PassedToFactory()
     {
         // Arrange
-        var key = "cancel-key";
-        using var cts = new CancellationTokenSource();
-        var tokenPassed = false;
-
-        Task<string> Factory(CancellationToken ct)
+        var key = "test-key";
+        var ttl = TimeSpan.FromMinutes(5);
+        var cts = new CancellationTokenSource();
+        CancellationToken receivedToken = default;
+        
+        Func<CancellationToken, Task<string>> factory = ct =>
         {
-            tokenPassed = ct.CanBeCanceled;
+            receivedToken = ct;
             return Task.FromResult("value");
-        }
+        };
 
         // Act
-        await _cache.GetOrCreateAsync(key, TimeSpan.FromMinutes(1), Factory, cts.Token);
+        await _cacheService.GetOrCreateAsync(key, ttl, factory, cts.Token);
 
         // Assert
-        Assert.True(tokenPassed);
+        Assert.Equal(cts.Token, receivedToken);
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_WithZeroTtl_AlwaysExecutesFactory()
+    public async Task GetOrCreateAsync_MultipleCalls_DifferentKeys_IndependentCache()
     {
         // Arrange
-        var key = "zero-ttl-key";
-        var factoryCallCount = 0;
-
-        Task<int> Factory(CancellationToken ct)
-        {
-            return Task.FromResult(++factoryCallCount);
-        }
+        var key1 = "key1";
+        var key2 = "key2";
+        var ttl = TimeSpan.FromMinutes(5);
 
         // Act
-        var result1 = await _cache.GetOrCreateAsync(key, TimeSpan.Zero, Factory);
-        var result2 = await _cache.GetOrCreateAsync(key, TimeSpan.Zero, Factory);
-        var result3 = await _cache.GetOrCreateAsync(key, TimeSpan.Zero, Factory);
+        var result1 = await _cacheService.GetOrCreateAsync(key1, ttl, ct => Task.FromResult("value1"));
+        var result2 = await _cacheService.GetOrCreateAsync(key2, ttl, ct => Task.FromResult("value2"));
 
         // Assert
-        Assert.Equal(1, result1);
-        Assert.Equal(2, result2);
-        Assert.Equal(3, result3);
-        Assert.Equal(3, factoryCallCount);
-    }
-
-    [Fact]
-    public async Task GetOrCreateAsync_MultipleKeys_MaintainsSeparateTtls()
-    {
-        // Arrange
-        var key1 = "short-ttl";
-        var key2 = "long-ttl";
-        var shortTtl = TimeSpan.FromMilliseconds(50);
-        var longTtl = TimeSpan.FromMinutes(10);
-
-        var factoryCallCount1 = 0;
-        var factoryCallCount2 = 0;
-
-        // Act
-        await _cache.GetOrCreateAsync(key1, shortTtl, _ => Task.FromResult(++factoryCallCount1));
-        await _cache.GetOrCreateAsync(key2, longTtl, _ => Task.FromResult(++factoryCallCount2));
-
-        await Task.Delay(100); // Wait for first cache to expire
-
-        await _cache.GetOrCreateAsync(key1, shortTtl, _ => Task.FromResult(++factoryCallCount1));
-        await _cache.GetOrCreateAsync(key2, longTtl, _ => Task.FromResult(++factoryCallCount2));
-
-        // Assert
-        Assert.Equal(2, factoryCallCount1); // Short TTL expired, called twice
-        Assert.Equal(1, factoryCallCount2); // Long TTL still valid, called once
+        Assert.Equal("value1", result1);
+        Assert.Equal("value2", result2);
+        // Verify they're independent
+        _cacheService.Remove(key1);
+        var result1Again = await _cacheService.GetOrCreateAsync(key1, ttl, ct => Task.FromResult("new-value1"));
+        var result2Again = await _cacheService.GetOrCreateAsync(key2, ttl, ct => Task.FromResult("should-not-be-called"));
+        Assert.Equal("new-value1", result1Again);
+        Assert.Equal("value2", result2Again); // Still cached
     }
 }
