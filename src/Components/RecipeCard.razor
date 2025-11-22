@@ -11,6 +11,16 @@
             <MudIcon Icon="@GetRecipeIcon()" Size="Size.Large" Style="font-size: 72px; color: rgba(255,255,255,0.9);" />
         </div>
         
+        <!-- Favorite Icon (Top Left) -->
+        <div class="favorite-icon" @onclick:stopPropagation="true">
+            <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
+                          Color="@(IsFavorite ? Color.Error : Color.Default)"
+                          Size="Size.Small"
+                          OnClick="@(() => OnToggleFavorite.InvokeAsync(Recipe))"
+                          Title="@(IsFavorite ? "Retirer des favoris" : "Ajouter aux favoris")"
+                          Style="background-color: rgba(255,255,255,0.9); box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
+        </div>
+        
         <div class="recipe-rating-overlay">
             @if (Recipe.Rating > 0)
             {
@@ -128,6 +138,25 @@
         right: 8px;
     }
     
+    .favorite-icon {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 10;
+    }
+    
+    .favorite-icon .mud-icon-button {
+        transition: transform 0.2s ease;
+    }
+    
+    .favorite-icon .mud-icon-button:hover {
+        transform: scale(1.15);
+    }
+    
+    .favorite-icon .mud-icon-button:active {
+        transform: scale(0.95);
+    }
+    
     .recipe-card-title {
         font-weight: 600;
         line-height: 1.3;
@@ -149,6 +178,9 @@
     public bool IsAuthenticated { get; set; }
     
     [Parameter]
+    public bool IsFavorite { get; set; }
+    
+    [Parameter]
     public EventCallback<Recipe> OnView { get; set; }
     
     [Parameter]
@@ -160,6 +192,9 @@
     [Parameter]
     public EventCallback<Recipe> OnPrint { get; set; }
     
+    [Parameter]
+    public EventCallback<Recipe> OnToggleFavorite { get; set; }
+
     private Color GetRatingColor() => Recipe.Rating switch
     {
         5 => Color.Success,

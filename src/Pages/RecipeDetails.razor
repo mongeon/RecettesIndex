@@ -12,6 +12,7 @@
 @inject NavigationManager NavigationManager
 @inject Client SupabaseClient
 @inject LocalStorageService LocalStorage
+@inject ISnackbar Snackbar
 
 <PageTitle>Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -34,11 +35,31 @@ else
                  AdditionalInfo=""
                  Icon="@Icons.Material.Filled.Restaurant">
         <RightContent>
-            @if (recipe.Rating > 0)
-            {
-                <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.9;" Class="mb-2">Évaluation</MudText>
-                <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
-            }
+            <MudStack Spacing="3" AlignItems="AlignItems.Center">
+                <!-- Favorite Toggle -->
+                <div>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.9;" Class="mb-2" Align="Align.Center">
+                        Favori
+                    </MudText>
+                    <MudIconButton Icon="@(favoriteRecipeIds.Contains(recipe.Id) ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
+                                   Color="@(favoriteRecipeIds.Contains(recipe.Id) ? Color.Error : Color.Default)"
+                                   Size="Size.Large"
+                                   OnClick="@(() => ToggleFavorite(recipe))"
+                                   Title="@(favoriteRecipeIds.Contains(recipe.Id) ? "Retirer des favoris" : "Ajouter aux favoris")"
+                                   Style="background-color: rgba(255,255,255,0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 50%;" />
+                </div>
+                
+                <!-- Rating -->
+                @if (recipe.Rating > 0)
+                {
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.9;" Class="mb-2" Align="Align.Center">
+                            Évaluation
+                        </MudText>
+                        <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
+                    </div>
+                }
+            </MudStack>
         </RightContent>
     </HeroSection>
 
@@ -129,10 +150,12 @@ else
                             <RecipeCard Recipe="@relatedRecipe"
                                        Book="@relatedRecipe.Book"
                                        IsAuthenticated="@AuthService.IsAuthenticated"
+                                       IsFavorite="@favoriteRecipeIds.Contains(relatedRecipe.Id)"
                                        OnView="@HandleViewRelatedRecipe"
                                        OnEdit="@(async (r) => await Task.CompletedTask)"
                                        OnDelete="@(async (r) => await Task.CompletedTask)"
-                                       OnPrint="@HandlePrintRelatedRecipe" />
+                                       OnPrint="@HandlePrintRelatedRecipe"
+                                       OnToggleFavorite="@ToggleFavorite" />
                         </MudItem>
                     }
                 </MudGrid>
@@ -161,6 +184,7 @@ else
     private Book? book;
     private bool loading = true;
     private List<Recipe> relatedRecipes = new();
+    private List<int> favoriteRecipeIds = new();
     private List<BreadcrumbItem> breadcrumbs =
     [
         new BreadcrumbItem("Accueil", href: "/" ),
@@ -170,6 +194,9 @@ else
     
     protected override async Task OnInitializedAsync()
     {
+        // Load favorites from localStorage
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
         await LoadRecipeData();
     }
     
@@ -329,6 +356,23 @@ else
         // Navigate to print view
         NavigationManager.NavigateTo($"/recipes/{relatedRecipe.Id}/print");
         await Task.CompletedTask;
+    }
+    
+    private async Task ToggleFavorite(Recipe recipeToToggle)
+    {
+        await LocalStorage.ToggleFavoriteAsync(recipeToToggle.Id);
+        
+        // Refresh favorites list
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
+        StateHasChanged();
+        
+        // Show toast notification
+        var isFavorite = favoriteRecipeIds.Contains(recipeToToggle.Id);
+        Snackbar.Add(
+            isFavorite ? $"'{recipeToToggle.Name}' ajouté aux favoris ❤️" : $"'{recipeToToggle.Name}' retiré des favoris",
+            isFavorite ? Severity.Success : Severity.Info
+        );
     }
     
     private async Task OpenEditDialog()
