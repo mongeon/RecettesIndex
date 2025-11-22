@@ -1,7 +1,8 @@
 @using MudBlazor
 @using RecettesIndex.Models
-@using Supabase
-@inject Client SupabaseClient
+@using RecettesIndex.Services.Abstractions
+@inject IRecipeService RecipeService
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
@@ -24,50 +25,80 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="AddRecipe" Color="Color.Primary" Variant="Variant.Filled">Ajouter</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
+        <MudButton OnClick="AddRecipeAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Ajouter</span>
+            }
+        </MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text" Disabled="@isSaving">Annuler</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
-    private Recipe recipe = new() { CreationDate = DateTime.Now };
+    
+    private Recipe recipe = new() { CreationDate = DateTime.UtcNow };
     private string? bookRef;
     private string? errorMessage;
     private List<Book> books = [];
     private Book? selectedBook;
+    private bool isSaving = false;
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await SupabaseClient.From<Book>().Get();
-        books = response.Models ?? [];
+        // Use service layer instead of direct Supabase client
+        // This leverages caching (3-minute TTL) and proper error handling
+        books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
     }
 
-    private async Task AddRecipe()
+    private async Task AddRecipeAsync()
     {
         errorMessage = null;
+        isSaving = true;
+        
         try
         {
-            if (selectedBook != null)
+            // Validate input
+            if (string.IsNullOrWhiteSpace(recipe.Name))
             {
-                recipe.BookId = selectedBook.Id;
+                errorMessage = "Le nom de la recette est requis.";
+                return;
+            }
+
+            // Set book reference if selected
+            recipe.BookId = selectedBook?.Id;
+            
+            // Use service layer for creation
+            var result = await RecipeService.CreateAsync(recipe);
+            
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Recette ajoutée avec succès!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(result.Value));
             }
             else
             {
-                recipe.BookId = null;
+                errorMessage = result.ErrorMessage ?? "Échec lors de l'ajout de la recette.";
+                Snackbar.Add(errorMessage, Severity.Error);
             }
-            var response = await SupabaseClient.From<Recipe>().Insert(recipe);
-            if (response.Models?.Count > 0)
-                MudDialog.Close(DialogResult.Ok(response.Models[0]));
-            else
-                errorMessage = "Échec lors de l'ajout de la recette.";
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = "Une erreur inattendue s'est produite.";
+            Snackbar.Add(errorMessage, Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
+    
     private void Cancel()
     {
         MudDialog.Cancel();

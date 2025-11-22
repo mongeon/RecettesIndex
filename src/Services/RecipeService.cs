@@ -153,12 +153,30 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
+            // Input validation
+            if (recipe == null)
+                return Result<Recipe>.Failure("Recipe cannot be null");
+            
+            if (string.IsNullOrWhiteSpace(recipe.Name))
+                return Result<Recipe>.Failure("Recipe name is required");
+            
+            if (recipe.Rating < 0 || recipe.Rating > 5)
+                return Result<Recipe>.Failure("Rating must be between 0 and 5");
+            
+            if (recipe.BookPage.HasValue && recipe.BookPage.Value < 0)
+                return Result<Recipe>.Failure("Book page number must be positive");
+
+            // Set creation date if not already set
+            if (recipe.CreationDate == default)
+                recipe.CreationDate = DateTime.UtcNow;
+
             var res = await _supabaseClient.From<Recipe>().Insert(recipe);
             var created = res.Models?.FirstOrDefault() ?? recipe;
 
             // Invalidate related caches
             InvalidateRelatedCaches();
 
+            _logger?.LogInformation("Recipe created successfully: {RecipeId}", created.Id);
             return Result<Recipe>.Success(created);
         }
         catch (HttpRequestException ex)
@@ -183,12 +201,29 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
+            // Input validation
+            if (recipe == null)
+                return Result<Recipe>.Failure("Recipe cannot be null");
+            
+            if (recipe.Id <= 0)
+                return Result<Recipe>.Failure("Invalid recipe ID");
+            
+            if (string.IsNullOrWhiteSpace(recipe.Name))
+                return Result<Recipe>.Failure("Recipe name is required");
+            
+            if (recipe.Rating < 0 || recipe.Rating > 5)
+                return Result<Recipe>.Failure("Rating must be between 0 and 5");
+            
+            if (recipe.BookPage.HasValue && recipe.BookPage.Value < 0)
+                return Result<Recipe>.Failure("Book page number must be positive");
+
             var res = await _supabaseClient.From<Recipe>().Update(recipe);
             var updated = res.Models?.FirstOrDefault() ?? recipe;
 
             // Invalidate related caches
             InvalidateRelatedCaches();
 
+            _logger?.LogInformation("Recipe updated successfully: {RecipeId}", updated.Id);
             return Result<Recipe>.Success(updated);
         }
         catch (HttpRequestException ex)
@@ -213,6 +248,10 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
+            // Input validation
+            if (id <= 0)
+                return Result<bool>.Failure("Invalid recipe ID");
+
             _logger?.LogInformation("Attempting to delete recipe with ID: {RecipeId}", id);
             
             // First, verify the recipe exists
@@ -223,7 +262,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
             if (existingRecipe == null)
             {
                 _logger?.LogWarning("Recipe with ID {RecipeId} not found", id);
-                return Result<bool>.Failure("Recipe not found");
+                return Result<bool>.Failure($"Recipe with ID {id} not found");
             }
             
             // Delete the recipe

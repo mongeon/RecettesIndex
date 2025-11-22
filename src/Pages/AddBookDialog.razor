@@ -1,9 +1,11 @@
 @using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
-@using Supabase
+@using RecettesIndex.Services.Abstractions
 @inject ILogger<AddBookDialog> Logger
-@inject Client SupabaseClient
+@inject IBookService BookService
+@inject IAuthorService AuthorService
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
@@ -28,85 +30,79 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="AddBook" Color="Color.Primary" Variant="Variant.Filled">Ajouter</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
+        <MudButton OnClick="AddBookAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Ajouter</span>
+            }
+        </MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text" Disabled="@isSaving">Annuler</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] 
     public required IMudDialogInstance MudDialog { get; set; }
+    
     private Book book = new();
     private string? errorMessage;
     private List<Author> authors = new();
     private IEnumerable<Author> selectedAuthors = new HashSet<Author>();
+    private bool isSaving = false;
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await SupabaseClient.From<Author>().Get();
-        authors = response.Models ?? new List<Author>();
+        // Use service layer with caching instead of direct Supabase client
+        authors = (await AuthorService.GetAllAsync())?.ToList() ?? [];
     }
 
-    private async Task AddBook()
+    private async Task AddBookAsync()
     {
         errorMessage = null;
-        try
-        {
-            // First, insert the book without authors
-            var bookToInsert = new Book 
-            { 
-                Name = book.Name,
-                CreationDate = DateTime.UtcNow
-            };
-            
-            var response = await SupabaseClient.From<Book>().Insert(bookToInsert);
-            
-            if (response.Models?.Count > 0)
-            {
-                var insertedBook = response.Models[0];
-                
-                // Now handle the many-to-many relationship manually
-                if (selectedAuthors.Any())
-                {
-                    await CreateBookAuthorAssociations(insertedBook.Id, selectedAuthors);
-                }
-                
-                // Return the book with authors populated
-                insertedBook.Authors = selectedAuthors.ToList();
-                MudDialog.Close(DialogResult.Ok(insertedBook));
-            }
-            else
-            {
-                errorMessage = "Échec lors de l'ajout du livre.";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Erreur: {ex.Message}";
-            Logger.LogError(ex, "Error adding book");
-        }
-    }
-
-    private async Task CreateBookAuthorAssociations(int bookId, IEnumerable<Author> authors)
-    {
-        if (!authors.Any()) return;
+        isSaving = true;
         
         try
         {
-            var bookAuthors = authors.Select(author => new BookAuthor
+            // Validate input
+            if (string.IsNullOrWhiteSpace(book.Name))
             {
-                BookId = bookId,
-                AuthorId = author.Id
-            }).ToList();
+                errorMessage = "Le nom du livre est requis.";
+                return;
+            }
 
-            await SupabaseClient.From<BookAuthor>().Insert(bookAuthors);
+            // Get author IDs
+            var authorIds = selectedAuthors.Select(a => a.Id).ToList();
+            
+            // Use service layer for creation
+            var result = await BookService.CreateAsync(book, authorIds);
+            
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Livre ajouté avec succès!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(result.Value));
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Échec lors de l'ajout du livre.";
+                Snackbar.Add(errorMessage, Severity.Error);
+            }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error creating book-author associations for book {BookId}", bookId);
-            throw;
+            errorMessage = "Une erreur inattendue s'est produite.";
+            Logger.LogError(ex, "Error adding book");
+            Snackbar.Add(errorMessage, Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
+    
     private void Cancel()
     {
         MudDialog.Cancel();
