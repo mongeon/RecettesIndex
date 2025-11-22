@@ -377,44 +377,6 @@
     }
 </MudPaper>
 
-<style>
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .recipe-table tbody tr {
-        transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    
-    .recipe-table tbody tr:hover {
-        transform: translateX(2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    /* Rating-based row colors */
-    .rating-5-row { background-color: rgba(76, 175, 80, 0.08) !important; }
-    .rating-4-row { background-color: rgba(33, 150, 243, 0.08) !important; }
-    .rating-3-row { background-color: rgba(255, 152, 0, 0.08) !important; }
-    .rating-2-row { background-color: rgba(158, 158, 158, 0.08) !important; }
-    .rating-1-row { background-color: rgba(244, 67, 54, 0.08) !important; }
-    .rating-0-row { background-color: rgba(117, 117, 117, 0.05) !important; }
-    
-    /* Hover states for rating colors */
-    .recipe-table tbody tr.rating-5-row:hover { background-color: rgba(76, 175, 80, 0.15) !important; }
-    .recipe-table tbody tr.rating-4-row:hover { background-color: rgba(33, 150, 243, 0.15) !important; }
-    .recipe-table tbody tr.rating-3-row:hover { background-color: rgba(255, 152, 0, 0.15) !important; }
-    .recipe-table tbody tr.rating-2-row:hover { background-color: rgba(158, 158, 158, 0.15) !important; }
-    .recipe-table tbody tr.rating-1-row:hover { background-color: rgba(244, 67, 54, 0.15) !important; }
-    .recipe-table tbody tr.rating-0-row:hover { background-color: rgba(117, 117, 117, 0.12) !important; }
-</style>
-
 @code {
     private MudTable<Recipe>? table;
     private List<Book> books = [];
