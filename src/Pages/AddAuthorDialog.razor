@@ -1,7 +1,8 @@
 @using MudBlazor
 @using RecettesIndex.Models
-@using Supabase
-@inject Client SupabaseClient
+@using RecettesIndex.Services.Abstractions
+@inject IAuthorService AuthorService
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
@@ -14,34 +15,69 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="AddAuthor" Color="Color.Primary" Variant="Variant.Filled">Ajouter</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
+        <MudButton OnClick="AddAuthorAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Ajouter</span>
+            }
+        </MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text" Disabled="@isSaving">Annuler</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter] public required MudBlazor.MudDialog MudDialog { get; set; }
+    [CascadingParameter] 
+    public required IMudDialogInstance MudDialog { get; set; }
+    
     private Author author = new();
     private string? errorMessage;
+    private bool isSaving = false;
 
-    private async Task AddAuthor()
+    private async Task AddAuthorAsync()
     {
         errorMessage = null;
+        isSaving = true;
+        
         try
         {
-            var response = await SupabaseClient.From<Author>().Insert(author);
-            if (response.Models?.Count > 0)
-                await MudDialog.CloseAsync(DialogResult.Ok(response.Models[0]));
+            // Validate input
+            if (string.IsNullOrWhiteSpace(author.Name))
+            {
+                errorMessage = "Le prénom de l'auteur est requis.";
+                return;
+            }
+
+            // Use service layer for creation
+            var result = await AuthorService.CreateAsync(author);
+            
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Auteur ajouté avec succès!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(result.Value));
+            }
             else
-                errorMessage = "Échec lors de l'ajout de l'auteur.";
+            {
+                errorMessage = result.ErrorMessage ?? "Échec lors de l'ajout de l'auteur.";
+                Snackbar.Add(errorMessage, Severity.Error);
+            }
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = "Une erreur inattendue s'est produite.";
+            Snackbar.Add(errorMessage, Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
+    
     private void Cancel()
     {
-        MudDialog.CloseAsync(DialogResult.Cancel());
+        MudDialog.Cancel();
     }
 }

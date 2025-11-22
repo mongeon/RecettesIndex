@@ -2,132 +2,12 @@
 @using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
-@using Supabase
+@using RecettesIndex.Services.Abstractions
 @inject ILogger<EditBookDialog> Logger
-@inject Client SupabaseClient
-@code {
-    [Parameter] public Book BookToEdit { get; set; } = new();
-    [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }
-    private Book book = new();
-    private string? errorMessage;
-    private List<Author> authors = [];
-    private IEnumerable<Author> selectedAuthors = new HashSet<Author>();
-    protected override async Task OnInitializedAsync()
-    {
-        var response = await SupabaseClient.From<Author>().Get();
-        authors = response.Models ?? [];
-        book = new Book
-        {
-            Id = BookToEdit.Id,
-            Name = BookToEdit.Name,
-            Authors = BookToEdit.Authors ?? [],
-            CreationDate = BookToEdit.CreationDate
-        };
-        // Pre-select authors by finding matching objects in the loaded authors list
-        selectedAuthors = authors.Where(a => book.Authors.Any(ba => ba.Id == a.Id)).ToHashSet();
-    }
-    private async Task Save()
-    {
-        errorMessage = null;
-        try
-        {
-            // Update the book basic information (without authors)
-            var bookToUpdate = new Book 
-            { 
-                Id = book.Id,
-                Name = book.Name,
-                CreationDate = book.CreationDate
-            };
-            
-            var response = await SupabaseClient.From<Book>().Where(x => x.Id == book.Id).Update(bookToUpdate);
-            
-            if (response.Models?.Count > 0)
-            {
-                var updatedBook = response.Models[0];
-                
-                // Handle the many-to-many relationship manually
-                await UpdateBookAuthorAssociations(book.Id, selectedAuthors);
-                
-                // Return the book with authors populated
-                updatedBook.Authors = selectedAuthors.ToList();
-                MudDialog.Close(DialogResult.Ok(updatedBook));
-            }
-            else
-            {
-                errorMessage = "Échec lors de la mise à jour du livre.";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Erreur: {ex.Message}";
-            Logger.LogError(ex, "Error updating book {BookId}", book.Id);
-        }
-    }
+@inject IBookService BookService
+@inject IAuthorService AuthorService
+@inject ISnackbar Snackbar
 
-    private async Task UpdateBookAuthorAssociations(int bookId, IEnumerable<Author> newAuthors)
-    {
-        try
-        {
-            // Get current associations
-            var currentAssociationsResponse = await SupabaseClient.From<BookAuthor>()
-                .Where(x => x.BookId == bookId)
-                .Get();
-            
-            var currentAuthorIds = currentAssociationsResponse.Models?.Select(x => x.AuthorId).ToHashSet() ?? new HashSet<int>();
-            var newAuthorIds = newAuthors.Select(x => x.Id).ToHashSet();
-            
-            // Find authors to remove
-            var authorsToRemove = currentAuthorIds.Except(newAuthorIds).ToList();
-            
-            // Find authors to add
-            var authorsToAdd = newAuthorIds.Except(currentAuthorIds).ToList();
-            
-            // Remove associations that are no longer needed
-            foreach (var authorIdToRemove in authorsToRemove)
-            {
-                await SupabaseClient.From<BookAuthor>()
-                    .Where(x => x.BookId == bookId && x.AuthorId == authorIdToRemove)
-                    .Delete();
-            }
-            
-            // Add new associations
-            if (authorsToAdd.Any())
-            {
-                var bookAuthorsToAdd = authorsToAdd.Select(authorId => new BookAuthor
-                {
-                    BookId = bookId,
-                    AuthorId = authorId
-                }).ToList();
-
-                await SupabaseClient.From<BookAuthor>().Insert(bookAuthorsToAdd);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating book-author associations for book {BookId}", bookId);
-            throw; // Re-throw to handle in the calling method
-        }
-    }
-    private void Cancel()
-    {
-        MudDialog.Cancel();
-    }
-
-    private class AuthorComparer : IEqualityComparer<Author>
-    {
-        public bool Equals(Author? x, Author? y)
-        {
-            if (x == null && y == null) return true;
-            if (x == null || y == null) return false;
-            return x.Id == y.Id;
-        }
-
-        public int GetHashCode(Author obj)
-        {
-            return obj?.Id.GetHashCode() ?? 0;
-        }
-    }
-}
 <MudDialog>
     <DialogContent>
         <MudText Typo="Typo.h6">Modifier le Livre</MudText>
@@ -151,7 +31,110 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Save" Color="Color.Primary" Variant="Variant.Filled">Enregistrer</MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text">Annuler</MudButton>
+        <MudButton OnClick="SaveAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Enregistrer</span>
+            }
+        </MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text" Disabled="@isSaving">Annuler</MudButton>
     </DialogActions>
 </MudDialog>
+
+@code {
+    [Parameter] 
+    public Book BookToEdit { get; set; } = new();
+    
+    [CascadingParameter] 
+    public required IMudDialogInstance MudDialog { get; set; }
+    
+    private Book book = new();
+    private string? errorMessage;
+    private List<Author> authors = [];
+    private IEnumerable<Author> selectedAuthors = new HashSet<Author>();
+    private bool isSaving = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // Use service layer with caching instead of direct Supabase client
+        authors = (await AuthorService.GetAllAsync())?.ToList() ?? [];
+        
+        book = new Book
+        {
+            Id = BookToEdit.Id,
+            Name = BookToEdit.Name,
+            Authors = BookToEdit.Authors ?? [],
+            CreationDate = BookToEdit.CreationDate
+        };
+        
+        // Pre-select authors by finding matching objects in the loaded authors list
+        selectedAuthors = authors.Where(a => book.Authors.Any(ba => ba.Id == a.Id)).ToHashSet();
+    }
+    
+    private async Task SaveAsync()
+    {
+        errorMessage = null;
+        isSaving = true;
+        
+        try
+        {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(book.Name))
+            {
+                errorMessage = "Le nom du livre est requis.";
+                return;
+            }
+
+            // Get author IDs
+            var authorIds = selectedAuthors.Select(a => a.Id).ToList();
+            
+            // Use service layer for update
+            var result = await BookService.UpdateAsync(book, authorIds);
+            
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Livre modifié avec succès!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(result.Value));
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Échec lors de la mise à jour du livre.";
+                Snackbar.Add(errorMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Une erreur inattendue s'est produite.";
+            Logger.LogError(ex, "Error updating book {BookId}", book.Id);
+            Snackbar.Add(errorMessage, Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private class AuthorComparer : IEqualityComparer<Author>
+    {
+        public bool Equals(Author? x, Author? y)
+        {
+            if (x == null && y == null) return true;
+            if (x == null || y == null) return false;
+            return x.Id == y.Id;
+        }
+
+        public int GetHashCode(Author obj)
+        {
+            return obj?.Id.GetHashCode() ?? 0;
+        }
+    }
+}

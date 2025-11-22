@@ -35,11 +35,13 @@ builder.Services.AddSingleton(sp =>
 );
 
 builder.Services.AddScoped<ISupabaseAuthWrapper, SupabaseAuthWrapper>();
-builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<RecettesIndex.Services.AuthService>();
 builder.Services.AddScoped<IBookAuthorService, BookAuthorService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IRecipesQuery, SupabaseRecipesQuery>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<LocalStorageService>();
 
 var host = builder.Build();
