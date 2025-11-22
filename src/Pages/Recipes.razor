@@ -479,10 +479,11 @@
     {
         try
         {
-            isLoading = true;
-            
             // Load view preference from localStorage first
             await LoadViewPreference();
+            
+            // Always start with loading = true
+            isLoading = true;
             
             // Load recipes and filter data BEFORE reading query parameters
             await LoadRecipes();
@@ -494,7 +495,10 @@
             // Load data based on view mode
             if (isCardView)
             {
+                // LoadCardViewData will handle setting isLoading = false
                 await LoadCardViewData();
+                // Force UI update after loading card view data
+                StateHasChanged();
             }
             else
             {
@@ -502,10 +506,11 @@
                 isLoading = false;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Log error if needed
+            Logger.LogError(ex, "Error initializing Recipes page");
             isLoading = false;
+            StateHasChanged();
         }
     }
     

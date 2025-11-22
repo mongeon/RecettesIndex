@@ -1,8 +1,10 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services.Abstractions
+@using Microsoft.Extensions.Logging
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
+@inject ILogger<AddRecipeDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -90,6 +92,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Unexpected error adding recipe");
             errorMessage = "Une erreur inattendue s'est produite.";
             Snackbar.Add(errorMessage, Severity.Error);
         }

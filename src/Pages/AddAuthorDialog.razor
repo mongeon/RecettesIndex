@@ -1,8 +1,10 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services.Abstractions
+@using Microsoft.Extensions.Logging
 @inject IAuthorService AuthorService
 @inject ISnackbar Snackbar
+@inject ILogger<AddAuthorDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -67,6 +69,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Unexpected error adding author");
             errorMessage = "Une erreur inattendue s'est produite.";
             Snackbar.Add(errorMessage, Severity.Error);
         }
