@@ -27,6 +27,11 @@ public static class CacheConstants
 public static class PaginationConstants
 {
     /// <summary>
+    /// Minimum page number (1-based pagination).
+    /// </summary>
+    public const int MinPage = 1;
+
+    /// <summary>
     /// Minimum allowed page size.
     /// </summary>
     public const int MinPageSize = 1;

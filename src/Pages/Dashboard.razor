@@ -1,6 +1,7 @@
 @page "/dashboard"
 @using MudBlazor
 @using RecettesIndex.Models
+@using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
 @using Supabase
 @inject IRecipeService RecipeService
@@ -90,15 +91,7 @@
                         var percentage = statistics.TotalRecipes > 0 
                             ? (rating.Value * 100.0 / statistics.TotalRecipes) 
                             : 0;
-                        var color = rating.Key switch
-                        {
-                            5 => Color.Success,
-                            4 => Color.Info,
-                            3 => Color.Warning,
-                            2 => Color.Default,
-                            1 => Color.Error,
-                            _ => Color.Dark
-                        };
+                        var color = RatingColorService.GetRatingMudColor(rating.Key);
                         
                         <MudStack Row AlignItems="AlignItems.Center" Class="mb-3" Spacing="2">
                             <MudText Typo="Typo.body1" Style="min-width: 80px;">

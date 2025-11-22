@@ -32,7 +32,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
-            page = Math.Max(1, page);
+            page = Math.Max(PaginationConstants.MinPage, page);
             pageSize = Math.Clamp(pageSize, PaginationConstants.MinPageSize, PaginationConstants.MaxPageSize);
 
             var ids = new HashSet<int>();
