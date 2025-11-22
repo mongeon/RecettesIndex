@@ -200,7 +200,7 @@ public class CacheServiceTests
         var key = "test-key";
         var ttl = TimeSpan.FromMinutes(5);
         Func<CancellationToken, Task<string>> factory = ct => Task.FromResult("value");
-
+        
         // First, populate cache
         await _cacheService.GetOrCreateAsync(key, ttl, factory);
 
@@ -244,9 +244,9 @@ public class CacheServiceTests
         // Arrange
         var key = "test-key";
         var ttl = TimeSpan.FromMinutes(5);
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         CancellationToken receivedToken = default;
-
+        
         Func<CancellationToken, Task<string>> factory = ct =>
         {
             receivedToken = ct;

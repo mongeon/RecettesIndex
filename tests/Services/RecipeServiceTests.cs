@@ -20,7 +20,7 @@ public class RecipeServiceTests
     public RecipeServiceTests()
     {
         _query = Substitute.For<IRecipesQuery>();
-        _cache = new CacheService();
+        _cache = new CacheService(Substitute.For<ILogger<CacheService>>());
         _client = new Client("http://localhost", "test-key", new SupabaseOptions());
         _logger = Substitute.For<ILogger<RecipeService>>();
         _service = new RecipeService(_query, _cache, _client, _logger);

@@ -17,7 +17,7 @@ public class AuthorServiceTests
 
     public AuthorServiceTests()
     {
-        _cache = new CacheService();
+        _cache = new CacheService(Substitute.For<ILogger<CacheService>>());
         _client = new Client("http://localhost", "test-key", new SupabaseOptions());
         _logger = Substitute.For<ILogger<AuthorService>>();
         _service = new AuthorService(_cache, _client, _logger);

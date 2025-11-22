@@ -19,7 +19,7 @@ public class BookServiceTests
     public BookServiceTests()
     {
         _bookAuthorService = Substitute.For<IBookAuthorService>();
-        _cache = new CacheService();
+        _cache = new CacheService(Substitute.For<ILogger<CacheService>>());
         _client = new Client("http://localhost", "test-key", new SupabaseOptions());
         _logger = Substitute.For<ILogger<BookService>>();
         _service = new BookService(_bookAuthorService, _cache, _client, _logger);

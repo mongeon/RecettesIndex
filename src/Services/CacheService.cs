@@ -7,7 +7,7 @@ namespace RecettesIndex.Services;
 /// <summary>
 /// In-memory cache service with exception handling and type safety.
 /// </summary>
-public class CacheService(ILogger<CacheService>? logger = null) : ICacheService
+public class CacheService(ILogger<CacheService> logger) : ICacheService
 {
     private class CacheEntry(object value, DateTimeOffset expiresAt)
     {
@@ -16,7 +16,7 @@ public class CacheService(ILogger<CacheService>? logger = null) : ICacheService
     }
 
     private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();
-    private readonly ILogger<CacheService>? _logger = logger;
+    private readonly ILogger<CacheService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Gets or creates a cached value with comprehensive error handling.

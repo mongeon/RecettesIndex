@@ -45,7 +45,7 @@
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
     
-    private Recipe recipe = new() { CreationDate = DateTime.UtcNow };
+    private readonly Recipe recipe = new() { CreationDate = DateTime.UtcNow };
     private string? bookRef;
     private string? errorMessage;
     private List<Book> books = [];
