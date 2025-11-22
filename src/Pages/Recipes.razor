@@ -25,13 +25,13 @@
         </div>
         
         <!-- View Toggle Button -->
-        <MudToggleIconButton @bind-Toggled="isCardView"
-                            Icon="@Icons.Material.Filled.ViewList"
-                            ToggledIcon="@Icons.Material.Filled.ViewModule"
-                            Color="Color.Primary"
-                            Title="@(isCardView ? "Vue liste" : "Vue grille")"
-                            ToggledTitle="@(isCardView ? "Vue liste" : "Vue grille")"
-                            Size="Size.Large" />
+        <MudTooltip Text="@(isCardView ? "Passer en vue liste" : "Passer en vue grille")">
+            <MudToggleIconButton @bind-Toggled="isCardView"
+                                Icon="@Icons.Material.Filled.ViewList"
+                                ToggledIcon="@Icons.Material.Filled.ViewModule"
+                                Color="Color.Primary"
+                                Size="Size.Large" />
+        </MudTooltip>
     </MudStack>
     
     <!-- Quick Filter Buttons -->

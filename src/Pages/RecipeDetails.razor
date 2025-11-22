@@ -41,12 +41,13 @@ else
                     <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.9;" Class="mb-2" Align="Align.Center">
                         Favori
                     </MudText>
-                    <MudIconButton Icon="@(favoriteRecipeIds.Contains(recipe.Id) ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
-                                   Color="@(favoriteRecipeIds.Contains(recipe.Id) ? Color.Error : Color.Default)"
-                                   Size="Size.Large"
-                                   OnClick="@(() => ToggleFavorite(recipe))"
-                                   Title="@(favoriteRecipeIds.Contains(recipe.Id) ? "Retirer des favoris" : "Ajouter aux favoris")"
-                                   Style="background-color: rgba(255,255,255,0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 50%;" />
+                    <MudTooltip Text="@(favoriteRecipeIds.Contains(recipe.Id) ? "Retirer des favoris" : "Ajouter aux favoris")">
+                        <MudIconButton Icon="@(favoriteRecipeIds.Contains(recipe.Id) ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
+                                       Color="@(favoriteRecipeIds.Contains(recipe.Id) ? Color.Error : Color.Default)"
+                                       Size="Size.Large"
+                                       OnClick="@(() => ToggleFavorite(recipe))"
+                                       Style="background-color: rgba(255,255,255,0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 50%;" />
+                    </MudTooltip>
                 </div>
                 
                 <!-- Rating -->

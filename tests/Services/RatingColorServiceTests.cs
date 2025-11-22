@@ -197,10 +197,10 @@ public class RatingColorServiceTests
     }
 
     [Theory]
-    [InlineData(0, "#7575750D")]
-    [InlineData(-1, "#7575750D")]
-    [InlineData(6, "#7575750D")]
-    public void GetRowBackgroundStyle_InvalidRatings_ReturnsDarkGreyWithOpacity(int rating, string expectedSuffix)
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(6)]
+    public void GetRowBackgroundStyle_InvalidRatings_ReturnsDarkGreyWithOpacity(int rating)
     {
         // Act
         var style = RatingColorService.GetRowBackgroundStyle(rating);

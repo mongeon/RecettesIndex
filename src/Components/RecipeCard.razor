@@ -1,6 +1,7 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Pages
 
 <MudCard Elevation="2" Class="recipe-card" Style="height: 100%; display: flex; flex-direction: column;">
     <div class="recipe-card-image" 
@@ -13,12 +14,13 @@
         
         <!-- Favorite Icon (Top Left) -->
         <div class="favorite-icon" @onclick:stopPropagation="true">
-            <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
-                          Color="@(IsFavorite ? Color.Error : Color.Default)"
-                          Size="Size.Small"
-                          OnClick="@(() => OnToggleFavorite.InvokeAsync(Recipe))"
-                          Title="@(IsFavorite ? "Retirer des favoris" : "Ajouter aux favoris")"
-                          Style="background-color: rgba(255,255,255,0.9); box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
+            <MudTooltip Text="@(IsFavorite ? "Retirer des favoris" : "Ajouter aux favoris")">
+                <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
+                              Color="@(IsFavorite ? Color.Error : Color.Default)"
+                              Size="Size.Small"
+                              OnClick="@(() => OnToggleFavorite.InvokeAsync(Recipe))"
+                              Style="background-color: rgba(255,255,255,0.9); box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
+            </MudTooltip>
         </div>
         
         <div class="recipe-rating-overlay">
@@ -69,31 +71,35 @@
     
     <MudCardActions Class="d-flex justify-space-between pa-2">
         <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
-            <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
-                          Color="Color.Primary"
-                          Size="Size.Small"
-                          OnClick="@(() => OnView.InvokeAsync(Recipe))"
-                          Title="Voir les détails" />
+            <MudTooltip Text="Voir les détails">
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                              Color="Color.Primary"
+                              Size="Size.Small"
+                              OnClick="@(() => OnView.InvokeAsync(Recipe))" />
+            </MudTooltip>
             
-            <MudIconButton Icon="@Icons.Material.Filled.Print" 
-                          Color="Color.Default"
-                          Size="Size.Small"
-                          OnClick="@(() => OnPrint.InvokeAsync(Recipe))"
-                          Title="Imprimer" />
+            <MudTooltip Text="Imprimer">
+                <MudIconButton Icon="@Icons.Material.Filled.Print" 
+                              Color="Color.Default"
+                              Size="Size.Small"
+                              OnClick="@(() => OnPrint.InvokeAsync(Recipe))" />
+            </MudTooltip>
             
             @if (IsAuthenticated)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                              Color="Color.Secondary"
-                              Size="Size.Small"
-                              OnClick="@(() => OnEdit.InvokeAsync(Recipe))"
-                              Title="Modifier" />
+                <MudTooltip Text="Modifier">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                  Color="Color.Secondary"
+                                  Size="Size.Small"
+                                  OnClick="@(() => OnEdit.InvokeAsync(Recipe))" />
+                </MudTooltip>
                 
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                              Color="Color.Error"
-                              Size="Size.Small"
-                              OnClick="@(() => OnDelete.InvokeAsync(Recipe))"
-                              Title="Supprimer" />
+                <MudTooltip Text="Supprimer">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                  Color="Color.Error"
+                                  Size="Size.Small"
+                                  OnClick="@(() => OnDelete.InvokeAsync(Recipe))" />
+                </MudTooltip>
             }
         </MudButtonGroup>
         
