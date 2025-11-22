@@ -3,10 +3,12 @@
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
+@using Microsoft.Extensions.Logging
 @using Supabase
 @inject IRecipeService RecipeService
 @inject Client SupabaseClient
 @inject NavigationManager NavigationManager
+@inject ILogger<Dashboard> Logger
 
 <PageTitle>Tableau de Bord - Mes Recettes</PageTitle>
 
@@ -358,117 +360,170 @@
         await LoadStatistics();
     }
 
+    /// <summary>
+    /// Loads all dashboard statistics from the database.
+    /// </summary>
     private async Task LoadStatistics()
     {
         loading = true;
         try
         {
-            // Load all data
-            var recipesResult = await RecipeService.SearchAsync(null, null, null, null, 1, 10000);
-            var books = await RecipeService.GetBooksAsync();
-            var authors = await RecipeService.GetAuthorsAsync();
-
-            if (!recipesResult.IsSuccess)
+            // Load base data
+            var (recipes, books, authors) = await LoadBaseDataAsync();
+            
+            if (recipes == null)
             {
                 statistics = new DashboardStatistics();
                 return;
             }
 
-            var allRecipes = recipesResult.Value.Items.ToList();
-
-            // Calculate statistics
-            statistics.TotalRecipes = allRecipes.Count;
-            statistics.TotalBooks = books.Count;
-            statistics.TotalAuthors = authors.Count;
-
-            // Rating statistics
-            var ratedRecipes = allRecipes.Where(r => r.Rating > 0).ToList();
-            statistics.AverageRating = ratedRecipes.Any() 
-                ? ratedRecipes.Average(r => r.Rating) 
-                : 0;
-
-            statistics.RatingDistribution = allRecipes
-                .Where(r => r.Rating > 0)
-                .GroupBy(r => r.Rating)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            statistics.UnratedCount = allRecipes.Count(r => r.Rating == 0);
-
-            // Top rated recipes
-            statistics.TopRatedRecipes = allRecipes
-                .Where(r => r.Rating > 0)
-                .OrderByDescending(r => r.Rating)
-                .ThenByDescending(r => r.CreationDate)
-                .Take(10)
-                .ToList();
-
-            // Book statistics
-            var bookRecipeCounts = allRecipes
-                .Where(r => r.BookId.HasValue)
-                .GroupBy(r => r.BookId!.Value)
-                .Select(g => new BookStatistic
-                {
-                    BookId = g.Key,
-                    BookName = books.FirstOrDefault(b => b.Id == g.Key)?.Name ?? "Unknown",
-                    RecipeCount = g.Count()
-                })
-                .OrderByDescending(b => b.RecipeCount)
-                .ToList();
-
-            statistics.MostUsedBooks = bookRecipeCounts;
-
-            // Author statistics (through books)
-            var authorRecipeCounts = new Dictionary<int, int>();
-            foreach (var author in authors)
-            {
-                var authorBookIds = books
-                    .Where(b => b.Authors.Any(a => a.Id == author.Id))
-                    .Select(b => b.Id)
-                    .ToHashSet();
-                
-                var count = allRecipes.Count(r => r.BookId.HasValue && authorBookIds.Contains(r.BookId.Value));
-                if (count > 0)
-                {
-                    authorRecipeCounts[author.Id] = count;
-                }
-            }
-
-            statistics.MostUsedAuthors = authorRecipeCounts
-                .Select(kvp => new AuthorStatistic
-                {
-                    AuthorId = kvp.Key,
-                    AuthorName = authors.FirstOrDefault(a => a.Id == kvp.Key)?.FullName ?? "Unknown",
-                    RecipeCount = kvp.Value
-                })
-                .OrderByDescending(a => a.RecipeCount)
-                .ToList();
-
-            // Recent activity
-            statistics.MostRecentRecipe = allRecipes
-                .OrderByDescending(r => r.CreationDate)
-                .FirstOrDefault();
-
-            statistics.MostRecentBook = books
-                .OrderByDescending(b => b.CreationDate)
-                .FirstOrDefault();
-
-            var now = DateTime.UtcNow;
-            statistics.RecipesAddedLast7Days = allRecipes
-                .Count(r => r.CreationDate >= now.AddDays(-7));
-            
-            statistics.RecipesAddedLast30Days = allRecipes
-                .Count(r => r.CreationDate >= now.AddDays(-30));
+            // Calculate all statistics
+            CalculateBasicStatistics(recipes, books, authors);
+            CalculateRatingStatistics(recipes);
+            CalculateTopRatedRecipes(recipes);
+            CalculateBookStatistics(recipes, books);
+            CalculateAuthorStatistics(recipes, books, authors);
+            CalculateRecentActivity(recipes, books);
         }
         catch (Exception ex)
         {
-            // Log error (would use ILogger in production)
-            Console.WriteLine($"Error loading statistics: {ex.Message}");
+            Logger.LogError(ex, "Error loading dashboard statistics");
             statistics = new DashboardStatistics();
         }
         finally
         {
             loading = false;
         }
+    }
+
+    /// <summary>
+    /// Loads recipes, books, and authors from the service.
+    /// </summary>
+    private async Task<(List<Recipe>? recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)> LoadBaseDataAsync()
+    {
+        var recipesResult = await RecipeService.SearchAsync(null, null, null, null, 1, 10000);
+        var books = await RecipeService.GetBooksAsync();
+        var authors = await RecipeService.GetAuthorsAsync();
+
+        if (!recipesResult.IsSuccess)
+        {
+            Logger.LogWarning("Failed to load recipes for dashboard: {Error}", recipesResult.ErrorMessage);
+            return (null, books, authors);
+        }
+
+        return (recipesResult.Value.Items.ToList(), books, authors);
+    }
+
+    /// <summary>
+    /// Calculates basic statistics (total counts).
+    /// </summary>
+    private void CalculateBasicStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)
+    {
+        statistics.TotalRecipes = recipes.Count;
+        statistics.TotalBooks = books.Count;
+        statistics.TotalAuthors = authors.Count;
+    }
+
+    /// <summary>
+    /// Calculates rating-related statistics (average, distribution, unrated count).
+    /// </summary>
+    private void CalculateRatingStatistics(List<Recipe> recipes)
+    {
+        var ratedRecipes = recipes.Where(r => r.Rating > 0).ToList();
+        
+        statistics.AverageRating = ratedRecipes.Any() 
+            ? ratedRecipes.Average(r => r.Rating) 
+            : 0;
+
+        statistics.RatingDistribution = ratedRecipes
+            .GroupBy(r => r.Rating)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        statistics.UnratedCount = recipes.Count(r => r.Rating == 0);
+    }
+
+    /// <summary>
+    /// Calculates the top-rated recipes.
+    /// </summary>
+    private void CalculateTopRatedRecipes(List<Recipe> recipes)
+    {
+        statistics.TopRatedRecipes = recipes
+            .Where(r => r.Rating > 0)
+            .OrderByDescending(r => r.Rating)
+            .ThenByDescending(r => r.CreationDate)
+            .Take(10)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Calculates book usage statistics.
+    /// </summary>
+    private void CalculateBookStatistics(List<Recipe> recipes, IReadOnlyList<Book> books)
+    {
+        statistics.MostUsedBooks = recipes
+            .Where(r => r.BookId.HasValue)
+            .GroupBy(r => r.BookId!.Value)
+            .Select(g => new BookStatistic
+            {
+                BookId = g.Key,
+                BookName = books.FirstOrDefault(b => b.Id == g.Key)?.Name ?? "Unknown",
+                RecipeCount = g.Count()
+            })
+            .OrderByDescending(b => b.RecipeCount)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Calculates author usage statistics (through books).
+    /// </summary>
+    private void CalculateAuthorStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)
+    {
+        var authorRecipeCounts = new Dictionary<int, int>();
+        
+        foreach (var author in authors)
+        {
+            var authorBookIds = books
+                .Where(b => b.Authors.Any(a => a.Id == author.Id))
+                .Select(b => b.Id)
+                .ToHashSet();
+            
+            var count = recipes.Count(r => r.BookId.HasValue && authorBookIds.Contains(r.BookId.Value));
+            if (count > 0)
+            {
+                authorRecipeCounts[author.Id] = count;
+            }
+        }
+
+        statistics.MostUsedAuthors = authorRecipeCounts
+            .Select(kvp => new AuthorStatistic
+            {
+                AuthorId = kvp.Key,
+                AuthorName = authors.FirstOrDefault(a => a.Id == kvp.Key)?.FullName ?? "Unknown",
+                RecipeCount = kvp.Value
+            })
+            .OrderByDescending(a => a.RecipeCount)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Calculates recent activity metrics.
+    /// </summary>
+    private void CalculateRecentActivity(List<Recipe> recipes, IReadOnlyList<Book> books)
+    {
+        statistics.MostRecentRecipe = recipes
+            .OrderByDescending(r => r.CreationDate)
+            .FirstOrDefault();
+
+        statistics.MostRecentBook = books
+            .OrderByDescending(b => b.CreationDate)
+            .FirstOrDefault();
+
+        var now = DateTime.UtcNow;
+        statistics.RecipesAddedLast7Days = recipes
+            .Count(r => r.CreationDate >= now.AddDays(-7));
+        
+        statistics.RecipesAddedLast30Days = recipes
+            .Count(r => r.CreationDate >= now.AddDays(-30));
     }
 
     private void NavigateToRecipe(int id) => NavigationManager.NavigateTo($"/recipes/{id}");
