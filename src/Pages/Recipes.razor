@@ -1173,15 +1173,7 @@
 
     private string GetRowStyle(Recipe recipe)
     {
-        // Apply subtle background color based on rating
-        return recipe.Rating switch
-        {
-            5 => "background-color: rgba(76, 175, 80, 0.08);",
-            4 => "background-color: rgba(33, 150, 243, 0.08);",
-            3 => "background-color: rgba(255, 152, 0, 0.08);",
-            2 => "background-color: rgba(158, 158, 158, 0.08);",
-            1 => "background-color: rgba(244, 67, 54, 0.08);",
-            _ => "background-color: rgba(117, 117, 117, 0.05);"
-        };
+        // Use centralized color service for consistent rating-based colors
+        return RatingColorService.GetRowBackgroundStyle(recipe.Rating);
     }
 }
