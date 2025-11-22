@@ -1,11 +1,10 @@
 using Supabase.Gotrue;
 
-namespace RecettesIndex.Services
+namespace RecettesIndex.Services;
+
+public interface ISupabaseAuthWrapper
 {
-    public interface ISupabaseAuthWrapper
-    {
-        Task<Session?> SignIn(string email, string password);
-        Task SignOut();
-        User? CurrentUser { get; }
-    }
+    public Task<Session?> SignIn(string email, string password);
+    public Task SignOut();
+    public User? CurrentUser { get; }
 }

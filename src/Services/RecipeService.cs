@@ -39,16 +39,28 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
 
             if (!string.IsNullOrWhiteSpace(term))
             {
-                foreach (var id in await _q.GetRecipeIdsByNameAsync(term.Trim(), rating, ct)) ids.Add(id);
+                foreach (var id in await _q.GetRecipeIdsByNameAsync(term.Trim(), rating, ct))
+                {
+                    ids.Add(id);
+                }
                 var bookIdsByTitle = await _q.GetBookIdsByTitleAsync(term.Trim(), ct);
-                foreach (var id in await _q.GetRecipeIdsByBookIdsAsync(bookIdsByTitle, rating, ct)) ids.Add(id);
+                foreach (var id in await _q.GetRecipeIdsByBookIdsAsync(bookIdsByTitle, rating, ct))
+                {
+                    ids.Add(id);
+                }
                 var authorIds = await _q.GetAuthorIdsByNameAsync(term.Trim(), ct);
                 var bookIdsByAuthors = await _q.GetBookIdsByAuthorIdsAsync(authorIds, ct);
-                foreach (var id in await _q.GetRecipeIdsByBookIdsAsync(bookIdsByAuthors, rating, ct)) ids.Add(id);
+                foreach (var id in await _q.GetRecipeIdsByBookIdsAsync(bookIdsByAuthors, rating, ct))
+                {
+                    ids.Add(id);
+                }
             }
             else
             {
-                foreach (var id in await _q.GetAllRecipeIdsAsync(rating, ct)) ids.Add(id);
+                foreach (var id in await _q.GetAllRecipeIdsAsync(rating, ct))
+                {
+                    ids.Add(id);
+                }
             }
 
             if (bookId.HasValue)
@@ -118,7 +130,10 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         {
             var list = await _q.GetRecipesByIdsAsync(new[] { id }, ct);
             var model = list.FirstOrDefault();
-            if (model is null) throw new NotFoundException("Recipe", id);
+            if (model is null)
+            {
+                throw new NotFoundException("Recipe", id);
+            }
             return Result<Recipe>.Success(model);
         }
         catch (NotFoundException ex)
@@ -155,20 +170,30 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         {
             // Input validation
             if (recipe == null)
+            {
                 return Result<Recipe>.Failure("Recipe cannot be null");
+            }
             
             if (string.IsNullOrWhiteSpace(recipe.Name))
+            {
                 return Result<Recipe>.Failure("Recipe name is required");
+            }
             
             if (recipe.Rating < 0 || recipe.Rating > 5)
+            {
                 return Result<Recipe>.Failure("Rating must be between 0 and 5");
+            }
             
             if (recipe.BookPage.HasValue && recipe.BookPage.Value < 0)
+            {
                 return Result<Recipe>.Failure("Book page number must be positive");
+            }
 
             // Set creation date if not already set
             if (recipe.CreationDate == default)
+            {
                 recipe.CreationDate = DateTime.UtcNow;
+            }
 
             var res = await _supabaseClient.From<Recipe>().Insert(recipe);
             var created = res.Models?.FirstOrDefault() ?? recipe;
@@ -203,19 +228,29 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         {
             // Input validation
             if (recipe == null)
+            {
                 return Result<Recipe>.Failure("Recipe cannot be null");
+            }
             
             if (recipe.Id <= 0)
+            {
                 return Result<Recipe>.Failure("Invalid recipe ID");
+            }
             
             if (string.IsNullOrWhiteSpace(recipe.Name))
+            {
                 return Result<Recipe>.Failure("Recipe name is required");
+            }
             
             if (recipe.Rating < 0 || recipe.Rating > 5)
+            {
                 return Result<Recipe>.Failure("Rating must be between 0 and 5");
+            }
             
             if (recipe.BookPage.HasValue && recipe.BookPage.Value < 0)
+            {
                 return Result<Recipe>.Failure("Book page number must be positive");
+            }
 
             var res = await _supabaseClient.From<Recipe>().Update(recipe);
             var updated = res.Models?.FirstOrDefault() ?? recipe;
@@ -250,7 +285,9 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         {
             // Input validation
             if (id <= 0)
+            {
                 return Result<bool>.Failure("Invalid recipe ID");
+            }
 
             _logger?.LogInformation("Attempting to delete recipe with ID: {RecipeId}", id);
             

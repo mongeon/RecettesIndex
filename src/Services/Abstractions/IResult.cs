@@ -2,7 +2,7 @@ namespace RecettesIndex.Services.Abstractions;
 
 public interface IResult<out T>
 {
-    bool IsSuccess { get; }
-    T? Value { get; }
-    string? ErrorMessage { get; }
+    public bool IsSuccess { get; }
+    public T? Value { get; }
+    public string? ErrorMessage { get; }
 }

@@ -14,10 +14,10 @@ public static class RecentRecipesExtensions
     public static async Task AddRecentRecipeAsync(this LocalStorageService localStorage, int recipeId, string recipeName)
     {
         var recentRecipes = await localStorage.GetRecentRecipesAsync();
-        
+
         // Remove if already exists (to avoid duplicates)
         recentRecipes.RemoveAll(r => r.Id == recipeId);
-        
+
         // Add to the beginning of the list
         recentRecipes.Insert(0, new RecentRecipe
         {
@@ -25,13 +25,13 @@ public static class RecentRecipesExtensions
             Name = recipeName,
             ViewedAt = DateTime.UtcNow
         });
-        
+
         // Keep only the most recent N recipes
         if (recentRecipes.Count > MaxRecentRecipes)
         {
             recentRecipes = recentRecipes.Take(MaxRecentRecipes).ToList();
         }
-        
+
         await localStorage.SetItemAsync(RecentRecipesKey, recentRecipes);
     }
 

@@ -1,5 +1,5 @@
-using RecettesIndex.Models;
 using System.ComponentModel.DataAnnotations;
+using RecettesIndex.Models;
 
 namespace RecettesIndex.Tests;
 

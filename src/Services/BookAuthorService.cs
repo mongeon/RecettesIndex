@@ -19,7 +19,10 @@ public class BookAuthorService(Client supabaseClient, ILogger<BookAuthorService>
     /// </summary>
     public async Task CreateBookAuthorAssociationsAsync(int bookId, IEnumerable<Author> authors)
     {
-        if (!authors.Any()) return;
+        if (!authors.Any())
+        {
+            return;
+        }
 
         try
         {

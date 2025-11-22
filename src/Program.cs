@@ -22,14 +22,14 @@ var options = new SupabaseOptions
 };
 var supabaseConfig = new SupabaseConfigDto
 {
-    url = builder.Configuration["supabase:Url"] ?? string.Empty,
-    key = builder.Configuration["supabase:Key"] ?? string.Empty
+    Url = builder.Configuration["supabase:Url"] ?? string.Empty,
+    Key = builder.Configuration["supabase:Key"] ?? string.Empty
 };
 
 builder.Services.AddSingleton(sp =>
     new Client(
-        supabaseConfig.url,
-        supabaseConfig.key,
+        supabaseConfig.Url,
+        supabaseConfig.Key,
         options
     )
 );
@@ -51,6 +51,6 @@ await host.RunAsync();
 
 public class SupabaseConfigDto
 {
-    public string url { get; set; } = string.Empty;
-    public string key { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty;
 }

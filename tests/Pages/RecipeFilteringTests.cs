@@ -1,8 +1,8 @@
-using Xunit;
-using RecettesIndex.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RecettesIndex.Models;
+using Xunit;
 
 namespace RecettesIndex.Tests.Pages;
 
@@ -24,7 +24,7 @@ public class RecipeFilteringTests
         var searchTerm = "chocolate";
 
         // Act
-        var filtered = recipes.Where(r => 
+        var filtered = recipes.Where(r =>
             r.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
 
         // Assert
@@ -164,9 +164,9 @@ public class RecipeFilteringTests
         string? authorFilter = null;
 
         // Act
-        var hasFilters = !string.IsNullOrWhiteSpace(searchTerm) 
-            || (ratingFilter != null && ratingFilter != "all") 
-            || (bookFilter != null && bookFilter != "all") 
+        var hasFilters = !string.IsNullOrWhiteSpace(searchTerm)
+            || (ratingFilter != null && ratingFilter != "all")
+            || (bookFilter != null && bookFilter != "all")
             || (authorFilter != null && authorFilter != "all");
 
         // Assert
@@ -183,9 +183,9 @@ public class RecipeFilteringTests
         string? authorFilter = null;
 
         // Act
-        var hasFilters = !string.IsNullOrWhiteSpace(searchTerm) 
-            || (ratingFilter != null && ratingFilter != "all") 
-            || (bookFilter != null && bookFilter != "all") 
+        var hasFilters = !string.IsNullOrWhiteSpace(searchTerm)
+            || (ratingFilter != null && ratingFilter != "all")
+            || (bookFilter != null && bookFilter != "all")
             || (authorFilter != null && authorFilter != "all");
 
         // Assert
@@ -213,8 +213,8 @@ public class RecipeFilteringTests
         var maxLength = 50;
 
         // Act
-        var preview = longNotes.Length > maxLength 
-            ? longNotes.Substring(0, maxLength) + "..." 
+        var preview = longNotes.Length > maxLength
+            ? longNotes.Substring(0, maxLength) + "..."
             : longNotes;
 
         // Assert
@@ -230,8 +230,8 @@ public class RecipeFilteringTests
         var maxLength = 50;
 
         // Act
-        var preview = shortNotes.Length > maxLength 
-            ? shortNotes.Substring(0, maxLength) + "..." 
+        var preview = shortNotes.Length > maxLength
+            ? shortNotes.Substring(0, maxLength) + "..."
             : shortNotes;
 
         // Assert
@@ -310,7 +310,7 @@ public class RecipeFilteringTests
             new() { Id = 2, Name = "Recipe 2", Rating = 4, BookId = 2, CreationDate = DateTime.UtcNow },
             new() { Id = 3, Name = "Recipe 3", Rating = 5, BookId = 3, CreationDate = DateTime.UtcNow }
         };
-        
+
         // Simulate books from a specific author
         var authorBookIds = new HashSet<int> { 1, 3 };
 

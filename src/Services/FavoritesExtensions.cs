@@ -31,7 +31,7 @@ public static class FavoritesExtensions
     public static async Task ToggleFavoriteAsync(this LocalStorageService localStorage, int recipeId)
     {
         var favorites = await localStorage.GetFavoritesAsync();
-        
+
         if (favorites.Contains(recipeId))
         {
             favorites.Remove(recipeId);
@@ -40,7 +40,7 @@ public static class FavoritesExtensions
         {
             favorites.Add(recipeId);
         }
-        
+
         await localStorage.SetItemAsync(FavoritesKey, favorites);
     }
 

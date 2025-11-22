@@ -13,7 +13,7 @@ public interface IBookAuthorService
     /// <param name="bookId">The ID of the book to associate authors with.</param>
     /// <param name="authors">The collection of authors to associate with the book.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task CreateBookAuthorAssociationsAsync(int bookId, IEnumerable<Author> authors);
+    public Task CreateBookAuthorAssociationsAsync(int bookId, IEnumerable<Author> authors);
 
     /// <summary>
     /// Updates associations between a book and authors (for existing books).
@@ -22,12 +22,12 @@ public interface IBookAuthorService
     /// <param name="bookId">The ID of the book to update associations for.</param>
     /// <param name="newAuthors">The new collection of authors to associate with the book.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task UpdateBookAuthorAssociationsAsync(int bookId, IEnumerable<Author> newAuthors);
+    public Task UpdateBookAuthorAssociationsAsync(int bookId, IEnumerable<Author> newAuthors);
 
     /// <summary>
     /// Loads authors for a specific book using the junction table and populates the book's Authors property.
     /// </summary>
     /// <param name="book">The book to load authors for. Its Authors property will be populated.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task LoadAuthorsForBookAsync(Book book);
+    public Task LoadAuthorsForBookAsync(Book book);
 }

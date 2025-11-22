@@ -34,7 +34,7 @@ public static class RatingColorService
         1 => "#F44336", // Red - Error
         _ => "#757575"  // Dark Grey - Unrated
     };
-    
+
     /// <summary>
     /// Gets the MudBlazor Color enum value for a given recipe rating.
     /// </summary>
@@ -52,7 +52,7 @@ public static class RatingColorService
         1 => Color.Error,
         _ => Color.Dark
     };
-    
+
     /// <summary>
     /// Gets a CSS background color style with 5% opacity for table rows.
     /// </summary>
@@ -62,9 +62,9 @@ public static class RatingColorService
     /// The "0D" suffix represents 5% opacity in hex (0.05 * 255 = 13 = 0x0D).
     /// This provides subtle color coding without overwhelming the UI.
     /// </remarks>
-    public static string GetRowBackgroundStyle(int rating) => 
+    public static string GetRowBackgroundStyle(int rating) =>
         $"background-color: {GetRatingColorHex(rating)}0D;";
-    
+
     /// <summary>
     /// Gets a CSS background-color property value for solid color usage.
     /// </summary>
@@ -73,6 +73,6 @@ public static class RatingColorService
     /// <remarks>
     /// Used for elements that need full color intensity (print views, color bars, etc.).
     /// </remarks>
-    public static string GetRatingColorBarStyle(int rating) => 
+    public static string GetRatingColorBarStyle(int rating) =>
         $"background-color: {GetRatingColorHex(rating)};";
 }

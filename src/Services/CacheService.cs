@@ -117,7 +117,9 @@ public class CacheService(ILogger<CacheService>? logger = null) : ICacheService
     public void Remove(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
+        {
             return;
+        }
 
         try
         {

@@ -56,7 +56,9 @@ public class BookService(
                 .Single();
 
             if (book == null)
+            {
                 return Result<Book>.Failure($"Book with ID {id} not found");
+            }
 
             await _bookAuthorService.LoadAuthorsForBookAsync(book);
             
@@ -80,10 +82,14 @@ public class BookService(
         {
             // Validate input
             if (book == null)
+            {
                 return Result<Book>.Failure("Book cannot be null");
+            }
             
             if (string.IsNullOrWhiteSpace(book.Name))
+            {
                 return Result<Book>.Failure("Book name is required");
+            }
 
             // Set creation date
             book.CreationDate = DateTime.UtcNow;
@@ -93,7 +99,9 @@ public class BookService(
             var createdBook = response.Models?.FirstOrDefault();
 
             if (createdBook == null)
+            {
                 return Result<Book>.Failure("Failed to create book");
+            }
 
             // Create author associations
             var authorIdsList = authorIds.ToList();
@@ -134,13 +142,19 @@ public class BookService(
         {
             // Validate input
             if (book == null)
+            {
                 return Result<Book>.Failure("Book cannot be null");
+            }
             
             if (string.IsNullOrWhiteSpace(book.Name))
+            {
                 return Result<Book>.Failure("Book name is required");
+            }
             
             if (book.Id <= 0)
+            {
                 return Result<Book>.Failure("Invalid book ID");
+            }
 
             // Update book
             var response = await _supabaseClient.From<Book>()
@@ -150,7 +164,9 @@ public class BookService(
             var updatedBook = response.Models?.FirstOrDefault();
 
             if (updatedBook == null)
+            {
                 return Result<Book>.Failure("Failed to update book");
+            }
 
             // Update author associations
             var authorIdsList = authorIds.ToList();
@@ -186,7 +202,9 @@ public class BookService(
         {
             // Validate input
             if (id <= 0)
+            {
                 return Result<bool>.Failure("Invalid book ID");
+            }
 
             // Check if book exists
             var existingBook = await _supabaseClient.From<Book>()
@@ -194,7 +212,9 @@ public class BookService(
                 .Single();
 
             if (existingBook == null)
+            {
                 return Result<bool>.Failure($"Book with ID {id} not found");
+            }
 
             // Delete book (cascade will handle book-author associations)
             await _supabaseClient.From<Book>()
