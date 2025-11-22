@@ -11,6 +11,7 @@
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject LocalStorageService LocalStorage
 
 <PageTitle>Recettes</PageTitle>
 
@@ -62,6 +63,15 @@
                  Label="true"
                  Icon="@Icons.Material.Filled.HelpOutline">
             Non évaluées (@unratedCount)
+        </MudChip>
+        
+        <MudChip T="string" 
+                 Color="@(showFavorites ? Color.Error : Color.Default)" 
+                 Style="@(showFavorites ? "background-color: #F44336 !important; color: white !important;" : "")"
+                 OnClick="ShowFavorites" 
+                 Label="true"
+                 Icon="@Icons.Material.Filled.Favorite">
+            Mes Favoris (@favoritesCount)
         </MudChip>
         
         <!-- New Presets -->
@@ -280,10 +290,12 @@
                         <RecipeCard Recipe="@recipe"
                                    Book="@book"
                                    IsAuthenticated="@AuthService.IsAuthenticated"
+                                   IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
                                    OnView="ViewRecipe"
                                    OnEdit="ShowEditDialog"
                                    OnDelete="DeleteRecipe"
-                                   OnPrint="PrintRecipe" />
+                                   OnPrint="PrintRecipe"
+                                   OnToggleFavorite="ToggleFavorite" />
                     </MudItem>
                 }
             </MudGrid>
@@ -420,12 +432,15 @@
     private int? quickFilterRating = null;
     private bool quickFilterUnrated = false;
     private bool showRecentRecipes = false;
+    private bool showFavorites = false;
+    private List<int> favoriteRecipeIds = new();
     
     // Filter counts
     private int totalCount = 0;
     private int fiveStarCount = 0;
     private int fourPlusStarCount = 0;
     private int unratedCount = 0;
+    private int favoritesCount = 0;
     private Dictionary<int, int> bookRecipeCounts = new();
     private Dictionary<int, int> authorRecipeCounts = new();
     
@@ -657,6 +672,37 @@
             await Reload();
     }
 
+    private async Task ShowFavorites()
+    {
+        // Toggle favorites filter
+        if (showFavorites)
+        {
+            // If already showing favorites, turn it off and show all
+            showFavorites = false;
+            showAllRecipes = true;
+        }
+        else
+        {
+            // Turn on favorites filter
+            showAllRecipes = false;
+            showRecentRecipes = false;
+            quickFilterRating = null;
+            quickFilterUnrated = false;
+            showFavorites = true;
+            ratingFilter = null;
+            bookFilter = null;
+            authorFilter = null;
+            searchTerm = string.Empty;
+        }
+        
+        currentPage = 1;
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
     private async Task ClearAllFilters()
     {
         searchTerm = string.Empty;
@@ -668,6 +714,7 @@
         quickFilterRating = null;
         quickFilterUnrated = false;
         currentPage = 1;
+        showFavorites = false;
         
         if (isCardView)
             await LoadCardViewData();
@@ -748,6 +795,12 @@
                     items = items.Where(r => r.CreationDate >= thirtyDaysAgo).ToList();
                 }
                 
+                // Apply favorites filter if active
+                if (showFavorites)
+                {
+                    items = items.Where(r => favoriteRecipeIds.Contains(r.Id)).ToList();
+                }
+                
                 currentRecipes = items;
                 totalPages = (int)Math.Ceiling(items.Count / (double)pageSize);
             }
@@ -825,6 +878,13 @@
             total = items.Count;
         }
         
+        // Apply favorites filter if active
+        if (showFavorites)
+        {
+            items = items.Where(r => favoriteRecipeIds.Contains(r.Id)).ToList();
+            total = items.Count;
+        }
+        
         return new TableData<Recipe> { Items = items, TotalItems = total };
     }
     
@@ -841,6 +901,9 @@
 
     private async Task LoadFilterCounts()
     {
+        // Load favorites from localStorage
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
         // Load all recipes to calculate counts
         var result = await RecipeService.SearchAsync(null, null, null, null, 1, 10000);
         if (result.IsSuccess)
@@ -850,6 +913,7 @@
             fiveStarCount = allRecipes.Count(r => r.Rating == 5);
             fourPlusStarCount = allRecipes.Count(r => r.Rating >= 4);
             unratedCount = allRecipes.Count(r => r.Rating == 0 || r.Rating < 1);
+            favoritesCount = favoriteRecipeIds.Count;
             
             // Calculate book counts
             bookRecipeCounts = allRecipes
@@ -1089,6 +1153,32 @@
     private void PrintRecipe(Recipe recipe)
     {
         NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
+    }
+    
+    private async Task ToggleFavorite(Recipe recipe)
+    {
+        await LocalStorage.ToggleFavoriteAsync(recipe.Id);
+        
+        // Refresh favorites list
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        favoritesCount = favoriteRecipeIds.Count;
+        
+        // If showing favorites, reload to update the list
+        if (showFavorites)
+        {
+            if (isCardView)
+                await LoadCardViewData();
+            else
+                await Reload();
+        }
+        
+        StateHasChanged();
+        
+        var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
+        Snackbar.Add(
+            isFavorite ? $"'{recipe.Name}' ajouté aux favoris ❤️" : $"'{recipe.Name}' retiré des favoris",
+            isFavorite ? Severity.Success : Severity.Info
+        );
     }
 
     private string GetRowStyle(Recipe recipe)

@@ -1195,12 +1195,26 @@ Displays top 6 most relevant recipes with clickable cards that navigate to recip
 - Timer refreshes list every 30 seconds
 - Implements IDisposable for cleanup
 
-**Priority 2D - LocalStorage Favorites** (2 hours)
-- [ ] Add favorite toggle button (heart icon) to cards
-- [ ] Store favorites in localStorage
-- [ ] Display favorite badge/icon on cards
-- [ ] Create "My Favorites" filter preset
-- [ ] Show favorites count in navigation
+**Priority 2D - LocalStorage Favorites** ✅ **COMPLETED** (2 hours)
+- [x] Create `FavoritesExtensions.cs` for localStorage favorites management
+- [x] Add favorite toggle button (heart icon) to recipe cards
+- [x] Store favorites in localStorage (persists across sessions)
+- [x] Display favorite badge/icon on cards (filled/outlined heart)
+- [x] Create "Mes Favoris" filter preset chip
+- [x] Show favorites count in filter chip badge
+- [x] Filter recipes by favorites in both card and table view
+- [x] Toast notifications for favorite/unfavorite actions
+- [x] Heart icon positioned in top-left corner with hover effects
+- [x] Auto-reload when toggling favorites while viewing favorites
+
+**Technical implementation**:
+- Reused `LocalStorageService` infrastructure from recent recipes
+- Heart icon with smooth scale animations on hover/click
+- Favorites persisted as list of recipe IDs in localStorage
+- Count badge updates dynamically
+- Red filled heart for favorited recipes, outlined heart for non-favorited
+- White background with shadow for heart icon visibility
+- Toast shows recipe name with heart emoji on favorite
 
 ---
 
