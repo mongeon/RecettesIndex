@@ -40,8 +40,7 @@ builder.Services.AddScoped<IBookAuthorService, BookAuthorService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IRecipesQuery, SupabaseRecipesQuery>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
-
-
+builder.Services.AddScoped<LocalStorageService>();
 
 var host = builder.Build();
 
