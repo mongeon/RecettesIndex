@@ -1,0 +1,27 @@
+@using MudBlazor
+
+@if (IsCardView)
+{
+    <MudGrid Spacing="3" Class="mt-4">
+        @for (int i = 0; i < SkeletonCount; i++)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <RecipeCardSkeleton />
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <div class="mt-4">
+        @for (int i = 0; i < SkeletonCount; i++)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="60px" Class="mb-2" Animation="Animation.Wave" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsCardView { get; set; }
+    [Parameter] public int SkeletonCount { get; set; } = 8;
+}

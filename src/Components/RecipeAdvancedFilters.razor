@@ -1,0 +1,120 @@
+@using MudBlazor
+@using RecettesIndex.Models
+
+<MudExpansionPanels Class="mb-3">
+    <MudExpansionPanel Text="Filtres Avancés" 
+                      Icon="@Icons.Material.Filled.FilterList">
+        <TitleContent>
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.FilterList" Class="mr-2" />
+                <MudText>Filtres Avancés</MudText>
+                @if (ActiveFilterCount > 0)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">
+                        @ActiveFilterCount
+                    </MudChip>
+                }
+            </div>
+        </TitleContent>
+        <ChildContent>
+            <MudStack Spacing="3" Class="mt-2">
+                <!-- Search -->
+                <MudTextField T="string" 
+                              Value="@SearchTerm" 
+                              ValueChanged="OnSearchChanged" 
+                              Placeholder="Rechercher des recettes..." 
+                              Adornment="Adornment.Start" 
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Clearable="true"
+                              Immediate="false"
+                              DebounceInterval="300"
+                              HelperText="Recherchez par nom de recette"
+                              Variant="Variant.Outlined" />
+                
+                <!-- Filter Row -->
+                <MudStack Row Spacing="2" Wrap="Wrap.Wrap">
+                    <MudSelect T="string" 
+                               Value="@RatingFilter" 
+                               ValueChanged="OnRatingChanged" 
+                               Clearable="true" 
+                               Label="Évaluation" 
+                               Variant="Variant.Outlined"
+                               Style="min-width: 200px;">
+                        <MudSelectItem T="string" Value='@("all")'>Toutes</MudSelectItem>
+                        <MudSelectItem T="string" Value='@("1")'>🍕 1</MudSelectItem>
+                        <MudSelectItem T="string" Value='@("2")'>🍕 2</MudSelectItem>
+                        <MudSelectItem T="string" Value='@("3")'>🍕 3</MudSelectItem>
+                        <MudSelectItem T="string" Value='@("4")'>🍕 4</MudSelectItem>
+                        <MudSelectItem T="string" Value='@("5")'>🍕 5</MudSelectItem>
+                    </MudSelect>
+                    
+                    <MudSelect T="string" 
+                               Value="@BookFilter" 
+                               ValueChanged="OnBookChanged" 
+                               Clearable="true" 
+                               Label="Livre" 
+                               Variant="Variant.Outlined"
+                               Style="min-width: 250px;">
+                        <MudSelectItem T="string" Value='@("all")'>Tous (@Books.Count)</MudSelectItem>
+                        @foreach (var b in Books)
+                        {
+                            var recipeCount = GetRecipeCountForBook(b.Id);
+                            <MudSelectItem T="string" Value="@b.Id.ToString()">@b.Name (@recipeCount)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    
+                    <MudSelect T="string" 
+                               Value="@AuthorFilter" 
+                               ValueChanged="OnAuthorChanged" 
+                               Clearable="true" 
+                               Label="Auteur" 
+                               Variant="Variant.Outlined"
+                               Style="min-width: 250px;">
+                        <MudSelectItem T="string" Value='@("all")'>Tous (@Authors.Count)</MudSelectItem>
+                        @foreach (var a in Authors)
+                        {
+                            var recipeCount = GetRecipeCountForAuthor(a.Id);
+                            <MudSelectItem T="string" Value="@a.Id.ToString()">@a.FullName (@recipeCount)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudStack>
+                
+                <!-- Filter Actions -->
+                @if (ActiveFilterCount > 0)
+                {
+                    <MudStack Row Spacing="1" Class="mt-2">
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Error" 
+                                  Size="Size.Small"
+                                  StartIcon="@Icons.Material.Filled.Clear"
+                                  OnClick="OnClearAllFilters">
+                            Tout effacer
+                        </MudButton>
+                    </MudStack>
+                }
+            </MudStack>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    [Parameter, EditorRequired] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string? RatingFilter { get; set; }
+    [Parameter, EditorRequired] public string? BookFilter { get; set; }
+    [Parameter, EditorRequired] public string? AuthorFilter { get; set; }
+    [Parameter, EditorRequired] public int ActiveFilterCount { get; set; }
+    
+    [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public List<Author> Authors { get; set; } = new();
+    [Parameter, EditorRequired] public Dictionary<int, int> BookRecipeCounts { get; set; } = new();
+    [Parameter, EditorRequired] public Dictionary<int, int> AuthorRecipeCounts { get; set; } = new();
+    
+    [Parameter, EditorRequired] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnRatingChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnBookChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnAuthorChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClearAllFilters { get; set; }
+    
+    private int GetRecipeCountForBook(int bookId) => BookRecipeCounts.GetValueOrDefault(bookId, 0);
+    private int GetRecipeCountForAuthor(int authorId) => AuthorRecipeCounts.GetValueOrDefault(authorId, 0);
+}
