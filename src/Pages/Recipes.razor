@@ -470,15 +470,17 @@
     {
         try
         {
+            isLoading = true;
+            
             // Load view preference from localStorage first
             await LoadViewPreference();
             
-            // Read query parameters from URL
-            await ReadQueryParameters();
-            
-            // Load recipes and filter data
+            // Load recipes and filter data BEFORE reading query parameters
             await LoadRecipes();
             await LoadFilterCounts();
+            
+            // Read query parameters from URL
+            await ReadQueryParameters();
             
             // Load data based on view mode
             if (isCardView)
