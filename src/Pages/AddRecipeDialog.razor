@@ -45,7 +45,7 @@
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
     
-    private readonly Recipe recipe = new() { CreationDate = DateTime.UtcNow };
+    private Recipe recipe = new() { CreationDate = DateTime.UtcNow };
     private string? bookRef;
     private string? errorMessage;
     private List<Book> books = [];
@@ -70,6 +70,7 @@
             if (string.IsNullOrWhiteSpace(recipe.Name))
             {
                 errorMessage = "Le nom de la recette est requis.";
+                isSaving = false;
                 return;
             }
 
