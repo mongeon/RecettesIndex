@@ -184,7 +184,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
                 return Result<Recipe>.Failure("Rating must be between 0 and 5");
             }
             
-            if (recipe.BookPage.HasValue && recipe.BookPage.Value < 0)
+            if (recipe.BookPage.HasValue && recipe.BookPage.Value <= 0)
             {
                 return Result<Recipe>.Failure("Book page number must be positive");
             }
@@ -247,7 +247,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
                 return Result<Recipe>.Failure("Rating must be between 0 and 5");
             }
             
-            if (recipe.BookPage.HasValue && recipe.BookPage.Value < 0)
+            if (recipe.BookPage.HasValue && recipe.BookPage.Value <= 0)
             {
                 return Result<Recipe>.Failure("Book page number must be positive");
             }
