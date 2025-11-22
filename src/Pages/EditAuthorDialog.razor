@@ -65,6 +65,7 @@
             if (string.IsNullOrWhiteSpace(author.Name))
             {
                 errorMessage = "Le prénom de l'auteur est requis.";
+                isSaving = false;
                 return;
             }
 
