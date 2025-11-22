@@ -59,7 +59,7 @@ public class AuthorModelTests
         var fullName = author.FullName;
 
         // Assert
-        Assert.Equal("Julia ", fullName);
+        Assert.Equal("Julia", fullName); // Trimmed - no trailing space
     }
 
     [Theory]
@@ -91,14 +91,15 @@ public class AuthorModelTests
         // Assert
         Assert.Equal(string.Empty, author.Name);
         Assert.Null(author.LastName);
-        // Books collection is initialized as default! (null) in the model
-        Assert.Null(author.Books);
+        // Books collection is initialized as [] (empty list) in the model
+        Assert.NotNull(author.Books);
+        Assert.Empty(author.Books);
     }
 
     [Theory]
-    [InlineData("", "", " ")]
-    [InlineData("SingleName", "", "SingleName ")]
-    [InlineData("", "LastOnly", " LastOnly")]
+    [InlineData("", "", "")] // Both empty - returns empty string (trimmed)
+    [InlineData("SingleName", "", "SingleName")] // Only first name (trimmed)
+    [InlineData("", "LastOnly", "LastOnly")] // Only last name (trimmed)
     public void Author_FullName_EdgeCases_ReturnsCorrectFormat(string firstName, string lastName, string expected)
     {
         // Arrange

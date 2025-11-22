@@ -265,7 +265,7 @@ public class AdditionalModelValidationTests
         var fullName = author.FullName;
 
         // Assert
-        Assert.Equal("Cher ", fullName);
+        Assert.Equal("Cher", fullName); // Trimmed - no trailing space
     }
 
     [Fact]
