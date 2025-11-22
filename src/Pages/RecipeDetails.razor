@@ -11,6 +11,7 @@
 @inject ILogger<RecipeDetails> Logger
 @inject NavigationManager NavigationManager
 @inject Client SupabaseClient
+@inject LocalStorageService LocalStorage
 
 <PageTitle>Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -201,6 +202,9 @@ else
                 
                 // Load related recipes
                 await LoadRelatedRecipes();
+                
+                // Track this recipe in recent recipes
+                await LocalStorage.AddRecentRecipeAsync(recipe.Id, recipe.Name);
             }
         }
         catch (Exception ex)

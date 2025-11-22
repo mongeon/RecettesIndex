@@ -1,3 +1,8 @@
+@using RecettesIndex.Services
+@inject LocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
 <MudNavMenu>
     <div class="d-flex justify-center py-4">
         <MudImage Src="/icons/recipe-icon.svg" Alt="Logo" Width="60" Height="60" Class="mt-4 mb-3" />
@@ -21,6 +26,48 @@
         Auteurs
     </MudNavLink>
     
+    <!-- Recent Recipes Dropdown -->
+    @if (recentRecipes.Any())
+    {
+        <MudDivider Class="my-2" />
+        
+        <MudMenu Icon="@Icons.Material.Filled.History" 
+                 IconColor="Color.Primary"
+                 Dense="true"
+                 FullWidth="true"
+                 Class="px-4">
+            <ActivatorContent>
+                <div class="d-flex align-center justify-space-between" style="width: 100%;">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-3" />
+                        <MudText>Récentes</MudText>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">@recentRecipes.Count</MudChip>
+                </div>
+            </ActivatorContent>
+            <ChildContent>
+                @foreach (var recent in recentRecipes)
+                {
+                    <MudMenuItem OnClick="@(() => NavigateToRecipe(recent.Id))">
+                        <div class="d-flex flex-column" style="min-width: 200px;">
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@recent.Name</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @GetRelativeTime(recent.ViewedAt)
+                            </MudText>
+                        </div>
+                    </MudMenuItem>
+                }
+                <MudDivider Class="my-1" />
+                <MudMenuItem OnClick="ClearRecentRecipes">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" Class="mr-2" Color="Color.Error" />
+                        <MudText Typo="Typo.body2" Color="Color.Error">Effacer l'historique</MudText>
+                    </div>
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    }
+    
     <MudSpacer />
     <MudDivider Class="mb-2" />
     
@@ -29,3 +76,78 @@
         <MudText Typo="Typo.caption" Align="Align.Center" Style="opacity: 0.7;">Votre collection personnelle de recettes</MudText>
     </div>
 </MudNavMenu>
+
+@code {
+    private List<RecentRecipe> recentRecipes = new();
+    private System.Threading.Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecentRecipes();
+        
+        // Set up timer to refresh recent recipes every 30 seconds
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await LoadRecentRecipes();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        
+        // Subscribe to navigation changes
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        // Refresh recent recipes when navigation occurs
+        await LoadRecentRecipes();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadRecentRecipes()
+    {
+        try
+        {
+            recentRecipes = await LocalStorage.GetRecentRecipesAsync();
+        }
+        catch
+        {
+            recentRecipes = new List<RecentRecipe>();
+        }
+    }
+
+    private void NavigateToRecipe(int recipeId)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipeId}");
+    }
+
+    private async Task ClearRecentRecipes()
+    {
+        await LocalStorage.ClearRecentRecipesAsync();
+        recentRecipes = new List<RecentRecipe>();
+        StateHasChanged();
+    }
+
+    private string GetRelativeTime(DateTime viewedAt)
+    {
+        var timeSpan = DateTime.UtcNow - viewedAt;
+        
+        if (timeSpan.TotalMinutes < 1)
+            return "À l'instant";
+        if (timeSpan.TotalMinutes < 60)
+            return $"Il y a {(int)timeSpan.TotalMinutes} min";
+        if (timeSpan.TotalHours < 24)
+            return $"Il y a {(int)timeSpan.TotalHours}h";
+        if (timeSpan.TotalDays < 7)
+            return $"Il y a {(int)timeSpan.TotalDays}j";
+        if (timeSpan.TotalDays < 30)
+            return $"Il y a {(int)(timeSpan.TotalDays / 7)} sem";
+        
+        return viewedAt.ToString("dd MMM");
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

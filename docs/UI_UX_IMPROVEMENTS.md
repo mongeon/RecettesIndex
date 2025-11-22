@@ -1177,12 +1177,23 @@ public async Task SetBookColor(int bookId, string colorHex)
 
 Displays top 6 most relevant recipes with clickable cards that navigate to recipe details.
 
-**Priority 2C - Recent Recipes in Navigation** (1.5 hours)
-- [ ] Create `LocalStorageService` class
-- [ ] Track recently viewed recipes (last 5)
-- [ ] Add dropdown menu in NavMenu
-- [ ] Display with icons and creation dates
-- [ ] Clear recent recipes option
+**Priority 2C - Recent Recipes in Navigation** ✅ **COMPLETED** (1.5 hours)
+- [x] Create `LocalStorageService` class
+- [x] Track recently viewed recipes (last 5)
+- [x] Add dropdown menu in NavMenu
+- [x] Display with icons and creation dates (relative timestamps)
+- [x] Clear recent recipes option
+- [x] Auto-refresh on navigation changes
+- [x] Badge showing count of recent recipes
+
+**Technical implementation**:
+- Created reusable `LocalStorageService` for all localStorage operations
+- Added `RecentRecipesExtensions` with helper methods
+- Tracks recipes automatically when viewed in RecipeDetails page
+- Dropdown updates dynamically on navigation
+- Shows relative time (e.g., "Il y a 5 min", "Il y a 2h", "Il y a 3j")
+- Timer refreshes list every 30 seconds
+- Implements IDisposable for cleanup
 
 **Priority 2D - LocalStorage Favorites** (2 hours)
 - [ ] Add favorite toggle button (heart icon) to cards
