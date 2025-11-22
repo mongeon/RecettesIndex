@@ -495,10 +495,8 @@
             // Load data based on view mode
             if (isCardView)
             {
-                // LoadCardViewData will handle setting isLoading = false
+                // LoadCardViewData will handle setting isLoading = false and calling StateHasChanged()
                 await LoadCardViewData();
-                // Force UI update after loading card view data
-                StateHasChanged();
             }
             else
             {
@@ -777,32 +775,43 @@
             if (result.IsSuccess)
             {
                 var items = result.Value.Items.ToList();
+                var total = result.Value.Total;
                 
                 // Apply recent filter if active
                 if (showRecentRecipes)
                 {
                     var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
                     items = items.Where(r => r.CreationDate >= thirtyDaysAgo).ToList();
+                    total = items.Count; // Update total after filter
                 }
                 
                 // Apply favorites filter if active
                 if (showFavorites)
                 {
                     items = items.Where(r => favoriteRecipeIds.Contains(r.Id)).ToList();
+                    total = items.Count; // Update total after filter
                 }
                 
                 currentRecipes = items;
-                totalPages = (int)Math.Ceiling(items.Count / (double)pageSize);
+                // Calculate total pages from the TOTAL count, not the current page items
+                totalPages = (int)Math.Ceiling(total / (double)pageSize);
             }
             else
             {
-                currentRecipes = new();
+                currentRecipes = [];
                 totalPages = 0;
             }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading card view data");
+            currentRecipes = [];
+            totalPages = 0;
         }
         finally
         {
             isLoading = false;
+            StateHasChanged(); // Ensure UI updates
         }
     }
     
