@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Recipe book/notepad with shadow for depth -->
+  <rect x="128" y="140" width="256" height="232" rx="12" fill="#FF6B6B" opacity="0.1"/>
+  <rect x="124" y="136" width="256" height="232" rx="12" fill="#FF6B6B"/>
+  
+  <!-- White paper overlay -->
+  <rect x="144" y="156" width="224" height="192" rx="8" fill="white"/>
+  
+  <!-- Recipe lines -->
+  <rect x="168" y="180" width="176" height="24" rx="6" fill="#4ECDC4"/>
+  <rect x="168" y="220" width="176" height="24" rx="6" fill="#4ECDC4"/>
+  <rect x="168" y="260" width="120" height="24" rx="6" fill="#4ECDC4"/>
+  
+  <!-- Checkmark circle -->
+  <circle cx="320" cy="272" r="28" fill="#4ECDC4"/>
+  <path d="M310 272L316 278L330 264" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
