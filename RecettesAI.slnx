@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/misc/">
+    <File Path=".editorconfig" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src\RecettesIndex.csproj" />
   </Folder>

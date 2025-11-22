@@ -46,8 +46,10 @@ public class AuthorService(
                 .Single();
 
             if (author == null)
+            {
                 return Result<Author>.Failure($"Author with ID {id} not found");
-            
+            }
+
             return Result<Author>.Success(author);
         }
         catch (HttpRequestException ex)
@@ -68,10 +70,14 @@ public class AuthorService(
         {
             // Validate input
             if (author == null)
+            {
                 return Result<Author>.Failure("Author cannot be null");
-            
+            }
+
             if (string.IsNullOrWhiteSpace(author.Name))
+            {
                 return Result<Author>.Failure("Author first name is required");
+            }
 
             // Set creation date
             author.CreationDate = DateTime.UtcNow;
@@ -81,7 +87,9 @@ public class AuthorService(
             var createdAuthor = response.Models?.FirstOrDefault();
 
             if (createdAuthor == null)
+            {
                 return Result<Author>.Failure("Failed to create author");
+            }
 
             // Invalidate cache
             _cache.Remove(CacheConstants.AuthorsListKey);
@@ -107,23 +115,31 @@ public class AuthorService(
         {
             // Validate input
             if (author == null)
+            {
                 return Result<Author>.Failure("Author cannot be null");
-            
+            }
+
             if (string.IsNullOrWhiteSpace(author.Name))
+            {
                 return Result<Author>.Failure("Author first name is required");
-            
+            }
+
             if (author.Id <= 0)
+            {
                 return Result<Author>.Failure("Invalid author ID");
+            }
 
             // Update author
             var response = await _supabaseClient.From<Author>()
                 .Where(x => x.Id == author.Id)
                 .Update(author);
-                
+
             var updatedAuthor = response.Models?.FirstOrDefault();
 
             if (updatedAuthor == null)
+            {
                 return Result<Author>.Failure("Failed to update author");
+            }
 
             // Invalidate cache
             _cache.Remove(CacheConstants.AuthorsListKey);
@@ -149,7 +165,9 @@ public class AuthorService(
         {
             // Validate input
             if (id <= 0)
+            {
                 return Result<bool>.Failure("Invalid author ID");
+            }
 
             // Check if author exists
             var existingAuthor = await _supabaseClient.From<Author>()
@@ -157,7 +175,9 @@ public class AuthorService(
                 .Single();
 
             if (existingAuthor == null)
+            {
                 return Result<bool>.Failure($"Author with ID {id} not found");
+            }
 
             // Delete author
             await _supabaseClient.From<Author>()

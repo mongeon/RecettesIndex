@@ -194,15 +194,15 @@ public class CacheServiceTests
     }
 
     [Fact]
-    public void Remove_ExistingKey_RemovesFromCache()
+    public async Task Remove_ExistingKey_RemovesFromCache()
     {
         // Arrange
         var key = "test-key";
         var ttl = TimeSpan.FromMinutes(5);
         Func<CancellationToken, Task<string>> factory = ct => Task.FromResult("value");
-        
+
         // First, populate cache
-        _ = _cacheService.GetOrCreateAsync(key, ttl, factory).Result;
+        await _cacheService.GetOrCreateAsync(key, ttl, factory);
 
         // Act
         _cacheService.Remove(key);
@@ -214,7 +214,7 @@ public class CacheServiceTests
             factoryCalled = true;
             return Task.FromResult("new-value");
         };
-        _ = _cacheService.GetOrCreateAsync(key, ttl, factoryCheck).Result;
+        await _cacheService.GetOrCreateAsync(key, ttl, factoryCheck);
         Assert.True(factoryCalled);
     }
 
@@ -246,7 +246,7 @@ public class CacheServiceTests
         var ttl = TimeSpan.FromMinutes(5);
         var cts = new CancellationTokenSource();
         CancellationToken receivedToken = default;
-        
+
         Func<CancellationToken, Task<string>> factory = ct =>
         {
             receivedToken = ct;

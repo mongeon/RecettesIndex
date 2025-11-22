@@ -1,5 +1,5 @@
-using Microsoft.JSInterop;
 using System.Text.Json;
+using Microsoft.JSInterop;
 
 namespace RecettesIndex.Services;
 
@@ -68,7 +68,9 @@ public class LocalStorageService
     {
         var json = await GetItemAsync(key);
         if (string.IsNullOrEmpty(json))
+        {
             return default;
+        }
 
         try
         {

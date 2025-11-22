@@ -1,8 +1,8 @@
-using Xunit;
-using RecettesIndex.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RecettesIndex.Models;
+using Xunit;
 
 namespace RecettesIndex.Tests.Pages;
 
@@ -246,32 +246,32 @@ public class DashboardStatisticsTests
         var recipes = new List<Recipe>();
         for (int i = 1; i <= 10; i++)
         {
-            recipes.Add(new Recipe 
-            { 
-                Id = i, 
-                Name = $"Recipe {i}", 
-                Rating = 5, 
-                CreationDate = DateTime.UtcNow 
+            recipes.Add(new Recipe
+            {
+                Id = i,
+                Name = $"Recipe {i}",
+                Rating = 5,
+                CreationDate = DateTime.UtcNow
             });
         }
         for (int i = 11; i <= 18; i++)
         {
-            recipes.Add(new Recipe 
-            { 
-                Id = i, 
-                Name = $"Recipe {i}", 
-                Rating = 4, 
-                CreationDate = DateTime.UtcNow 
+            recipes.Add(new Recipe
+            {
+                Id = i,
+                Name = $"Recipe {i}",
+                Rating = 4,
+                CreationDate = DateTime.UtcNow
             });
         }
         for (int i = 19; i <= 23; i++)
         {
-            recipes.Add(new Recipe 
-            { 
-                Id = i, 
-                Name = $"Recipe {i}", 
-                Rating = 3, 
-                CreationDate = DateTime.UtcNow 
+            recipes.Add(new Recipe
+            {
+                Id = i,
+                Name = $"Recipe {i}",
+                Rating = 3,
+                CreationDate = DateTime.UtcNow
             });
         }
 

@@ -20,7 +20,11 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
             var like = $"%{term}%";
             IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             q = q.Filter("name", Operator.ILike, like);
-            if (rating is >= 1 and <= 5) q = q.Filter("rating", Operator.Equals, rating.Value);
+            if (rating is >= 1 and <= 5)
+            {
+                q = q.Filter("rating", Operator.Equals, rating.Value);
+            }
+
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? [];
         }
@@ -38,13 +42,20 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
 
     public async Task<List<int>> GetRecipeIdsByBookIdsAsync(IReadOnlyCollection<int> bookIds, int? rating, CancellationToken ct = default)
     {
-        if (bookIds.Count == 0) return [];
+        if (bookIds.Count == 0)
+        {
+            return [];
+        }
 
         try
         {
             IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             q = q.Filter("book_id", Operator.In, bookIds.ToList());
-            if (rating is >= 1 and <= 5) q = q.Filter("rating", Operator.Equals, rating.Value);
+            if (rating is >= 1 and <= 5)
+            {
+                q = q.Filter("rating", Operator.Equals, rating.Value);
+            }
+
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? [];
         }
@@ -65,7 +76,11 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         try
         {
             IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
-            if (rating is >= 1 and <= 5) q = q.Filter("rating", Operator.Equals, rating.Value);
+            if (rating is >= 1 and <= 5)
+            {
+                q = q.Filter("rating", Operator.Equals, rating.Value);
+            }
+
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? [];
         }
@@ -83,7 +98,10 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
 
     public async Task<IReadOnlyList<Recipe>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default)
     {
-        if (ids.Count == 0) return Array.Empty<Recipe>();
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Recipe>();
+        }
 
         try
         {
@@ -124,7 +142,10 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
 
     public async Task<List<int>> GetBookIdsByAuthorIdsAsync(IReadOnlyCollection<int> authorIds, CancellationToken ct = default)
     {
-        if (authorIds.Count == 0) return [];
+        if (authorIds.Count == 0)
+        {
+            return [];
+        }
 
         try
         {

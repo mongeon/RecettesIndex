@@ -225,7 +225,7 @@ public class BookAuthorServiceTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ServiceException>(async () =>
             await _service.CreateBookAuthorAssociationsAsync(bookId, authors));
-        
+
         // Verify error message is user-friendly
         Assert.NotNull(exception.Message);
     }
@@ -243,7 +243,7 @@ public class BookAuthorServiceTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ServiceException>(async () =>
             await _service.UpdateBookAuthorAssociationsAsync(bookId, authors));
-        
+
         // Verify error handling
         Assert.Contains("error", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
