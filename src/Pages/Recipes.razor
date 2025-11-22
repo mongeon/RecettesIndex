@@ -1,4 +1,5 @@
 @page "/recipes"
+@using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
@@ -8,6 +9,7 @@
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject ILogger<Recipes> Logger
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
@@ -563,8 +565,9 @@
         {
             await JSRuntime.InvokeVoidAsync("localStorage.setItem", ViewModeKey, isCardView ? "card" : "table");
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogWarning(ex, "Failed to save view preference to localStorage");
             // Silently fail if localStorage is not available
         }
     }
@@ -621,8 +624,9 @@
                 Snackbar.Add("Aucune recette disponible", Severity.Warning);
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error selecting random recipe");
             Snackbar.Add("Erreur lors de la sélection aléatoire", Severity.Error);
         }
     }
@@ -746,21 +750,6 @@
             await LoadCardViewData();
         else
             await Reload();
-    }
-    
-    private class SavedFilters
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("searchTerm")]
-        public string? SearchTerm { get; set; }
-        
-        [System.Text.Json.Serialization.JsonPropertyName("ratingFilter")]
-        public string? RatingFilter { get; set; }
-        
-        [System.Text.Json.Serialization.JsonPropertyName("bookFilter")]
-        public string? BookFilter { get; set; }
-        
-        [System.Text.Json.Serialization.JsonPropertyName("authorFilter")]
-        public string? AuthorFilter { get; set; }
     }
     
     private async Task LoadCardViewData()
@@ -1077,8 +1066,9 @@
                 Snackbar.Add(res.ErrorMessage ?? "Une erreur s'est produite lors de la suppression de la recette.", Severity.Error);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error deleting recipe");
             Snackbar.Add("Une erreur s'est produite lors de la suppression de la recette. Veuillez réessayer.", Severity.Error);
         }
     }
