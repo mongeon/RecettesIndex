@@ -1,0 +1,91 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+
+<MudTable T="Recipe" 
+          ServerData="LoadServerData" 
+          Hover="true" 
+          Elevation="1" 
+          Dense="true" 
+          RowsPerPage="20" 
+          @ref="table" 
+          Class="recipe-table">
+    <PagerContent>
+        <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}"
+                       RowsPerPageString="Lignes par page:"
+                       PageSizeOptions="[10, 20, 50]" />
+    </PagerContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel T="Recipe" SortLabel="name">Nom</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel T="Recipe" SortLabel="rating">Évaluation</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel T="Recipe" SortLabel="created_at">Créée le</MudTableSortLabel></MudTh>
+        <MudTh>Notes</MudTh>
+        <MudTh>Livre</MudTh>
+        @if (IsAuthenticated)
+        {
+            <MudTh>Actions</MudTh>
+        }
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nom" Style="@GetRowStyle(context)">
+            <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
+        </MudTd>
+        <MudTd DataLabel="Évaluation" Style="@GetRowStyle(context)">
+            <PizzaRating Value="@context.Rating" />
+        </MudTd>
+        <MudTd DataLabel="Créée le" Style="@GetRowStyle(context)">@context.CreationDate.ToShortDateString()</MudTd>
+        <MudTd DataLabel="Notes" Style="@GetRowStyle(context)">
+            @if (!string.IsNullOrWhiteSpace(context.Notes))
+            {
+                var preview = context.Notes.Length > 50 ? context.Notes.Substring(0, 50) + "..." : context.Notes;
+                <MudTooltip Text="@context.Notes">
+                    <MudText Typo="Typo.body2">@preview</MudText>
+                </MudTooltip>
+            }
+        </MudTd>
+        <MudTd DataLabel="Livre" Style="@GetRowStyle(context)">
+            @if (context.BookId != null)
+            {
+                var book = Books.FirstOrDefault(b => b.Id == context.BookId);
+                if (book != null)
+                {
+                    <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
+                }
+            }
+        </MudTd>
+        @if (IsAuthenticated)
+        {
+            <MudTd Style="@GetRowStyle(context)">
+                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => OnEditRecipe.InvokeAsync(context)">Modifier</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => OnDeleteRecipe.InvokeAsync(context)">Supprimer</MudButton>
+            </MudTd>
+        }
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private MudTable<Recipe>? table;
+    
+    [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public bool IsAuthenticated { get; set; }
+    [Parameter, EditorRequired] public Func<TableState, CancellationToken, Task<TableData<Recipe>>> LoadServerData { get; set; } = null!;
+    
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnEditRecipe { get; set; }
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnDeleteRecipe { get; set; }
+    
+    /// <summary>
+    /// Reloads the table data from the server.
+    /// </summary>
+    public async Task ReloadServerData()
+    {
+        if (table is not null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+    
+    private string GetRowStyle(Recipe recipe)
+    {
+        return RatingColorService.GetRowBackgroundStyle(recipe.Rating);
+    }
+}

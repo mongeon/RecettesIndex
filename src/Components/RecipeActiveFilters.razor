@@ -1,0 +1,63 @@
+@using MudBlazor
+@using RecettesIndex.Models
+
+@if (HasActiveFilters)
+{
+    <MudPaper Elevation="0" Class="pa-2 mb-2" Style="background-color: #f5f5f5;">
+        <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.body2" Style="font-weight: 500;">Filtres actifs:</MudText>
+            
+            @if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                <MudChip T="string" Size="Size.Small" OnClose="OnClearSearch">
+                    Recherche: @SearchTerm
+                </MudChip>
+            }
+            
+            @if (RatingFilter != null && RatingFilter != "all")
+            {
+                <MudChip T="string" Size="Size.Small" OnClose="OnClearRating">
+                    Note: @RatingFilter 🍕
+                </MudChip>
+            }
+            
+            @if (BookFilter != null && BookFilter != "all")
+            {
+                var book = Books.FirstOrDefault(b => b.Id.ToString() == BookFilter);
+                if (book != null)
+                {
+                    <MudChip T="string" Size="Size.Small" OnClose="OnClearBook">
+                        Livre: @book.Name
+                    </MudChip>
+                }
+            }
+            
+            @if (AuthorFilter != null && AuthorFilter != "all")
+            {
+                var author = Authors.FirstOrDefault(a => a.Id.ToString() == AuthorFilter);
+                if (author != null)
+                {
+                    <MudChip T="string" Size="Size.Small" OnClose="OnClearAuthor">
+                        Auteur: @author.FullName
+                    </MudChip>
+                }
+            }
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter, EditorRequired] public bool HasActiveFilters { get; set; }
+    [Parameter, EditorRequired] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string? RatingFilter { get; set; }
+    [Parameter, EditorRequired] public string? BookFilter { get; set; }
+    [Parameter, EditorRequired] public string? AuthorFilter { get; set; }
+    
+    [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public List<Author> Authors { get; set; } = new();
+    
+    [Parameter, EditorRequired] public EventCallback OnClearSearch { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClearRating { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClearBook { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClearAuthor { get; set; }
+}

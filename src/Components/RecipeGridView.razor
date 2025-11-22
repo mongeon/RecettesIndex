@@ -1,0 +1,48 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Components
+
+<MudGrid Spacing="3" Class="mt-4">
+    @foreach (var recipe in Recipes)
+    {
+        var book = Books.FirstOrDefault(b => b.Id == recipe.BookId);
+        <MudItem xs="12" sm="6" md="4" lg="3" Style="animation: fadeIn 0.3s ease-out;">
+            <RecipeCard Recipe="@recipe"
+                       Book="@book"
+                       IsAuthenticated="@IsAuthenticated"
+                       IsFavorite="@FavoriteRecipeIds.Contains(recipe.Id)"
+                       OnView="OnViewRecipe"
+                       OnEdit="OnEditRecipe"
+                       OnDelete="OnDeleteRecipe"
+                       OnPrint="OnPrintRecipe"
+                       OnToggleFavorite="OnToggleFavorite" />
+        </MudItem>
+    }
+</MudGrid>
+
+<!-- Pagination -->
+<div class="d-flex justify-center mt-4">
+    <MudPagination Count="@TotalPages" 
+                  SelectedChanged="OnPageChanged" 
+                  Selected="@CurrentPage"
+                  Color="Color.Primary"
+                  ShowFirstButton="true"
+                  ShowLastButton="true" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<Recipe> Recipes { get; set; } = new();
+    [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public List<int> FavoriteRecipeIds { get; set; } = new();
+    [Parameter, EditorRequired] public bool IsAuthenticated { get; set; }
+    [Parameter, EditorRequired] public int CurrentPage { get; set; }
+    [Parameter, EditorRequired] public int TotalPages { get; set; }
+    
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnViewRecipe { get; set; }
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnEditRecipe { get; set; }
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnDeleteRecipe { get; set; }
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnPrintRecipe { get; set; }
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnToggleFavorite { get; set; }
+    [Parameter, EditorRequired] public EventCallback<int> OnPageChanged { get; set; }
+}

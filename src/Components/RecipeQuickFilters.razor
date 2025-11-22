@@ -1,0 +1,96 @@
+@using MudBlazor
+
+<MudStack Row Wrap="Wrap.Wrap" Spacing="2" Class="mb-3">
+    <MudChip T="string" 
+             Color="@(ShowAllRecipes ? Color.Primary : Color.Default)" 
+             OnClick="OnShowAll" 
+             Label="true">
+        Toutes (@TotalCount)
+    </MudChip>
+    
+    <MudChip T="string" 
+             Color="@(QuickFilterRating == 5 ? Color.Success : Color.Default)" 
+             Style="@(QuickFilterRating == 5 ? "background-color: #4CAF50 !important; color: white !important;" : "")"
+             OnClick="() => OnApplyQuickFilter.InvokeAsync(5)" 
+             Label="true" 
+             Icon="@Icons.Material.Filled.LocalPizza">
+        5 Étoiles (@FiveStarCount)
+    </MudChip>
+    
+    <MudChip T="string" 
+             Color="@(QuickFilterRating == 4 ? Color.Info : Color.Default)" 
+             Style="@(QuickFilterRating == 4 ? "background-color: #2196F3 !important; color: white !important;" : "")"
+             OnClick="() => OnApplyQuickFilter.InvokeAsync(4)" 
+             Label="true"
+             Icon="@Icons.Material.Filled.LocalPizza">
+        4+ Étoiles (@FourPlusStarCount)
+    </MudChip>
+    
+    <MudChip T="string" 
+             Color="@(QuickFilterUnrated ? Color.Dark : Color.Default)" 
+             Style="@(QuickFilterUnrated ? "background-color: #757575 !important; color: white !important;" : "")"
+             OnClick="OnShowUnrated" 
+             Label="true"
+             Icon="@Icons.Material.Filled.HelpOutline">
+        Non évaluées (@UnratedCount)
+    </MudChip>
+    
+    <MudChip T="string" 
+             Color="@(ShowFavorites ? Color.Error : Color.Default)" 
+             Style="@(ShowFavorites ? "background-color: #F44336 !important; color: white !important;" : "")"
+             OnClick="OnShowFavorites" 
+             Label="true"
+             Icon="@Icons.Material.Filled.Favorite">
+        Mes Favoris (@FavoritesCount)
+    </MudChip>
+    
+    <MudChip T="string" 
+             Color="@(ShowRecentRecipes ? Color.Info : Color.Default)" 
+             OnClick="OnShowRecent" 
+             Label="true"
+             Icon="@Icons.Material.Filled.Schedule">
+        Ajoutées récemment (30j)
+    </MudChip>
+    
+    <MudChip T="string" 
+             Color="Color.Secondary" 
+             OnClick="OnShowRandom" 
+             Label="true"
+             Icon="@Icons.Material.Filled.Shuffle">
+        Surprise !
+    </MudChip>
+    
+    @if (HasActiveFilters)
+    {
+        <MudChip T="string" 
+                 Color="Color.Error" 
+                 OnClick="OnClearAllFilters" 
+                 Label="true"
+                 Icon="@Icons.Material.Filled.Clear">
+            Réinitialiser les filtres
+        </MudChip>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public bool ShowAllRecipes { get; set; }
+    [Parameter, EditorRequired] public int? QuickFilterRating { get; set; }
+    [Parameter, EditorRequired] public bool QuickFilterUnrated { get; set; }
+    [Parameter, EditorRequired] public bool ShowRecentRecipes { get; set; }
+    [Parameter, EditorRequired] public bool ShowFavorites { get; set; }
+    [Parameter, EditorRequired] public bool HasActiveFilters { get; set; }
+    
+    [Parameter, EditorRequired] public int TotalCount { get; set; }
+    [Parameter, EditorRequired] public int FiveStarCount { get; set; }
+    [Parameter, EditorRequired] public int FourPlusStarCount { get; set; }
+    [Parameter, EditorRequired] public int UnratedCount { get; set; }
+    [Parameter, EditorRequired] public int FavoritesCount { get; set; }
+    
+    [Parameter, EditorRequired] public EventCallback OnShowAll { get; set; }
+    [Parameter, EditorRequired] public EventCallback<int> OnApplyQuickFilter { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnShowUnrated { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnShowFavorites { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnShowRecent { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnShowRandom { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClearAllFilters { get; set; }
+}
