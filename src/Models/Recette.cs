@@ -126,12 +126,14 @@ public class Author : BaseModel
     /// Gets or sets the collection of books written by this author.
     /// </summary>
     [Reference(typeof(Book), useInnerJoin: false, includeInQuery: true)]
-    public List<Book> Books { get; set; } = default!;
+    public List<Book> Books { get; set; } = [];
 
     /// <summary>
     /// Gets the full name of the author (first name and last name combined).
     /// </summary>
-    public string FullName { get { return $"{Name} {LastName}"; } }
+    public string FullName => string.IsNullOrWhiteSpace(LastName) 
+        ? Name 
+        : $"{Name} {LastName}".Trim();
 }
 
 /// <summary>
