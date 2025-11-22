@@ -878,10 +878,8 @@
         books = (await RecipeService.GetBooksAsync())?.ToList() ?? new();
         authors = (await RecipeService.GetAuthorsAsync())?.ToList() ?? new();
         
-        if (!isCardView)
-        {
-            await Reload();
-        }
+        // Don't call Reload() here - the MudTable will automatically call LoadServerData
+        // when it renders with ServerData parameter
     }
 
     private async Task LoadFilterCounts()
