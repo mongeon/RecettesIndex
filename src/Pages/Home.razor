@@ -221,69 +221,17 @@
             @foreach (var recipe in randomRecipes)
             {
                 var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
-                var bgColor = GetRandomCardColor(recipe.Id);
-                var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
                 
                 <div class="flex-shrink-0" style="width: 340px;">
-                    <MudPaper Elevation="3" Class="random-recipe-card h-100" Style="@($"background: {bgColor};")">
-                        <MudCardContent Class="pa-4">
-                            <!-- Header with rating and favorite toggle -->
-                            <div class="d-flex justify-space-between align-center mb-3">
-                                <PizzaRating Value="@recipe.Rating" Size="Size.Small" />
-                                <MudTooltip Text="@(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")">
-                                    <MudIconButton Icon="@(isFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
-                                                 Color="@(isFavorite ? Color.Error : Color.Surface)"
-                                                 Size="Size.Small"
-                                                 OnClick="@(async () => await ToggleFavoriteFromCard(recipe))" />
-                                </MudTooltip>
-                            </div>
-                            
-                            <!-- Recipe title -->
-                            <MudText Typo="Typo.h5" Color="Color.Surface" Class="mb-2" Style="font-weight: 600; min-height: 60px;">
-                                @recipe.Name
-                            </MudText>
-                            
-                            <!-- Book info -->
-                            @if (book != null)
-                            {
-                                <MudText Typo="Typo.body2" Color="Color.Surface" Class="mb-3" Style="opacity: 0.9;">
-                                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" /> @book.Name
-                                    @if (recipe.BookPage.HasValue)
-                                    {
-                                        <text> - p. @recipe.BookPage</text>
-                                    }
-                                </MudText>
-                            }
-                            
-                            <!-- Notes preview -->
-                            @if (!string.IsNullOrEmpty(recipe.Notes))
-                            {
-                                <MudText Typo="Typo.body2" Color="Color.Surface" Class="mb-4 notes-preview" Style="opacity: 0.85; min-height: 60px;">
-                                    @(recipe.Notes.Length > 120 ? recipe.Notes.Substring(0, 120) + "..." : recipe.Notes)
-                                </MudText>
-                            }
-                            else
-                            {
-                                <div style="min-height: 60px;"></div>
-                            }
-                            
-                            <!-- Action buttons -->
-                            <div class="d-flex gap-2 mt-auto">
-                                <MudButton Variant="Variant.Filled" 
-                                          Color="Color.Surface" 
-                                          Size="Size.Small"
-                                          StartIcon="@Icons.Material.Filled.Visibility"
-                                          FullWidth="true"
-                                          OnClick="() => ShowRecipeDetails(recipe)">
-                                    Voir la Recette
-                                </MudButton>
-                                <MudIconButton Icon="@Icons.Material.Filled.Print" 
-                                             Color="Color.Surface" 
-                                             Size="Size.Small"
-                                             OnClick="() => PrintRecipe(recipe)" />
-                            </div>
-                        </MudCardContent>
-                    </MudPaper>
+                    <RecipeCard Recipe="@recipe"
+                               Book="@book"
+                               IsAuthenticated="@AuthService.IsAuthenticated"
+                               IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
+                               OnView="@((r) => ShowRecipeDetails(r))"
+                               OnEdit="@(async (r) => await Task.CompletedTask)"
+                               OnDelete="@(async (r) => await Task.CompletedTask)"
+                               OnPrint="@((r) => PrintRecipe(r))"
+                               OnToggleFavorite="@ToggleFavorite" />
                 </div>
             }
             
@@ -300,78 +248,27 @@
             </div>
         </div>
 
-        <!-- Mobile/Tablet: Swipeable cards -->
+        <!-- Mobile/Tablet: Vertical stacked grid -->
         <div class="d-block d-md-none mb-6 @(refreshingRandom ? "fading-out" : "")">
-            <MudCarousel Class="mud-width-full" 
-                         Style="height: 440px;"
-                         ShowArrows="true" 
-                         ShowBullets="true" 
-                         AutoCycle="false"
-                         TData="Recipe"
-                         @bind-SelectedIndex="currentRandomIndex">
+            <MudGrid>
                 @foreach (var recipe in randomRecipes)
                 {
                     var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
-                    var bgColor = GetRandomCardColor(recipe.Id);
-                    var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
-                    
-                    <MudCarouselItem>
-                        <MudPaper Elevation="3" Class="random-recipe-card-mobile h-100 ma-2" Style="@($"background: {bgColor};")">
-                            <MudCardContent Class="pa-4 d-flex flex-column h-100">
-                                <!-- Header with rating and favorite toggle -->
-                                <div class="d-flex justify-space-between align-center mb-3">
-                                    <PizzaRating Value="@recipe.Rating" Size="Size.Small" />
-                                    <MudIconButton Icon="@(isFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
-                                                 Color="@(isFavorite ? Color.Error : Color.Surface)"
-                                                 Size="Size.Small"
-                                                 OnClick="@(async () => await ToggleFavoriteFromCard(recipe))" />
-                                </div>
-                                
-                                <!-- Recipe title -->
-                                <MudText Typo="Typo.h5" Color="Color.Surface" Class="mb-2" Style="font-weight: 600;">
-                                    @recipe.Name
-                                </MudText>
-                                
-                                <!-- Book info -->
-                                @if (book != null)
-                                {
-                                    <MudText Typo="Typo.body2" Color="Color.Surface" Class="mb-3" Style="opacity: 0.9;">
-                                        <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" /> @book.Name
-                                    </MudText>
-                                }
-                                
-                                <!-- Notes preview -->
-                                @if (!string.IsNullOrEmpty(recipe.Notes))
-                                {
-                                    <MudText Typo="Typo.body2" Color="Color.Surface" Class="mb-4 notes-preview" Style="opacity: 0.85;">
-                                        @(recipe.Notes.Length > 150 ? recipe.Notes.Substring(0, 150) + "..." : recipe.Notes)
-                                    </MudText>
-                                }
-                                
-                                <MudSpacer />
-                                
-                                <!-- Action buttons -->
-                                <div class="d-flex gap-2">
-                                    <MudButton Variant="Variant.Filled" 
-                                              Color="Color.Surface" 
-                                              Size="Size.Small"
-                                              StartIcon="@Icons.Material.Filled.Visibility"
-                                              FullWidth="true"
-                                              OnClick="() => ShowRecipeDetails(recipe)">
-                                        Voir la Recette
-                                    </MudButton>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Print" 
-                                                 Color="Color.Surface" 
-                                                 Size="Size.Small"
-                                                 OnClick="() => PrintRecipe(recipe)" />
-                                </div>
-                            </MudCardContent>
-                        </MudPaper>
-                    </MudCarouselItem>
+                    <MudItem xs="12">
+                        <RecipeCard Recipe="@recipe"
+                                   Book="@book"
+                                   IsAuthenticated="@AuthService.IsAuthenticated"
+                                   IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
+                                   OnView="@((r) => ShowRecipeDetails(r))"
+                                   OnEdit="@(async (r) => await Task.CompletedTask)"
+                                   OnDelete="@(async (r) => await Task.CompletedTask)"
+                                   OnPrint="@((r) => PrintRecipe(r))"
+                                   OnToggleFavorite="@ToggleFavorite" />
+                    </MudItem>
                 }
-            </MudCarousel>
+            </MudGrid>
             
-            <!-- Refresh button below carousel on mobile -->
+            <!-- Refresh button below cards on mobile -->
             <div class="d-flex justify-center mt-3">
                 <MudButton Variant="Variant.Outlined" 
                           Color="Color.Secondary" 
@@ -398,18 +295,6 @@
         .hero-section {
             min-height: 400px;
         }
-        
-        .desktop-h3 {
-            font-size: 2.5rem !important;
-        }
-        
-        .desktop-rating {
-            font-size: 1.5rem !important;
-        }
-        
-        .desktop-button {
-            font-size: 1.1rem !important;
-        }
     }
     
     .hero-overlay {
@@ -419,16 +304,6 @@
         right: 0;
         bottom: 0;
         background: linear-gradient(135deg, rgba(255,107,107,0.9) 0%, rgba(255,107,107,0.7) 100%);
-    }
-    
-    .recipe-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        cursor: pointer;
-    }
-    
-    .recipe-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
     
     .recipe-scroll {
@@ -450,84 +325,21 @@
         background: transparent;
     }
     
-    .recipe-notes-mobile {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-    }
-    
-    .carousel-responsive {
-        height: 300px;
-    }
-    
-    @@media (min-width: 768px) {
-        .carousel-responsive {
-            height: 400px;
-        }
-    }
-    
-    .random-recipe-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border-radius: 12px;
-        min-height: 320px;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .random-recipe-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-    }
-    
-    .random-recipe-card-mobile {
-        border-radius: 12px;
-        height: calc(100% - 16px);
-    }
-    
-    .notes-preview {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.4;
-    }
-    
     /* Fade animation for refresh */
     .fading-out {
         opacity: 0.3;
         pointer-events: none;
-    }
-    
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .random-recipe-card,
-    .random-recipe-card-mobile {
-        animation: fadeIn 0.4s ease-out;
     }
 </style>
 
 @code {
     private List<Recipe> newestRecipes = new();
     private List<Recipe> randomRecipes = new();
-    private Dictionary<int, Color> recipeColors = new(); // Store colors for each recipe
-    private Dictionary<int, string> recipeColorStrings = new(); // Store CSS color strings
     private List<Book> allBooks = new();
     private List<int> favoriteRecipeIds = new();
     private bool loadingNewest = true;
     private bool loadingRandom = true;
     private bool refreshingRandom = false;
-    private int currentRandomIndex = 0;
     private int totalRecipesCount = 0;
     private int totalBooksCount = 0;
     private int totalAuthorsCount = 0;
@@ -601,13 +413,6 @@
             {
                 // Use Fisher-Yates shuffle for pure random selection
                 randomRecipes = SelectPureRandomRecipes(allRecipes, UIConstants.RandomRecipeCount);
-            }
-            
-            // Assign gradient colors to each recipe
-            for (int i = 0; i < randomRecipes.Count; i++)
-            {
-                var recipe = randomRecipes[i];
-                recipeColorStrings[recipe.Id] = UIConstants.GradientColors[i % UIConstants.GradientColors.Count];
             }
         }
         catch (Exception ex)
@@ -716,7 +521,6 @@
         // Small delay for fade animation
         await Task.Delay(UIConstants.AnimationDelay);
         
-        currentRandomIndex = 0; // Reset carousel position
         await LoadRandomRecipes();
         
         refreshingRandom = false;
@@ -769,11 +573,6 @@
             isFavorite ? $"❤️ Ajouté aux favoris" : $"Retiré des favoris",
             isFavorite ? Severity.Success : Severity.Info
         );
-    }
-    
-    private string GetRandomCardColor(int recipeId)
-    {
-        return recipeColorStrings.GetValueOrDefault(recipeId, UIConstants.GradientColors[0]);
     }
 
     private async Task LoadBooks()
