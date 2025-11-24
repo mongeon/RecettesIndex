@@ -608,7 +608,7 @@
             for (int i = 0; i < randomRecipes.Count; i++)
             {
                 var recipe = randomRecipes[i];
-                recipeColorStrings[recipe.Id] = UIConstants.GradientColors[i % UIConstants.GradientColors.Length];
+                recipeColorStrings[recipe.Id] = UIConstants.GradientColors[i % UIConstants.GradientColors.Count];
             }
         }
         catch (Exception ex)
