@@ -385,16 +385,10 @@
             // Apply rating filter
             if (randomFilterRating.HasValue)
             {
-                if (randomFilterRating.Value == 4)
-                {
-                    // 4+ stars filter
-                    allRecipes = allRecipes.Where(r => r.Rating >= 4).ToList();
-                }
-                else
-                {
-                    // Exact rating filter (5 stars)
-                    allRecipes = allRecipes.Where(r => r.Rating == randomFilterRating.Value).ToList();
-                }
+                // Use ternary operator to filter by rating
+                allRecipes = (randomFilterRating.Value == 4)
+                    ? allRecipes.Where(r => r.Rating >= 4).ToList()
+                    : allRecipes.Where(r => r.Rating == randomFilterRating.Value).ToList();
             }
             
             if (allRecipes.Count == 0)
@@ -434,7 +428,7 @@
     {
         var rnd = new Random();
         var selected = new List<Recipe>();
-        var availableRecipes = recipes;
+        var availableRecipes = new List<Recipe>(recipes);
         
         // Calculate weights for each recipe
         var weights = new Dictionary<Recipe, double>();

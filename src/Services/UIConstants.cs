@@ -5,7 +5,10 @@ namespace RecettesIndex.Services;
 /// </summary>
 public static class UIConstants
 {
-    public const int AnimationDelay = 300; // in milliseconds
+    /// <summary>
+    /// The delay in milliseconds used for UI animations (e.g., fade-in, transitions).
+    /// </summary>
+    public const int AnimationDelay = 300;
     /// <summary>
     /// The number of random recipes to select/display.
     /// </summary>
