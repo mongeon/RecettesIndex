@@ -98,13 +98,13 @@ else
                                         @if (book != null)
                                         {
                                             <MudList Dense="true" T="Recipe">
-                                                <MudListItem Icon="@Icons.Material.Filled.Book">
+                                                <MudListItem Icon="@Icons.Material.Filled.MenuBook">
                                                     <MudText>Livre: <MudLink Href="@($"/books/{book.Id}")">@book.Name</MudLink></MudText>
                                                 </MudListItem>
                                                 
                                                 @if (recipe.BookPage != null)
                                                 {
-                                                    <MudListItem Icon="@Icons.Material.Filled.MenuBook">
+                                                    <MudListItem Icon="@Icons.Material.Filled.BookmarkBorder">
                                                         <MudText>Page: @recipe.BookPage</MudText>
                                                     </MudListItem>
                                                 }
