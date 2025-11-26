@@ -7,9 +7,10 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 - 📝 **Recipe Management**: Create, edit, and organize your favorite recipes
 - 📚 **Cookbook Integration**: Associate recipes with physical or digital cookbooks
 - 🏪 **Store & Restaurant Tracking**: Track recipes from stores, restaurants, and prepared meal vendors
+- 🌐 **Website Integration**: Store URLs for online recipes with clickable links
 - ⭐ **Rating System**: Rate recipes from 1-5 stars for easy favorites tracking
 - 📄 **Page References**: Track page numbers for cookbook recipes
-- 🏷️ **Source Badges**: Visual indicators showing recipe origin (book/store/homemade)
+- 🏷️ **Source Badges**: Visual indicators showing recipe origin (book/store/website/homemade)
 - 🖨️ **Print-Friendly**: Generate clean, printable versions of recipes with source information
 - 📱 **Responsive Design**: Works beautifully on desktop, tablet, and mobile
 - 🔍 **Search & Filter**: Find recipes by name, rating, cookbook, store, or author
@@ -88,6 +89,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
        book_id INTEGER REFERENCES books(id),
        book_page INTEGER,
        store_id INTEGER REFERENCES stores(id),
+       url TEXT, -- Optional website URL for online recipes
        creation_date TIMESTAMP DEFAULT NOW()
    );
    ```

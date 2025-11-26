@@ -137,4 +137,67 @@ public class RecipeStoreIntegrationTests
         Assert.False(recipe.IsFromStore);
         Assert.Null(recipe.SourceName);
     }
+
+    [Fact]
+    public void Recipe_IsFromUrl_ReturnsTrueWhenUrlSet()
+    {
+        // Arrange
+        var recipe = new Recipe { Id = 1, Name = "Test Recipe", Rating = 3, Url = "https://example.com/recipe" };
+
+        // Act & Assert
+        Assert.True(recipe.IsFromUrl);
+        Assert.False(recipe.IsFromBook);
+        Assert.False(recipe.IsFromStore);
+    }
+
+    [Fact]
+    public void Recipe_IsFromUrl_ReturnsFalseWhenUrlIsNullOrEmpty()
+    {
+        // Arrange
+        var recipe1 = new Recipe { Id = 1, Name = "Test Recipe", Rating = 3, Url = null };
+        var recipe2 = new Recipe { Id = 2, Name = "Test Recipe", Rating = 3, Url = string.Empty };
+        var recipe3 = new Recipe { Id = 3, Name = "Test Recipe", Rating = 3, Url = "   " };
+
+        // Act & Assert
+        Assert.False(recipe1.IsFromUrl);
+        Assert.False(recipe2.IsFromUrl);
+        Assert.False(recipe3.IsFromUrl);
+    }
+
+    [Fact]
+    public void Recipe_SourceName_ReturnsWebsiteWhenFromUrl()
+    {
+        // Arrange
+        var recipe = new Recipe 
+        { 
+            Id = 1, 
+            Name = "Online Recipe",
+            Rating = 4,
+            Url = "https://example.com/recipe"
+        };
+
+        // Act & Assert
+        Assert.Equal("Website", recipe.SourceName);
+    }
+
+    [Fact]
+    public void Recipe_SourceName_PrioritizesBookOverUrl()
+    {
+        // Arrange
+        var book = new Book { Id = 1, Name = "The Joy of Cooking" };
+        var recipe = new Recipe 
+        { 
+            Id = 1, 
+            Name = "Chocolate Cake",
+            Rating = 5,
+            BookId = book.Id,
+            Book = book,
+            Url = "https://example.com/recipe" // This should be ignored
+        };
+
+        // Act & Assert
+        Assert.Equal("The Joy of Cooking", recipe.SourceName);
+        Assert.True(recipe.IsFromBook);
+        Assert.True(recipe.IsFromUrl); // Both can be true, but SourceName prioritizes book
+    }
 }

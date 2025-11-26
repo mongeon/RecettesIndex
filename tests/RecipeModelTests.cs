@@ -161,4 +161,125 @@ public class RecipeModelTests
         Assert.Equal(bookId, recipe.BookId);
         Assert.Equal(page, recipe.BookPage);
     }
+
+    [Theory]
+    [InlineData("https://www.example.com/recipe")]
+    [InlineData("http://example.com")]
+    [InlineData("https://subdomain.example.com/path/to/recipe")]
+    [InlineData("https://example.com/recipe?param=value")]
+    public void Recipe_Url_AcceptsValidUrls(string url)
+    {
+        // Arrange
+        var recipe = new Recipe();
+
+        // Act
+        recipe.Url = url;
+
+        // Assert
+        Assert.Equal(url, recipe.Url);
+        Assert.True(recipe.IsFromUrl);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("not-a-url")]
+    [InlineData("www.example.com")]
+    [InlineData("ftp://example.com")]
+    public void Recipe_Url_AcceptsInvalidUrls_ButValidationWillCatch(string? url)
+    {
+        // Arrange
+        var recipe = new Recipe();
+
+        // Act
+        recipe.Url = url;
+
+        // Assert
+        Assert.Equal(url, recipe.Url);
+        
+        // IsFromUrl should return false for null/empty/whitespace
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            Assert.False(recipe.IsFromUrl);
+        }
+        else
+        {
+            // For non-empty strings, IsFromUrl returns true even if not valid URL
+            // The URL validation attribute will catch invalid URLs during validation
+            Assert.True(recipe.IsFromUrl);
+        }
+    }
+
+    [Fact]
+    public void Recipe_IsFromUrl_ReturnsTrueForValidUrl()
+    {
+        // Arrange
+        var recipe = new Recipe { Url = "https://example.com/recipe" };
+
+        // Act & Assert
+        Assert.True(recipe.IsFromUrl);
+    }
+
+    [Fact]
+    public void Recipe_IsFromUrl_ReturnsFalseForNullOrEmptyUrl()
+    {
+        // Arrange
+        var recipe1 = new Recipe { Url = null };
+        var recipe2 = new Recipe { Url = string.Empty };
+        var recipe3 = new Recipe { Url = "   " };
+
+        // Act & Assert
+        Assert.False(recipe1.IsFromUrl);
+        Assert.False(recipe2.IsFromUrl);
+        Assert.False(recipe3.IsFromUrl);
+    }
+
+    [Fact]
+    public void Recipe_SourceName_ReturnsWebsiteForUrlSource()
+    {
+        // Arrange
+        var recipe = new Recipe 
+        { 
+            Url = "https://example.com/recipe",
+            BookId = null,
+            StoreId = null
+        };
+
+        // Act & Assert
+        Assert.Equal("Website", recipe.SourceName);
+    }
+
+    [Fact]
+    public void Recipe_SourceName_PrioritizesBookOverStoreAndUrl()
+    {
+        // Arrange
+        var book = new Book { Id = 1, Name = "Cookbook" };
+        var recipe = new Recipe 
+        { 
+            BookId = 1,
+            Book = book,
+            StoreId = 2,
+            Url = "https://example.com/recipe"
+        };
+
+        // Act & Assert
+        Assert.Equal("Cookbook", recipe.SourceName);
+    }
+
+    [Fact]
+    public void Recipe_SourceName_PrioritizesStoreOverUrl()
+    {
+        // Arrange
+        var store = new Store { Id = 1, Name = "Restaurant" };
+        var recipe = new Recipe 
+        { 
+            StoreId = 1,
+            Store = store,
+            Url = "https://example.com/recipe"
+        };
+
+        // Act & Assert
+        Assert.Equal("Restaurant", recipe.SourceName);
+    }
 }

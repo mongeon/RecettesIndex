@@ -152,6 +152,14 @@ else
                                                 }
                                             </MudList>
                                         }
+                                        else if (recipe.IsFromUrl && !string.IsNullOrWhiteSpace(recipe.Url))
+                                        {
+                                            <MudList Dense="true" T="Recipe">
+                                                <MudListItem Icon="@Icons.Material.Filled.Language">
+                                                    <MudText>Source: <MudLink Href="@recipe.Url" Target="_blank">Voir la recette sur le web</MudLink></MudText>
+                                                </MudListItem>
+                                            </MudList>
+                                        }
                                         else
                                         {
                                             <MudAlert Severity="Severity.Info">
@@ -464,6 +472,10 @@ else
         else if (store != null)
         {
             info.Add($"Magasin: {store.Name}");
+        }
+        else if (recipe?.IsFromUrl == true)
+        {
+            info.Add("Recette en ligne");
         }
 
         return string.Join(" • ", info);

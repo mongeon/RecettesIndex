@@ -41,6 +41,12 @@
                     <span>Magasin/Restaurant</span>
                 </MudStack>
             </MudRadio>
+            <MudRadio T="string" Value="@("url")" Color="Color.Tertiary" Class="mb-2">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" />
+                    <span>Site Web</span>
+                </MudStack>
+            </MudRadio>
             <MudRadio T="string" Value="@("none")" Color="Color.Default">
                 <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
                     <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" />
@@ -100,6 +106,23 @@
                             </MudSelectItem>
                         }
                     </MudSelect>
+                </MudStack>
+            </MudPaper>
+        }
+        
+        <!-- URL Selection (shown when sourceType is "url") -->
+        @if (sourceType == "url")
+        {
+            <MudPaper Class="pa-3 mb-3" Elevation="0" Style="background-color: #e8f5e8;" @key="@($"url-{sourceType}")">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Tertiary">
+                        <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" Class="mr-1" />
+                        Informations du site web
+                    </MudText>
+                    <MudTextField @bind-Value="recipe.Url" 
+                                  Label="URL du site web *" 
+                                  Variant="Variant.Outlined" 
+                                  Placeholder="https://example.com/recipe" />
                 </MudStack>
             </MudPaper>
         }
@@ -192,6 +215,7 @@
                 }
                 recipe.BookId = selectedBook.Id;
                 recipe.StoreId = null;
+                recipe.Url = null;
             }
             else if (sourceType == "store")
             {
@@ -204,12 +228,26 @@
                 recipe.StoreId = selectedStore.Id;
                 recipe.BookId = null;
                 recipe.BookPage = null;
+                recipe.Url = null;
+            }
+            else if (sourceType == "url")
+            {
+                if (string.IsNullOrWhiteSpace(recipe.Url))
+                {
+                    errorMessage = "Veuillez saisir l'URL du site web.";
+                    isSaving = false;
+                    return;
+                }
+                recipe.BookId = null;
+                recipe.StoreId = null;
+                recipe.BookPage = null;
             }
             else
             {
                 recipe.BookId = null;
                 recipe.StoreId = null;
                 recipe.BookPage = null;
+                recipe.Url = null;
             }
             
             // Use service layer for creation
