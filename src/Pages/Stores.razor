@@ -112,18 +112,16 @@
 
 @code {
     private List<Store> stores = [];
-    private Dictionary<int, int> recipeCountsByStore = new();
+    private List<Store> filteredStores = [];
+    private string searchTerm = string.Empty;
     private bool loading = true;
-    private List<BreadcrumbItem> breadcrumbs =
+    private string? error;
+    private Dictionary<int, int> recipeCountsByStore = new();
+    private readonly List<BreadcrumbItem> breadcrumbs =
     [
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Magasins", href: "/stores", disabled: true)
     ];
-    private string searchTerm = string.Empty;
-    private IEnumerable<Store> filteredStores => string.IsNullOrWhiteSpace(searchTerm)
-        ? stores
-        : stores.Where(s => s.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) 
-                        || (s.Address != null && s.Address.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
 
     private void OnSearchChanged(ChangeEventArgs e)
     {

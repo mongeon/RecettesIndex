@@ -154,30 +154,6 @@ public class StoreServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_ValidStore_SetsCreationDate()
-    {
-        // Arrange
-        var store = new Store { Name = "Test Store" };
-        var beforeCreate = DateTime.UtcNow;
-
-        // Act
-        // Note: This will fail at runtime because we can't actually connect to Supabase
-        // but we're testing the business logic
-        try
-        {
-            await _service.CreateAsync(store);
-        }
-        catch
-        {
-            // Expected to fail due to no real Supabase connection
-        }
-
-        // The service should have set CreationDate before attempting the insert
-        // We can't verify the actual insert, but we test the logic is there
-        Assert.True(true); // Placeholder for testing structure
-    }
-
-    [Fact]
     public async Task UpdateAsync_ValidStore_ClearsCache()
     {
         // Arrange

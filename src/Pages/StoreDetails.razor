@@ -101,12 +101,8 @@ else
                                         </div>
                                     }
                                     
-                                    @if (!string.IsNullOrWhiteSpace(store.Address) || !string.IsNullOrWhiteSpace(store.Phone) || 
-                                         !string.IsNullOrWhiteSpace(store.Website) || !string.IsNullOrWhiteSpace(store.Notes))
-                                    {
-                                        <!-- Content already displayed -->
-                                    }
-                                    else
+                                    @if (string.IsNullOrWhiteSpace(store.Address) && string.IsNullOrWhiteSpace(store.Phone) && 
+                                         string.IsNullOrWhiteSpace(store.Website) && string.IsNullOrWhiteSpace(store.Notes))
                                     {
                                         <MudAlert Severity="Severity.Info">Aucune information supplémentaire disponible.</MudAlert>
                                     }
@@ -167,7 +163,7 @@ else
     
     private Store? store;
     private bool loading = true;
-    private List<BreadcrumbItem> breadcrumbs =
+    private readonly List<BreadcrumbItem> breadcrumbs =
     [
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Magasins", href: "/stores"),

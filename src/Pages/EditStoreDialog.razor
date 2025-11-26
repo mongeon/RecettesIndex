@@ -126,28 +126,18 @@
             }
 
             // Validate URL if provided
-            if (!string.IsNullOrWhiteSpace(store.Website))
+            if (!string.IsNullOrWhiteSpace(store.Website) &&
+                (!Uri.TryCreate(store.Website, UriKind.Absolute, out var uriResult) 
+                 || (uriResult.Scheme != Uri.UriSchemeHttp && uriResult.Scheme != Uri.UriSchemeHttps)))
             {
-                if (!Uri.TryCreate(store.Website, UriKind.Absolute, out var uriResult) 
-                    || (uriResult.Scheme != Uri.UriSchemeHttp && uriResult.Scheme != Uri.UriSchemeHttps))
-                {
-                    errorMessage = "Le site web doit être une URL valide (http:// ou https://).";
-                    isSaving = false;
-                    return;
-                }
+                errorMessage = "Le site web doit être une URL valide (http:// ou https://).";
+                isSaving = false;
+                return;
             }
             
-            Result<Store> result;
-            if (store.Id > 0)
-            {
-                // Update existing store
-                result = await StoreService.UpdateAsync(store);
-            }
-            else
-            {
-                // Create new store
-                result = await StoreService.CreateAsync(store);
-            }
+            Result<Store> result = store.Id > 0
+                ? await StoreService.UpdateAsync(store)
+                : await StoreService.CreateAsync(store);
             
             if (result.IsSuccess)
             {

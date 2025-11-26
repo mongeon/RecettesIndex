@@ -138,7 +138,7 @@
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
     
-    private Recipe recipe = new() 
+    private readonly Recipe recipe = new() 
     { 
         CreationDate = DateTime.UtcNow
     };
