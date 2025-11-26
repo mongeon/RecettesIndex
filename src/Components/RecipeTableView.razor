@@ -20,7 +20,7 @@
         <MudTh><MudTableSortLabel T="Recipe" SortLabel="rating">Évaluation</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel T="Recipe" SortLabel="created_at">Créée le</MudTableSortLabel></MudTh>
         <MudTh>Notes</MudTh>
-        <MudTh>Livre</MudTh>
+        <MudTh>Source</MudTh>
         @if (IsAuthenticated)
         {
             <MudTh>Actions</MudTh>
@@ -43,14 +43,35 @@
                 </MudTooltip>
             }
         </MudTd>
-        <MudTd DataLabel="Livre" Style="@GetRowStyle(context)">
-            @if (context.BookId != null)
+        <MudTd DataLabel="Source" Style="@GetRowStyle(context)">
+            @if (context.IsFromBook && context.BookId != null)
             {
                 var book = Books.FirstOrDefault(b => b.Id == context.BookId);
                 if (book != null)
                 {
-                    <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Color="Color.Primary" />
+                        <MudLink Href="@($"/books/{book.Id}")" Style="cursor:pointer">@book.Name</MudLink>
+                    </MudStack>
                 }
+            }
+            else if (context.IsFromStore && context.StoreId != null)
+            {
+                var store = Stores.FirstOrDefault(s => s.Id == context.StoreId);
+                if (store != null)
+                {
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" Color="Color.Secondary" />
+                        <MudLink Href="@($"/stores/{store.Id}")" Style="cursor:pointer">@store.Name</MudLink>
+                    </MudStack>
+                }
+            }
+            else
+            {
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" Color="Color.Tertiary" />
+                    <MudText Typo="Typo.body2">Maison</MudText>
+                </MudStack>
             }
         </MudTd>
         @if (IsAuthenticated)
@@ -67,6 +88,7 @@
     private MudTable<Recipe>? table;
     
     [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public List<Store> Stores { get; set; } = new();
     [Parameter, EditorRequired] public bool IsAuthenticated { get; set; }
     [Parameter, EditorRequired] public Func<TableState, CancellationToken, Task<TableData<Recipe>>> LoadServerData { get; set; } = null!;
     
