@@ -102,43 +102,6 @@ public class RecipeStoreIntegrationTests
     }
 
     [Fact]
-    public void Recipe_CanHaveRecipeType()
-    {
-        // Arrange
-        var recipe = new Recipe 
-        { 
-            Id = 1, 
-            Name = "Store-Bought Lasagna",
-            Rating = 4,
-            StoreId = 1,
-            RecipeType = "store"
-        };
-
-        // Act & Assert
-        Assert.Equal("store", recipe.RecipeType);
-        Assert.True(recipe.IsFromStore);
-    }
-
-    [Theory]
-    [InlineData("homemade")]
-    [InlineData("store")]
-    [InlineData("restaurant")]
-    public void Recipe_RecipeType_AcceptsValidValues(string recipeType)
-    {
-        // Arrange
-        var recipe = new Recipe 
-        { 
-            Id = 1, 
-            Name = "Test Recipe",
-            Rating = 3,
-            RecipeType = recipeType
-        };
-
-        // Act & Assert
-        Assert.Equal(recipeType, recipe.RecipeType);
-    }
-
-    [Fact]
     public void Store_CanHaveMultipleRecipes()
     {
         // Arrange

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
@@ -61,12 +62,6 @@ public class Recipe : BaseModel
     public int? StoreId { get; set; }
 
     /// <summary>
-    /// Gets or sets the type of recipe (homemade, store, restaurant).
-    /// </summary>
-    [Column("recipe_type")]
-    public string? RecipeType { get; set; }
-
-    /// <summary>
     /// Gets or sets the book this recipe is associated with.
     /// </summary>
     [Reference(typeof(Book), joinType: ReferenceAttribute.JoinType.Left, true)]
@@ -81,16 +76,19 @@ public class Recipe : BaseModel
     /// <summary>
     /// Gets whether this recipe is from a book.
     /// </summary>
+    [JsonIgnore]
     public bool IsFromBook => BookId.HasValue;
 
     /// <summary>
     /// Gets whether this recipe is from a store/restaurant.
     /// </summary>
+    [JsonIgnore]
     public bool IsFromStore => StoreId.HasValue;
 
     /// <summary>
     /// Gets the source name (book title or store name).
     /// </summary>
+    [JsonIgnore]
     public string? SourceName => Book?.Name ?? Store?.Name;
 }
 
@@ -164,6 +162,7 @@ public class Author : BaseModel
     /// <summary>
     /// Gets the full name of the author (first name and last name combined).
     /// </summary>
+    [JsonIgnore]
     public string FullName => string.IsNullOrWhiteSpace(LastName) 
         ? Name 
         : $"{Name} {LastName}".Trim();
