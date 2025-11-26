@@ -9,35 +9,128 @@
 <MudDialog>
     <DialogContent>
         <MudText Typo="Typo.h6">Ajouter une Recette</MudText>
-        <MudTextField @bind-Value="recipe.Name" Label="Nom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        
+        <MudTextField @bind-Value="recipe.Name" 
+                      Label="Nom" 
+                      Required="true" 
+                      Variant="Variant.Outlined" 
+                      Class="mb-3" />
+        
         <PizzaRating @bind-Value="recipe.Rating" ReadOnly="false" />
-        <MudTextField @bind-Value="recipe.Notes" Label="Notes" Variant="Variant.Outlined" Class="mb-2" />
-        <MudTextField @bind-Value="bookRef" Label="Référence du livre (optionnel)" Variant="Variant.Outlined" Class="mb-2" />
-        <MudNumericField @bind-Value="recipe.BookPage" Label="Page du livre (optionnel)" Variant="Variant.Outlined" Class="mb-2" />
-        <MudSelect T="Book" Label="Livre (optionnel)" @bind-Value="selectedBook" Variant="Variant.Outlined" Class="mb-2">
-            <MudSelectItem T="Book" Value="null">Aucun</MudSelectItem>
-            @foreach (var book in books)
-            {
-                <MudSelectItem T="Book" Value="book">@book.Name</MudSelectItem>
-            }
-        </MudSelect>
+        
+        <MudTextField @bind-Value="recipe.Notes" 
+                      Label="Notes" 
+                      Variant="Variant.Outlined" 
+                      Class="mb-3" 
+                      Lines="3" />
+        
+        <!-- Source Selection Toggle -->
+        <MudText Typo="Typo.subtitle2" Class="mb-2">Source de la recette:</MudText>
+        <MudRadioGroup T="string" 
+                       @bind-Value="sourceType"
+                       Class="mb-3">
+            <MudRadio T="string" Value="@("book")" Color="Color.Primary" Class="mb-2">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" />
+                    <span>Livre de recettes</span>
+                </MudStack>
+            </MudRadio>
+            <MudRadio T="string" Value="@("store")" Color="Color.Secondary" Class="mb-2">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" />
+                    <span>Magasin/Restaurant</span>
+                </MudStack>
+            </MudRadio>
+            <MudRadio T="string" Value="@("none")" Color="Color.Default">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" />
+                    <span>Aucune source</span>
+                </MudStack>
+            </MudRadio>
+        </MudRadioGroup>
+        
+        <!-- Book Selection (shown when sourceType is "book") -->
+        @if (sourceType == "book")
+        {
+            <MudPaper Class="pa-3 mb-3" Elevation="0" Style="background-color: #e3f2fd;" @key="@($"book-{sourceType}")">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                        <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Class="mr-1" />
+                        Informations du livre
+                    </MudText>
+                    <MudSelect T="Book" 
+                               Label="Livre *" 
+                               @bind-Value="selectedBook" 
+                               Variant="Variant.Outlined"
+                               ToStringFunc="@(b => b?.Name ?? "Sélectionner un livre...")">
+                        @foreach (var book in books)
+                        {
+                            <MudSelectItem T="Book" Value="@book">@book.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField @bind-Value="recipe.BookPage" 
+                                     Label="Page du livre" 
+                                     Variant="Variant.Outlined" 
+                                     Min="1" />
+                </MudStack>
+            </MudPaper>
+        }
+        
+        <!-- Store Selection (shown when sourceType is "store") -->
+        @if (sourceType == "store")
+        {
+            <MudPaper Class="pa-3 mb-3" Elevation="0" Style="background-color: #fff3e0;" @key="@($"store-{sourceType}")">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+                        <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" Class="mr-1" />
+                        Informations du magasin/restaurant
+                    </MudText>
+                    <MudSelect T="Store" 
+                               Label="Magasin ou Restaurant *" 
+                               @bind-Value="selectedStore" 
+                               Variant="Variant.Outlined"
+                               ToStringFunc="@(s => s?.Name ?? "Sélectionner un magasin...")">
+                        @foreach (var store in stores)
+                        {
+                            <MudSelectItem T="Store" Value="@store">
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" />
+                                    <span>@store.Name</span>
+                                </MudStack>
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudStack>
+            </MudPaper>
+        }
+        
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+            <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="AddRecipeAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@isSaving">
+        <MudButton OnClick="AddRecipeAsync" 
+                   Color="Color.Primary" 
+                   Variant="Variant.Filled" 
+                   Disabled="@isSaving"
+                   StartIcon="@Icons.Material.Filled.Add">
             @if (isSaving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <span class="ml-2">Ajout...</span>
             }
             else
             {
                 <span>Ajouter</span>
             }
         </MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text" Disabled="@isSaving">Annuler</MudButton>
+        <MudButton OnClick="Cancel" 
+                   Color="Color.Secondary" 
+                   Variant="Variant.Text" 
+                   Disabled="@isSaving">
+            Annuler
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -45,18 +138,32 @@
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
     
-    private Recipe recipe = new() { CreationDate = DateTime.UtcNow };
-    private string? bookRef;
+    private Recipe recipe = new() 
+    { 
+        CreationDate = DateTime.UtcNow
+    };
     private string? errorMessage;
     private List<Book> books = [];
+    private List<Store> stores = [];
     private Book? selectedBook;
+    private Store? selectedStore;
+    private string sourceType = "none";
     private bool isSaving = false;
 
     protected override async Task OnInitializedAsync()
     {
-        // Use service layer instead of direct Supabase client
-        // This leverages caching (3-minute TTL) and proper error handling
-        books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
+        try
+        {
+            // Load books and stores with caching
+            books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
+            stores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading books and stores");
+            books = [];
+            stores = [];
+        }
     }
 
     private async Task AddRecipeAsync()
@@ -74,8 +181,36 @@
                 return;
             }
 
-            // Set book reference if selected
-            recipe.BookId = selectedBook?.Id;
+            // Set source references based on selection
+            if (sourceType == "book")
+            {
+                if (selectedBook == null)
+                {
+                    errorMessage = "Veuillez sélectionner un livre.";
+                    isSaving = false;
+                    return;
+                }
+                recipe.BookId = selectedBook.Id;
+                recipe.StoreId = null;
+            }
+            else if (sourceType == "store")
+            {
+                if (selectedStore == null)
+                {
+                    errorMessage = "Veuillez sélectionner un magasin ou restaurant.";
+                    isSaving = false;
+                    return;
+                }
+                recipe.StoreId = selectedStore.Id;
+                recipe.BookId = null;
+                recipe.BookPage = null;
+            }
+            else
+            {
+                recipe.BookId = null;
+                recipe.StoreId = null;
+                recipe.BookPage = null;
+            }
             
             // Use service layer for creation
             var result = await RecipeService.CreateAsync(recipe);
@@ -94,7 +229,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Unexpected error adding recipe");
-            errorMessage = "Une erreur inattendue s'est produite.";
+            errorMessage = $"Une erreur inattendue s'est produite: {ex.Message}";
             Snackbar.Add(errorMessage, Severity.Error);
         }
         finally
