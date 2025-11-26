@@ -183,6 +183,12 @@ RecettesIndex/
 - **Author Management**: Organize books by authors
 - **Collection Overview**: View all recipes from a specific book or author
 
+#### Recipe Sources
+- **Multiple Source Types**: Support for books, stores/restaurants, and websites
+- **Website Integration**: Store URLs for online recipes with clickable links
+- **Source Tracking**: Visual badges indicating recipe origin
+- **Flexible Organization**: Recipes can come from any combination of sources
+
 #### User Experience
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
 - **Print-Friendly**: Generate clean print versions of recipes
@@ -225,6 +231,7 @@ erDiagram
         int rating "1-5 stars with validation"
         int book_id FK
         int page
+        string url "optional website URL"
         datetime created_at
     }
 ```
@@ -312,6 +319,7 @@ CREATE TABLE recettes (
     rating INTEGER CHECK (rating >= 1 AND rating <= 5), -- Enforced validation
     book_id INTEGER REFERENCES books(id),
     page INTEGER,
+    url TEXT, -- Optional website URL for online recipes
     created_at TIMESTAMP DEFAULT NOW()
 );
 ```
@@ -409,21 +417,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Overview
 
-The application now supports tracking recipes from stores, restaurants, and prepared meal vendors, complementing the traditional cookbook management.
+The application now supports tracking recipes from stores, restaurants, websites, and prepared meal vendors, complementing the traditional cookbook management.
 
 ### Key Features
 
 - **Store Management**: Full CRUD operations for stores and restaurants
 - **Store Information**: Track name, address, phone, website, and notes
 - **Recipe Association**: Link recipes to specific stores
+- **Website Integration**: Store URLs for online recipes with clickable links
 - **Visual Source Badges**: Color-coded badges showing recipe origin
   - 📖 Blue for cookbooks
   - 🏪 Orange for stores/restaurants
-  - 🏠 Tertiary for homemade recipes
+  - 🌐 Green for websites
+  - 🏠 Gray for homemade recipes
 - **Store Details Page**: View all recipes from a specific store
-- **Dashboard Integration**: Statistics on most popular stores
-- **Advanced Filtering**: Filter recipes by store
-- **Print Support**: Include store information in printed recipes
+- **Website Links**: Direct links to online recipes
+- **Dashboard Integration**: Statistics on most popular stores and websites
+- **Advanced Filtering**: Filter recipes by store or website
+- **Print Support**: Include store and website information in printed recipes
 
 ### Documentation
 

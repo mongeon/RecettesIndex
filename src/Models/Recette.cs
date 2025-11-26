@@ -62,6 +62,13 @@ public class Recipe : BaseModel
     public int? StoreId { get; set; }
 
     /// <summary>
+    /// Gets or sets the website URL where the recipe can be found, if applicable.
+    /// </summary>
+    [Column("url")]
+    [Url(ErrorMessage = "Please enter a valid URL")]
+    public string? Url { get; set; }
+
+    /// <summary>
     /// Gets or sets the book this recipe is associated with.
     /// </summary>
     [Reference(typeof(Book), joinType: ReferenceAttribute.JoinType.Left, true)]
@@ -86,10 +93,16 @@ public class Recipe : BaseModel
     public bool IsFromStore => StoreId.HasValue;
 
     /// <summary>
-    /// Gets the source name (book title or store name).
+    /// Gets whether this recipe is from a website URL.
     /// </summary>
     [JsonIgnore]
-    public string? SourceName => Book?.Name ?? Store?.Name;
+    public bool IsFromUrl => !string.IsNullOrWhiteSpace(Url);
+
+    /// <summary>
+    /// Gets the source name (book title, store name, or URL indicator).
+    /// </summary>
+    [JsonIgnore]
+    public string? SourceName => Book?.Name ?? Store?.Name ?? (IsFromUrl ? "Website" : null);
 }
 
 /// <summary>

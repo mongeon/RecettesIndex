@@ -66,10 +66,17 @@
                     </MudStack>
                 }
             }
+            else if (context.IsFromUrl && !string.IsNullOrWhiteSpace(context.Url))
+            {
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" Color="Color.Tertiary" />
+                    <MudLink Href="@context.Url" Target="_blank" Style="cursor:pointer">Voir la recette</MudLink>
+                </MudStack>
+            }
             else
             {
                 <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" Color="Color.Tertiary" />
+                    <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" Color="Color.Default" />
                     <MudText Typo="Typo.body2">Maison</MudText>
                 </MudStack>
             }

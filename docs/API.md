@@ -37,15 +37,20 @@ public class Recipe : BaseModel
     [Column("book_id")]
     public int? BookId { get; set; }
     
-    [Column("page_number")]
+    [Column("page")]
     [Range(1, int.MaxValue, ErrorMessage = "Page number must be positive")]
-    public int? PageNumber { get; set; }
+    public int? BookPage { get; set; }
     
-    [Column("creation_date")]
+    [Column("url")]
+    [Url(ErrorMessage = "Please enter a valid URL")]
+    public string? Url { get; set; }
+
+    [Column("created_at")]
     public DateTime CreationDate { get; set; } = DateTime.UtcNow;
     
     // Navigation properties (not stored in DB)
     public Book? Book { get; set; }
+    public Store? Store { get; set; }
 }
 ```
 
@@ -55,6 +60,7 @@ public class Recipe : BaseModel
 - `Notes`: Optional, unlimited text
 - `PageNumber`: Optional, must be positive when provided
 - `PageNumber`: Optional, positive integer
+- `Url`: Must be a valid URL format if provided
 
 ### Book Model
 
@@ -133,8 +139,9 @@ erDiagram
         text notes
         int rating "1-5 stars validated"
         int book_id FK
-        int page_number
-        datetime creation_date
+        int page
+        string url "optional website URL"
+        datetime created_at
     }
 ```
 
@@ -151,6 +158,7 @@ The application uses comprehensive validation through System.ComponentModel.Data
 | `Name` | Required, MaxLength(255) | "Recipe name is required" / "Recipe name cannot exceed 255 characters" |
 | `Rating` | Range(1, 5) | "Rating must be between 1 and 5" |
 | `PageNumber` | Range(1, int.MaxValue) | "Page number must be positive" |
+| `Url` | Url format | "Please enter a valid URL" |
 
 #### Author Validation
 
