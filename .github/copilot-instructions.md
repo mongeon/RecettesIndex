@@ -315,37 +315,6 @@ namespace RecettesIndex.Models
         [Url(ErrorMessage = "Please enter a valid URL")]
         public string? Url { get; set; }
         
-        /// <summary>
-        /// Gets or sets the creation date of the recipe.
-        /// </summary>
-        [Column("created_at")]
-        public DateTime CreationDate { get; set; }
-
-        /// <summary>
-        /// Gets or sets optional notes or modifications for the recipe.
-        /// </summary>
-        [Column("notes")]
-        public string? Notes { get; set; }
-
-        /// <summary>
-        /// Gets or sets the ID of the book this recipe is from, if applicable.
-        /// </summary>
-        [Column("book_id")]
-        public int? BookId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the page number where the recipe can be found in the book.
-        /// </summary>
-        [Column("page")]
-        [Range(1, int.MaxValue, ErrorMessage = "Page number must be positive")]
-        public int? BookPage { get; set; }
-
-        /// <summary>
-        /// Gets or sets the URL of the recipe source, if applicable.
-        /// </summary>
-        [Column("url")]
-        [Url(ErrorMessage = "Please enter a valid URL")]
-        public string? Url { get; set; }
     
         /// <summary>
         /// Gets or sets the book this recipe is associated with.
