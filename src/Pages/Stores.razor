@@ -126,6 +126,7 @@
     private void OnSearchChanged(ChangeEventArgs e)
     {
         searchTerm = e.Value?.ToString() ?? string.Empty;
+        FilterStores();
         StateHasChanged();
     }
 
@@ -141,13 +142,30 @@
         try
         {
             stores = (await StoreService.GetAllAsync()).ToList();
+            FilterStores();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading stores");
             stores = [];
+            filteredStores = [];
         }
         loading = false;
+    }
+    
+    private void FilterStores()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredStores = stores;
+        }
+        else
+        {
+            filteredStores = stores
+                .Where(s => s.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                           (!string.IsNullOrWhiteSpace(s.Address) && s.Address.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
     }
 
     private async Task LoadRecipeCounts()
