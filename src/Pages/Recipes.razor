@@ -286,7 +286,7 @@
     {
         favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
         
-        var result = await RecipeService.SearchAsync(null, null, null, null, 1, 10000);
+        var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
         if (result.IsSuccess)
         {
             var allRecipes = result.Value.Items;
@@ -340,7 +340,7 @@
             int? authorId = GetAuthorIdFilter();
             
             var result = await RecipeService.SearchAsync(
-                searchTerm, rating, bookId, authorId, currentPage, pageSize, "created_at", true);
+                searchTerm, rating, bookId, null, authorId, currentPage, pageSize, "created_at", true);
             
             if (result.IsSuccess)
             {
@@ -414,7 +414,7 @@
         var sortLabel = state.SortLabel;
         var sortDescending = state.SortDirection == SortDirection.Descending;
         
-        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, authorId, page, pageSize, sortLabel, sortDescending);
+        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, null, authorId, page, pageSize, sortLabel, sortDescending);
         if (!result.IsSuccess)
             return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
         
@@ -609,7 +609,7 @@
     {
         try
         {
-            var countResult = await RecipeService.SearchAsync(null, null, null, null, 1, 1);
+            var countResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 1);
             if (!countResult.IsSuccess || countResult.Value.Total == 0)
             {
                 Snackbar.Add("Aucune recette disponible", Severity.Warning);
@@ -620,7 +620,7 @@
             var randomIndex = random.Next(0, countResult.Value.Total);
             var randomPage = (randomIndex / 1) + 1;
             
-            var result = await RecipeService.SearchAsync(null, null, null, null, randomPage, 1);
+            var result = await RecipeService.SearchAsync(null, null, null, null, null, randomPage, 1);
             if (result.IsSuccess && result.Value.Items.Any())
             {
                 var randomRecipe = result.Value.Items.First();

@@ -55,10 +55,43 @@ public class Recipe : BaseModel
     public int? BookPage { get; set; }
 
     /// <summary>
+    /// Gets or sets the ID of the store/merchant/restaurant this recipe is from, if applicable.
+    /// </summary>
+    [Column("store_id")]
+    public int? StoreId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the type of recipe (homemade, store, restaurant).
+    /// </summary>
+    [Column("recipe_type")]
+    public string? RecipeType { get; set; }
+
+    /// <summary>
     /// Gets or sets the book this recipe is associated with.
     /// </summary>
     [Reference(typeof(Book), joinType: ReferenceAttribute.JoinType.Left, true)]
     public Book? Book { get; set; }
+
+    /// <summary>
+    /// Gets or sets the store/merchant/restaurant this recipe is associated with.
+    /// </summary>
+    [Reference(typeof(Store), joinType: ReferenceAttribute.JoinType.Left, true)]
+    public Store? Store { get; set; }
+
+    /// <summary>
+    /// Gets whether this recipe is from a book.
+    /// </summary>
+    public bool IsFromBook => BookId.HasValue;
+
+    /// <summary>
+    /// Gets whether this recipe is from a store/restaurant.
+    /// </summary>
+    public bool IsFromStore => StoreId.HasValue;
+
+    /// <summary>
+    /// Gets the source name (book title or store name).
+    /// </summary>
+    public string? SourceName => Book?.Name ?? Store?.Name;
 }
 
 /// <summary>
@@ -156,6 +189,61 @@ public class BookAuthor : BaseModel
 
     /// <summary>
     /// Gets or sets the creation date of this association.
+    /// </summary>
+    [Column("created_at")]
+    public DateTime CreationDate { get; set; }
+}
+
+/// <summary>
+/// Represents a store, merchant, or restaurant that sells prepared meals.
+/// </summary>
+[Table("stores")]
+public class Store : BaseModel
+{
+    /// <summary>
+    /// Gets or sets the unique identifier for the store.
+    /// </summary>
+    [PrimaryKey("id")]
+    public int Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the store/merchant/restaurant.
+    /// </summary>
+    [Column("name")]
+    [Required(ErrorMessage = "The store name is required.")]
+    [MaxLength(255, ErrorMessage = "Store name cannot exceed 255 characters")]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the address of the store.
+    /// </summary>
+    [Column("address")]
+    [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
+    public string? Address { get; set; }
+
+    /// <summary>
+    /// Gets or sets the phone number of the store.
+    /// </summary>
+    [Column("phone")]
+    [MaxLength(50, ErrorMessage = "Phone number cannot exceed 50 characters")]
+    public string? Phone { get; set; }
+
+    /// <summary>
+    /// Gets or sets the website URL of the store.
+    /// </summary>
+    [Column("website")]
+    [MaxLength(500, ErrorMessage = "Website URL cannot exceed 500 characters")]
+    [Url(ErrorMessage = "Please enter a valid URL")]
+    public string? Website { get; set; }
+
+    /// <summary>
+    /// Gets or sets optional notes about the store.
+    /// </summary>
+    [Column("notes")]
+    public string? Notes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the creation date of the store record.
     /// </summary>
     [Column("created_at")]
     public DateTime CreationDate { get; set; }

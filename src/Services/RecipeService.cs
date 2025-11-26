@@ -18,9 +18,10 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     /// <summary>
     /// Searches for recipes based on various criteria with pagination and sorting support.
     /// </summary>
-    /// <param name="term">Search term to filter by recipe name, book title, or author name.</param>
+    /// <param name="term">Search term to filter by recipe name, book title, author name, or store name.</param>
     /// <param name="rating">Optional rating filter (1-5).</param>
     /// <param name="bookId">Optional book ID filter.</param>
+    /// <param name="storeId">Optional store ID filter.</param>
     /// <param name="authorId">Optional author ID filter.</param>
     /// <param name="page">Page number for pagination (1-based).</param>
     /// <param name="pageSize">Number of items per page (clamped between 1-100).</param>
@@ -28,7 +29,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     /// <param name="sortDescending">Whether to sort in descending order.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result containing a tuple of recipe list and total count.</returns>
-    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, CancellationToken ct = default)
+    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? storeId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, CancellationToken ct = default)
     {
         try
         {
@@ -54,6 +55,12 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
                 {
                     ids.Add(id);
                 }
+                // NEW: Search by store name
+                var storeIdsByName = await _q.GetStoreIdsByNameAsync(term.Trim(), ct);
+                foreach (var id in await _q.GetRecipeIdsByStoreIdsAsync(storeIdsByName, rating, ct))
+                {
+                    ids.Add(id);
+                }
             }
             else
             {
@@ -67,6 +74,13 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
             {
                 var idsByBook = await _q.GetRecipeIdsByBookIdsAsync([bookId.Value], rating, ct);
                 ids.IntersectWith(idsByBook);
+            }
+
+            // NEW: Apply store filter
+            if (storeId.HasValue)
+            {
+                var idsByStore = await _q.GetRecipeIdsByStoreIdsAsync([storeId.Value], rating, ct);
+                ids.IntersectWith(idsByStore);
             }
 
             if (authorId.HasValue)
@@ -343,13 +357,22 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         => _cache.GetOrCreateAsync(CacheConstants.AuthorsListKey, CacheConstants.DefaultTtl, async _ => await _q.GetAuthorsAsync(ct), ct);
 
     /// <summary>
+    /// Retrieves all stores, cached for improved performance.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of all stores.</returns>
+    public Task<IReadOnlyList<Store>> GetStoresAsync(CancellationToken ct = default)
+        => _cache.GetOrCreateAsync(CacheConstants.StoresListKey, CacheConstants.DefaultTtl, async _ => await _q.GetStoresAsync(ct), ct);
+
+    /// <summary>
     /// Invalidates related caches when recipes are modified.
     /// </summary>
     private void InvalidateRelatedCaches()
     {
-        // Note: Books and authors lists rarely change based on recipe modifications,
-        // but we invalidate them to ensure consistency if book/author relationships change
+        // Note: Books, authors, and stores lists rarely change based on recipe modifications,
+        // but we invalidate them to ensure consistency if relationships change
         _cache.Remove(CacheConstants.BooksListKey);
         _cache.Remove(CacheConstants.AuthorsListKey);
+        _cache.Remove(CacheConstants.StoresListKey);
     }
 }
