@@ -51,12 +51,45 @@
             </div>
         }
         
-        @if (Book != null)
-        {
-            <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.MenuBook" Color="Color.Default">
-                @Book.Name
-            </MudChip>
-        }
+        <!-- Source Badges -->
+        <MudStack Row Spacing="1" Class="mb-2">
+            @if (Recipe.IsFromBook && Book != null)
+            {
+                <MudChip T="string" 
+                         Size="Size.Small" 
+                         Icon="@Icons.Material.Filled.MenuBook" 
+                         Color="Color.Primary"
+                         Variant="Variant.Filled">
+                    @Book.Name
+                </MudChip>
+                @if (Recipe.BookPage.HasValue)
+                {
+                    <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.BookmarkBorder" Color="Color.Default">
+                        p. @Recipe.BookPage
+                    </MudChip>
+                }
+            }
+            else if (Recipe.IsFromStore && Recipe.Store != null)
+            {
+                <MudChip T="string" 
+                         Size="Size.Small" 
+                         Icon="@Icons.Material.Filled.Storefront" 
+                         Color="Color.Secondary"
+                         Variant="Variant.Filled">
+                    @Recipe.Store.Name
+                </MudChip>
+            }
+            else
+            {
+                <MudChip T="string" 
+                         Size="Size.Small" 
+                         Icon="@Icons.Material.Filled.Home" 
+                         Color="Color.Tertiary"
+                         Variant="Variant.Filled">
+                    Maison
+                </MudChip>
+            }
+        </MudStack>
         
         @if (!string.IsNullOrWhiteSpace(Recipe.Notes))
         {
@@ -179,6 +212,9 @@
     
     [Parameter]
     public Book? Book { get; set; }
+    
+    [Parameter]
+    public Store? Store { get; set; }
     
     [Parameter]
     public bool IsAuthenticated { get; set; }

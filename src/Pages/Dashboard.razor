@@ -48,9 +48,9 @@
             <MudItem xs="12" sm="6" md="3">
                 <MudPaper Elevation="3" Class="pa-4 rounded-lg h-100">
                     <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Tertiary" Size="Size.Large" />
-                        <MudText Typo="Typo.h3" Align="Align.Center">@statistics.TotalAuthors</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Tertiary">Auteurs</MudText>
+                        <MudIcon Icon="@Icons.Material.Filled.Storefront" Color="Color.Info" Size="Size.Large" />
+                        <MudText Typo="Typo.h3" Align="Align.Center">@statistics.TotalStores</MudText>
+                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Info">Magasins/Restaurants</MudText>
                     </MudStack>
                 </MudPaper>
             </MudItem>
@@ -173,9 +173,9 @@
             </MudItem>
         </MudGrid>
 
-        <!-- Book and Author Statistics -->
+        <!-- Book, Store, and Author Statistics -->
         <MudGrid Class="mb-6">
-            <MudItem xs="12" md="6">
+            <MudItem xs="12" md="4">
                 <MudPaper Elevation="2" Class="pa-4 rounded-lg">
                     <MudText Typo="Typo.h5" Class="mb-4">
                         <MudIcon Icon="@Icons.Material.Filled.AutoStories" Class="mr-2" />
@@ -213,7 +213,45 @@
                 </MudPaper>
             </MudItem>
 
-            <MudItem xs="12" md="6">
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg">
+                    <MudText Typo="Typo.h5" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Storefront" Class="mr-2" />
+                        Magasins Populaires
+                    </MudText>
+                    
+                    @if (statistics.MostUsedStores.Any())
+                    {
+                        <MudList T="string" Dense="true">
+                            @foreach (var storeStat in statistics.MostUsedStores.Take(10))
+                            {
+                                <MudListItem Icon="@Icons.Material.Filled.Storefront" 
+                                           IconColor="Color.Info"
+                                           OnClick="() => NavigateToStore(storeStat.StoreId)"
+                                           Style="cursor: pointer;">
+                                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <div>
+                                            <MudText Typo="Typo.body1">@storeStat.StoreName</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                @storeStat.RecipeCount recettes
+                                            </MudText>
+                                        </div>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                                            @storeStat.RecipeCount
+                                        </MudChip>
+                                    </MudStack>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info">Aucun magasin enregistré.</MudAlert>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="4">
                 <MudPaper Elevation="2" Class="pa-4 rounded-lg">
                     <MudText Typo="Typo.h5" Class="mb-4">
                         <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
@@ -341,6 +379,12 @@
                     Gérer les livres
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Info" 
+                          StartIcon="@Icons.Material.Filled.Storefront"
+                          Href="/stores">
+                    Gérer les magasins
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" 
                           Color="Color.Tertiary" 
                           StartIcon="@Icons.Material.Filled.Person"
                           Href="/authors">
@@ -369,7 +413,7 @@
         try
         {
             // Load base data
-            var (recipes, books, authors) = await LoadBaseDataAsync();
+            var (recipes, books, authors, stores) = await LoadBaseDataAsync();
             
             if (recipes == null)
             {
@@ -378,10 +422,11 @@
             }
 
             // Calculate all statistics
-            CalculateBasicStatistics(recipes, books, authors);
+            CalculateBasicStatistics(recipes, books, authors, stores);
             CalculateRatingStatistics(recipes);
             CalculateTopRatedRecipes(recipes);
             CalculateBookStatistics(recipes, books);
+            CalculateStoreStatistics(recipes, stores);
             CalculateAuthorStatistics(recipes, books, authors);
             CalculateRecentActivity(recipes, books);
         }
@@ -397,31 +442,33 @@
     }
 
     /// <summary>
-    /// Loads recipes, books, and authors from the service.
+    /// Loads recipes, books, authors, and stores from the service.
     /// </summary>
-    private async Task<(List<Recipe>? recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)> LoadBaseDataAsync()
+    private async Task<(List<Recipe>? recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)> LoadBaseDataAsync()
     {
         var recipesResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
         var books = await RecipeService.GetBooksAsync();
         var authors = await RecipeService.GetAuthorsAsync();
+        var stores = await RecipeService.GetStoresAsync();
 
         if (!recipesResult.IsSuccess)
         {
             Logger.LogWarning("Failed to load recipes for dashboard: {Error}", recipesResult.ErrorMessage);
-            return (null, books, authors);
+            return (null, books, authors, stores);
         }
 
-        return (recipesResult.Value.Items.ToList(), books, authors);
+        return (recipesResult.Value.Items.ToList(), books, authors, stores);
     }
 
     /// <summary>
     /// Calculates basic statistics (total counts).
     /// </summary>
-    private void CalculateBasicStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)
+    private void CalculateBasicStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)
     {
         statistics.TotalRecipes = recipes.Count;
         statistics.TotalBooks = books.Count;
         statistics.TotalAuthors = authors.Count;
+        statistics.TotalStores = stores.Count;
     }
 
     /// <summary>
@@ -470,6 +517,24 @@
                 RecipeCount = g.Count()
             })
             .OrderByDescending(b => b.RecipeCount)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Calculates store usage statistics.
+    /// </summary>
+    private void CalculateStoreStatistics(List<Recipe> recipes, IReadOnlyList<Store> stores)
+    {
+        statistics.MostUsedStores = recipes
+            .Where(r => r.StoreId.HasValue)
+            .GroupBy(r => r.StoreId!.Value)
+            .Select(g => new StoreStatistic
+            {
+                StoreId = g.Key,
+                StoreName = stores.FirstOrDefault(s => s.Id == g.Key)?.Name ?? "Unknown",
+                RecipeCount = g.Count()
+            })
+            .OrderByDescending(s => s.RecipeCount)
             .ToList();
     }
 
@@ -528,6 +593,7 @@
 
     private void NavigateToRecipe(int id) => NavigationManager.NavigateTo($"/recipes/{id}");
     private void NavigateToBook(int id) => NavigationManager.NavigateTo($"/books/{id}");
+    private void NavigateToStore(int id) => NavigationManager.NavigateTo($"/stores/{id}");
     private void NavigateToAuthor(int id) => NavigationManager.NavigateTo($"/authors/{id}");
 
     private class DashboardStatistics
@@ -535,11 +601,13 @@
         public int TotalRecipes { get; set; }
         public int TotalBooks { get; set; }
         public int TotalAuthors { get; set; }
+        public int TotalStores { get; set; }
         public double AverageRating { get; set; }
         public Dictionary<int, int> RatingDistribution { get; set; } = new();
         public int UnratedCount { get; set; }
         public List<Recipe> TopRatedRecipes { get; set; } = new();
         public List<BookStatistic> MostUsedBooks { get; set; } = new();
+        public List<StoreStatistic> MostUsedStores { get; set; } = new();
         public List<AuthorStatistic> MostUsedAuthors { get; set; } = new();
         public Recipe? MostRecentRecipe { get; set; }
         public Book? MostRecentBook { get; set; }
@@ -551,6 +619,13 @@
     {
         public int BookId { get; set; }
         public string BookName { get; set; } = string.Empty;
+        public int RecipeCount { get; set; }
+    }
+
+    private class StoreStatistic
+    {
+        public int StoreId { get; set; }
+        public string StoreName { get; set; } = string.Empty;
         public int RecipeCount { get; set; }
     }
 

@@ -64,6 +64,21 @@
                     </MudSelect>
                     
                     <MudSelect T="string" 
+                               Value="@StoreFilter" 
+                               ValueChanged="OnStoreChanged" 
+                               Clearable="true" 
+                               Label="Magasin/Restaurant" 
+                               Variant="Variant.Outlined"
+                               Style="min-width: 250px;">
+                        <MudSelectItem T="string" Value='@("all")'>Tous (@Stores.Count)</MudSelectItem>
+                        @foreach (var s in Stores)
+                        {
+                            var recipeCount = GetRecipeCountForStore(s.Id);
+                            <MudSelectItem T="string" Value="@s.Id.ToString()">@s.Name (@recipeCount)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    
+                    <MudSelect T="string" 
                                Value="@AuthorFilter" 
                                ValueChanged="OnAuthorChanged" 
                                Clearable="true" 
@@ -101,20 +116,25 @@
     [Parameter, EditorRequired] public string SearchTerm { get; set; } = string.Empty;
     [Parameter, EditorRequired] public string? RatingFilter { get; set; }
     [Parameter, EditorRequired] public string? BookFilter { get; set; }
+    [Parameter, EditorRequired] public string? StoreFilter { get; set; }
     [Parameter, EditorRequired] public string? AuthorFilter { get; set; }
     [Parameter, EditorRequired] public int ActiveFilterCount { get; set; }
     
     [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public List<Store> Stores { get; set; } = new();
     [Parameter, EditorRequired] public List<Author> Authors { get; set; } = new();
     [Parameter, EditorRequired] public Dictionary<int, int> BookRecipeCounts { get; set; } = new();
+    [Parameter, EditorRequired] public Dictionary<int, int> StoreRecipeCounts { get; set; } = new();
     [Parameter, EditorRequired] public Dictionary<int, int> AuthorRecipeCounts { get; set; } = new();
     
     [Parameter, EditorRequired] public EventCallback<string> OnSearchChanged { get; set; }
     [Parameter, EditorRequired] public EventCallback<string?> OnRatingChanged { get; set; }
     [Parameter, EditorRequired] public EventCallback<string?> OnBookChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnStoreChanged { get; set; }
     [Parameter, EditorRequired] public EventCallback<string?> OnAuthorChanged { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearAllFilters { get; set; }
     
     private int GetRecipeCountForBook(int bookId) => BookRecipeCounts.GetValueOrDefault(bookId, 0);
+    private int GetRecipeCountForStore(int storeId) => StoreRecipeCounts.GetValueOrDefault(storeId, 0);
     private int GetRecipeCountForAuthor(int authorId) => AuthorRecipeCounts.GetValueOrDefault(authorId, 0);
 }

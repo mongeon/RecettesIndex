@@ -32,6 +32,17 @@
                 }
             }
             
+            @if (StoreFilter != null && StoreFilter != "all")
+            {
+                var store = Stores.FirstOrDefault(s => s.Id.ToString() == StoreFilter);
+                if (store != null)
+                {
+                    <MudChip T="string" Size="Size.Small" OnClose="OnClearStore">
+                        Magasin: @store.Name
+                    </MudChip>
+                }
+            }
+            
             @if (AuthorFilter != null && AuthorFilter != "all")
             {
                 var author = Authors.FirstOrDefault(a => a.Id.ToString() == AuthorFilter);
@@ -51,13 +62,16 @@
     [Parameter, EditorRequired] public string SearchTerm { get; set; } = string.Empty;
     [Parameter, EditorRequired] public string? RatingFilter { get; set; }
     [Parameter, EditorRequired] public string? BookFilter { get; set; }
+    [Parameter, EditorRequired] public string? StoreFilter { get; set; }
     [Parameter, EditorRequired] public string? AuthorFilter { get; set; }
     
     [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public List<Store> Stores { get; set; } = new();
     [Parameter, EditorRequired] public List<Author> Authors { get; set; } = new();
     
     [Parameter, EditorRequired] public EventCallback OnClearSearch { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearRating { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearBook { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClearStore { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearAuthor { get; set; }
 }
