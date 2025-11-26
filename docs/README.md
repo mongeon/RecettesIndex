@@ -189,16 +189,6 @@ RecettesIndex/
 - **Material Design**: Modern UI using MudBlazor components
 - **Dark/Light Themes**: Automatic theme support
 
-### Store & Restaurant Features
-
-- **Multi-User Support**: Different access levels for home cooks and professional chefs
-- **Recipe Sharing**: Share recipes or collections with other users or publicly
-- **Grocery List Integration**: Generate grocery lists based on recipe ingredients
-- **Meal Planning Calendar**: Schedule recipes for future meals
-- **Nutrition Information**: Automatically calculated nutrition facts for recipes
-- **Custom Labels and Tags**: Organize recipes with user-defined labels and tags
-- **Family Cookbook Compilation**: Compile selected recipes into a printable family cookbook
-
 ### Data Relationships
 
 ```mermaid
