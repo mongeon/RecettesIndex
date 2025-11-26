@@ -123,9 +123,43 @@ else
                                                 }
                                             </MudList>
                                         }
+                                        else if (store != null)
+                                        {
+                                            <MudList Dense="true" T="Recipe">
+                                                <MudListItem Icon="@Icons.Material.Filled.Storefront">
+                                                    <MudText>Magasin: <MudLink Href="@($"/stores/{store.Id}")">@store.Name</MudLink></MudText>
+                                                </MudListItem>
+                                                
+                                                @if (!string.IsNullOrWhiteSpace(store.Address))
+                                                {
+                                                    <MudListItem Icon="@Icons.Material.Filled.LocationOn">
+                                                        <MudText>Adresse: @store.Address</MudText>
+                                                    </MudListItem>
+                                                }
+                                                
+                                                @if (!string.IsNullOrWhiteSpace(store.Phone))
+                                                {
+                                                    <MudListItem Icon="@Icons.Material.Filled.Phone">
+                                                        <MudText>Téléphone: <MudLink Href="@($"tel:{store.Phone}")">@store.Phone</MudLink></MudText>
+                                                    </MudListItem>
+                                                }
+                                                
+                                                @if (!string.IsNullOrWhiteSpace(store.Website))
+                                                {
+                                                    <MudListItem Icon="@Icons.Material.Filled.Language">
+                                                        <MudText>Site Web: <MudLink Href="@store.Website" Target="_blank">Visiter</MudLink></MudText>
+                                                    </MudListItem>
+                                                }
+                                            </MudList>
+                                        }
                                         else
                                         {
-                                            <MudAlert Severity="Severity.Info">Aucun livre associé à cette recette.</MudAlert>
+                                            <MudAlert Severity="Severity.Info">
+                                                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" />
+                                                    <span>Recette maison (aucune source associée)</span>
+                                                </MudStack>
+                                            </MudAlert>
                                         }
                                     </MudPaper>
                                 </MudItem>
@@ -183,6 +217,7 @@ else
     
     private Recipe? recipe;
     private Book? book;
+    private Store? store;
     private bool loading = true;
     private List<Recipe> relatedRecipes = new();
     private List<int> favoriteRecipeIds = new();
@@ -222,10 +257,18 @@ else
                 // Update the breadcrumbs with recipe name
                 breadcrumbs[2] = new BreadcrumbItem(recipe.Name, href: null, disabled: true);
                 
+                // Load book if recipe is from a book
                 if (recipe.BookId != null)
                 {
                     var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
                     book = bookResponse.Models?.FirstOrDefault();
+                }
+                
+                // Load store if recipe is from a store
+                if (recipe.StoreId != null)
+                {
+                    var storeResponse = await SupabaseClient.From<Store>().Where(x => x.Id == recipe.StoreId).Get();
+                    store = storeResponse.Models?.FirstOrDefault();
                 }
                 
                 // Load related recipes
@@ -291,6 +334,12 @@ else
             score += 100;
         }
         
+        // Same store (highest priority) - 100 points
+        if (candidate.StoreId.HasValue && candidate.StoreId == recipe.StoreId)
+        {
+            score += 100;
+        }
+        
         // Same author (medium priority) - 50 points
         if (book != null && candidate.Book != null)
         {
@@ -326,15 +375,19 @@ else
     {
         // Check if there are potentially more related recipes
         // For now, show button if we have 6 recipes (indicating there might be more)
-        return relatedRecipes.Count >= 6 && recipe?.BookId != null;
+        return relatedRecipes.Count >= 6 && (recipe?.BookId != null || recipe?.StoreId != null);
     }
     
     private string GetMoreRecipesUrl()
     {
-        // Link to recipes page filtered by same book
+        // Link to recipes page filtered by same book or store
         if (recipe?.BookId != null)
         {
             return $"/recipes?bookId={recipe.BookId}";
+        }
+        else if (recipe?.StoreId != null)
+        {
+            return $"/recipes?storeId={recipe.StoreId}";
         }
         
         return "/recipes";
@@ -402,11 +455,15 @@ else
         if (book != null)
         {
             info.Add($"Livre: {book.Name}");
+            
+            if (recipe?.BookPage != null)
+            {
+                info.Add($"Page: {recipe.BookPage}");
+            }
         }
-        
-        if (recipe?.BookPage != null)
+        else if (store != null)
         {
-            info.Add($"Page: {recipe.BookPage}");
+            info.Add($"Magasin: {store.Name}");
         }
 
         return string.Join(" • ", info);

@@ -6,11 +6,14 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 
 - 📝 **Recipe Management**: Create, edit, and organize your favorite recipes
 - 📚 **Cookbook Integration**: Associate recipes with physical or digital cookbooks
+- 🏪 **Store & Restaurant Tracking**: Track recipes from stores, restaurants, and prepared meal vendors
 - ⭐ **Rating System**: Rate recipes from 1-5 stars for easy favorites tracking
 - 📄 **Page References**: Track page numbers for cookbook recipes
-- 🖨️ **Print-Friendly**: Generate clean, printable versions of recipes
+- 🏷️ **Source Badges**: Visual indicators showing recipe origin (book/store/homemade)
+- 🖨️ **Print-Friendly**: Generate clean, printable versions of recipes with source information
 - 📱 **Responsive Design**: Works beautifully on desktop, tablet, and mobile
-- 🔍 **Search & Filter**: Find recipes by name, rating, cookbook, or author
+- 🔍 **Search & Filter**: Find recipes by name, rating, cookbook, store, or author
+- 📊 **Dashboard Statistics**: Track your recipe collection, popular books, and favorite stores
 
 ## 🚀 Quick Start
 
@@ -51,13 +54,29 @@ A modern, personal recipe management application built with Blazor WebAssembly a
    CREATE TABLE authors (
        id SERIAL PRIMARY KEY,
        name VARCHAR(255) NOT NULL,
+       last_name VARCHAR(255),
        creation_date TIMESTAMP DEFAULT NOW()
    );
 
    CREATE TABLE books (
        id SERIAL PRIMARY KEY,
-       title VARCHAR(255) NOT NULL,
-       author_id INTEGER REFERENCES authors(id),
+       name VARCHAR(255) NOT NULL,
+       creation_date TIMESTAMP DEFAULT NOW()
+   );
+   
+   CREATE TABLE book_authors (
+       book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
+       author_id INTEGER REFERENCES authors(id) ON DELETE CASCADE,
+       PRIMARY KEY (book_id, author_id)
+   );
+   
+   CREATE TABLE stores (
+       id SERIAL PRIMARY KEY,
+       name VARCHAR(255) NOT NULL,
+       address TEXT,
+       phone VARCHAR(50),
+       website TEXT,
+       notes TEXT,
        creation_date TIMESTAMP DEFAULT NOW()
    );
 
@@ -67,7 +86,8 @@ A modern, personal recipe management application built with Blazor WebAssembly a
        notes TEXT,
        rating INTEGER CHECK (rating >= 1 AND rating <= 5),
        book_id INTEGER REFERENCES books(id),
-       page_number INTEGER,
+       book_page INTEGER,
+       store_id INTEGER REFERENCES stores(id),
        creation_date TIMESTAMP DEFAULT NOW()
    );
    ```
@@ -106,15 +126,15 @@ dotnet test --filter "RecipeModelTests"
 ```
 
 ### Test Coverage
-- ✅ **Model Validation**: Recipe rating constraints (1-5), data annotations, relationship tests
-- ✅ **Service Layer**: BookAuthorService, RecipeService, CacheService, SupabaseRecipesQuery, Result<T> pattern
-- ✅ **Business Logic**: Author name formatting, book-recipe relationships, caching
+- ✅ **Model Validation**: Recipe rating constraints (1-5), data annotations, relationship tests, store associations
+- ✅ **Service Layer**: BookAuthorService, RecipeService, StoreService, CacheService, SupabaseRecipesQuery, Result<T> pattern
+- ✅ **Business Logic**: Author name formatting, book-recipe relationships, store-recipe relationships, caching
 - ✅ **Constants**: Service constants validation, pagination, sorting, cache configuration
 - ✅ **Custom Exceptions**: NotFoundException, ServiceException, ValidationException
-- ✅ **Component Tests**: Edit dialogs for Recipe, Book, and Author with creation date preservation
-- ✅ **Integration Tests**: Complete relationship chains and data integrity
+- ✅ **Component Tests**: Edit dialogs for Recipe, Book, Author, and Store with creation date preservation
+- ✅ **Integration Tests**: Complete relationship chains, store integration, and data integrity
 - ✅ **Edge Cases**: Invalid inputs, boundary conditions, null handling, error scenarios
-- ✅ **Data Relationships**: Book-Author-Recipe associations and many-to-many mappings
+- ✅ **Data Relationships**: Book-Author-Recipe associations, Store-Recipe associations, and many-to-many mappings
 
 ## 📖 Documentation
 

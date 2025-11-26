@@ -1,0 +1,243 @@
+@page "/stores/{Id:int}"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using Supabase
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject ILogger<StoreDetails> Logger
+@inject NavigationManager NavigationManager
+@inject Client SupabaseClient
+
+<PageTitle>Magasin - @(store?.Name ?? "Chargement...")</PageTitle>
+<MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+
+@if (loading)
+{
+    <MudContainer Class="d-flex flex-column align-center py-8">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.h6" Class="mt-4">Chargement du magasin...</MudText>
+    </MudContainer>
+}
+else if (store == null)
+{
+    <MudAlert Severity="Severity.Error" Class="my-4">Magasin introuvable.</MudAlert>
+}
+else
+{
+    <HeroSection Title="@store.Name" 
+                 Subtitle="@GetStoreInfo()"
+                 AdditionalInfo="@store.Address"
+                 Icon="@Icons.Material.Filled.Storefront">
+        <RightContent>
+            <MudChip T="string" Size="Size.Large" Class="hero-chip">
+                @relatedRecipes.Count Recette@(relatedRecipes.Count > 1 ? "s" : "")
+            </MudChip>
+        </RightContent>
+    </HeroSection>
+
+    <ActionBar BackUrl="/stores" 
+               BackText="Retour aux magasins"
+               ShowEditButton="true"
+               ShowPrintButton="false"
+               IsAuthenticated="@AuthService.IsAuthenticated"
+               OnEditClick="@OpenEditDialog" />
+
+    <MudGrid>
+        <MudItem xs="12">
+            <MudCard Elevation="3">
+                <MudCardContent>
+                    <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
+                        <MudTabPanel Text="Informations" Icon="@Icons.Material.Filled.Info">
+                            <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
+                                <MudStack Spacing="3">
+                                    @if (!string.IsNullOrWhiteSpace(store.Address))
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                                                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Class="mr-1" />
+                                                Adresse
+                                            </MudText>
+                                            <MudText Typo="Typo.body1" Class="ml-6">@store.Address</MudText>
+                                        </div>
+                                    }
+                                    
+                                    @if (!string.IsNullOrWhiteSpace(store.Phone))
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                                                <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Class="mr-1" />
+                                                Téléphone
+                                            </MudText>
+                                            <MudText Typo="Typo.body1" Class="ml-6">
+                                                <MudLink Href="@($"tel:{store.Phone}")">@store.Phone</MudLink>
+                                            </MudText>
+                                        </div>
+                                    }
+                                    
+                                    @if (!string.IsNullOrWhiteSpace(store.Website))
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                                                <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" Class="mr-1" />
+                                                Site Web
+                                            </MudText>
+                                            <MudText Typo="Typo.body1" Class="ml-6">
+                                                <MudLink Href="@store.Website" Target="_blank">@store.Website</MudLink>
+                                            </MudText>
+                                        </div>
+                                    }
+                                    
+                                    @if (!string.IsNullOrWhiteSpace(store.Notes))
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                                                <MudIcon Icon="@Icons.Material.Filled.Notes" Size="Size.Small" Class="mr-1" />
+                                                Notes
+                                            </MudText>
+                                            <MudText Typo="Typo.body1" Class="ml-6">@store.Notes</MudText>
+                                        </div>
+                                    }
+                                    
+                                    @if (!string.IsNullOrWhiteSpace(store.Address) || !string.IsNullOrWhiteSpace(store.Phone) || 
+                                         !string.IsNullOrWhiteSpace(store.Website) || !string.IsNullOrWhiteSpace(store.Notes))
+                                    {
+                                        <!-- Content already displayed -->
+                                    }
+                                    else
+                                    {
+                                        <MudAlert Severity="Severity.Info">Aucune information supplémentaire disponible.</MudAlert>
+                                    }
+                                </MudStack>
+                            </MudPaper>
+                        </MudTabPanel>
+                        <MudTabPanel Text="Recettes" Icon="@Icons.Material.Filled.Restaurant">
+                            @if (relatedRecipes != null && relatedRecipes.Count > 0)
+                            {
+                                <MudPaper Elevation="0" Class="pa-2">
+                                    <MudGrid>
+                                        @foreach (var recipe in relatedRecipes)
+                                        {
+                                            <MudItem xs="12" sm="6" md="4">
+                                                <MudCard Elevation="2" Class="ma-2 recipe-card">
+                                                    <MudCardHeader>
+                                                        <CardHeaderContent>
+                                                            <MudText Typo="Typo.h6">@recipe.Name</MudText>
+                                                        </CardHeaderContent>
+                                                        <CardHeaderActions>
+                                                            <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
+                                                        </CardHeaderActions>
+                                                    </MudCardHeader>
+                                                    <MudCardContent>
+                                                        @if (!string.IsNullOrWhiteSpace(recipe.Notes))
+                                                        {
+                                                            var preview = recipe.Notes.Length > 80 ? recipe.Notes.Substring(0, 80) + "..." : recipe.Notes;
+                                                            <MudText Typo="Typo.body2" Color="Color.Secondary">@preview</MudText>
+                                                        }
+                                                    </MudCardContent>
+                                                    <MudCardActions>
+                                                        <MudButton Variant="Variant.Text" Color="Color.Primary" 
+                                                                Href="@($"/recipes/{recipe.Id}")">
+                                                            Voir les détails
+                                                        </MudButton>
+                                                    </MudCardActions>
+                                                </MudCard>
+                                            </MudItem>
+                                        }
+                                    </MudGrid>
+                                </MudPaper>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Info" Class="mt-3">Aucune recette trouvée pour ce magasin.</MudAlert>
+                            }
+                        </MudTabPanel>
+                    </MudTabs>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] 
+    public int Id { get; set; }
+    
+    private Store? store;
+    private bool loading = true;
+    private List<BreadcrumbItem> breadcrumbs =
+    [
+        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Magasins", href: "/stores"),
+        new BreadcrumbItem("Détails", href: null, disabled: true)
+    ];
+    
+    private List<Recipe> relatedRecipes = [];
+    
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        
+        try 
+        {
+            var response = await SupabaseClient.From<Store>().Where(x => x.Id == Id).Get();
+            store = response.Models?.FirstOrDefault();
+            
+            if (store != null)
+            {
+                // Update the breadcrumbs with store name
+                breadcrumbs[2] = new BreadcrumbItem(store.Name, href: null, disabled: true);
+                
+                // Get related recipes
+                var recipesResponse = await SupabaseClient.From<Recipe>().Where(x => x.StoreId == store.Id).Get();
+                relatedRecipes = recipesResponse.Models ?? new List<Recipe>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading store {StoreId}", Id);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    
+    private async Task OpenEditDialog()
+    {
+        if (store != null)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("StoreToEdit", store);
+            
+            var dialog = await DialogService.ShowAsync<EditStoreDialog>("Modifier le magasin", parameters);
+            var result = await dialog.Result;
+            
+            if (result is not null && !result.Canceled && result.Data is Store updatedStore)
+            {
+                // Refresh the store data
+                store = updatedStore;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private string GetStoreInfo()
+    {
+        var info = new List<string>();
+        
+        if (!string.IsNullOrWhiteSpace(store?.Phone))
+        {
+            info.Add($"📞 {store.Phone}");
+        }
+        
+        if (!string.IsNullOrWhiteSpace(store?.Website))
+        {
+            info.Add("🌐 Site web");
+        }
+
+        return string.Join(" • ", info);
+    }
+}
