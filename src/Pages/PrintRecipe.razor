@@ -43,6 +43,12 @@
                                     Color="Color.Primary"
                                     Disabled="@(book == null)" />
                     </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCheckBox @bind-Value="showStoreInfo" 
+                                    Label="Afficher le magasin" 
+                                    Color="Color.Primary"
+                                    Disabled="@(store == null)" />
+                    </MudItem>
                 </MudGrid>
                 <MudDivider Class="my-3" />
                 <MudStack Row Spacing="2">
@@ -112,6 +118,31 @@
                     </div>
                 }
 
+                @if (showStoreInfo && store != null)
+                {
+                    <div class="print-section store-info">
+                        <h2>Magasin</h2>
+                        <div class="store-details">
+                            <p><strong>Nom:</strong> @store.Name</p>
+                            
+                            @if (!string.IsNullOrWhiteSpace(store.Address))
+                            {
+                                <p><strong>Adresse:</strong> @store.Address</p>
+                            }
+                            
+                            @if (!string.IsNullOrWhiteSpace(store.Phone))
+                            {
+                                <p><strong>Téléphone:</strong> @store.Phone</p>
+                            }
+                            
+                            @if (!string.IsNullOrWhiteSpace(store.Website))
+                            {
+                                <p><strong>Site Web:</strong> @store.Website</p>
+                            }
+                        </div>
+                    </div>
+                }
+
                 @if (showNotes && !string.IsNullOrWhiteSpace(recipe.Notes))
                 {
                     <div class="print-section notes-section">
@@ -138,12 +169,14 @@
     [Parameter] public int id { get; set; }
     private Recipe? recipe;
     private Book? book;
+    private Store? store;
     private bool loading = true;
 
     // Print options
     private bool showRating = true;
     private bool showNotes = true;
     private bool showBookInfo = true;
+    private bool showStoreInfo = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -157,12 +190,19 @@
             book = bookResponse.Models?.FirstOrDefault();
         }
         
+        if (recipe?.StoreId != null)
+        {
+            var storeResponse = await SupabaseClient.From<Store>().Where(x => x.Id == recipe.StoreId).Get();
+            store = storeResponse.Models?.FirstOrDefault();
+        }
+        
         // Automatically disable options when data is not available
         if (recipe != null)
         {
             if (recipe.Rating == 0 || recipe.Rating < 1) showRating = false;
             if (string.IsNullOrWhiteSpace(recipe.Notes)) showNotes = false;
             if (book == null) showBookInfo = false;
+            if (store == null) showStoreInfo = false;
         }
         
         loading = false;

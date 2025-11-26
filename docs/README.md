@@ -11,6 +11,7 @@ Mes Recettes is a personal recipe management application built with Blazor WebAs
 - [Development Guide](#development-guide)
 - [API Reference](#api-reference)
 - [Deployment](#deployment)
+- [Store & Restaurant Features](#store--restaurant-features)
 - [Contributing](#contributing)
 
 ## 🎯 Project Overview
@@ -19,10 +20,12 @@ Mes Recettes is a modern web application that bridges the gap between traditiona
 
 - Store and organize their favorite recipes
 - Associate recipes with physical or digital cookbooks
+- Track recipes from stores, restaurants, and food vendors
 - Rate recipes for future reference
 - Track page numbers for cookbook references
 - Generate print-friendly recipe formats
-- Browse recipes by author, book, or rating
+- Browse recipes by author, book, store, or rating
+- View visual badges indicating recipe sources
 
 ### Tech Stack
 
@@ -185,6 +188,16 @@ RecettesIndex/
 - **Print-Friendly**: Generate clean print versions of recipes
 - **Material Design**: Modern UI using MudBlazor components
 - **Dark/Light Themes**: Automatic theme support
+
+### Store & Restaurant Features
+
+- **Multi-User Support**: Different access levels for home cooks and professional chefs
+- **Recipe Sharing**: Share recipes or collections with other users or publicly
+- **Grocery List Integration**: Generate grocery lists based on recipe ingredients
+- **Meal Planning Calendar**: Schedule recipes for future meals
+- **Nutrition Information**: Automatically calculated nutrition facts for recipes
+- **Custom Labels and Tags**: Organize recipes with user-defined labels and tags
+- **Family Cookbook Compilation**: Compile selected recipes into a printable family cookbook
 
 ### Data Relationships
 
@@ -401,6 +414,30 @@ We welcome contributions! Please follow these guidelines:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🏪 Store & Restaurant Features
+
+### Overview
+
+The application now supports tracking recipes from stores, restaurants, and prepared meal vendors, complementing the traditional cookbook management.
+
+### Key Features
+
+- **Store Management**: Full CRUD operations for stores and restaurants
+- **Store Information**: Track name, address, phone, website, and notes
+- **Recipe Association**: Link recipes to specific stores
+- **Visual Source Badges**: Color-coded badges showing recipe origin
+  - 📖 Blue for cookbooks
+  - 🏪 Orange for stores/restaurants
+  - 🏠 Tertiary for homemade recipes
+- **Store Details Page**: View all recipes from a specific store
+- **Dashboard Integration**: Statistics on most popular stores
+- **Advanced Filtering**: Filter recipes by store
+- **Print Support**: Include store information in printed recipes
+
+### Documentation
+
+For complete store feature documentation, see [STORE_FEATURES.md](STORE_FEATURES.md).
 
 ## 🆘 Support
 
