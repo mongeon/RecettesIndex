@@ -124,9 +124,9 @@ public class StoreService(
                 return Result<Store>.Failure("Invalid store ID");
             }
 
-            // Use Upsert instead of Update for better compatibility
             var response = await _supabaseClient.From<Store>()
-                .Upsert(store);
+                .Where(x => x.Id == store.Id)
+                .Update(store);
                 
             var updatedStore = response.Models?.FirstOrDefault();
 
