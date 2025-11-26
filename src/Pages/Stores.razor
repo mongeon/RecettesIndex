@@ -16,13 +16,14 @@
 <MudPaper Class="pa-4">
     <MudText Typo="Typo.h5">Magasins et Restaurants</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
-    <MudTextField @bind-Value="searchTerm" 
+    <MudTextField Value="@searchTerm"
+                  ValueChanged="@((string value) => OnSearchChanged(value))"
                   Placeholder="Rechercher des magasins ou restaurants..." 
                   Adornment="Adornment.Start" 
                   AdornmentIcon="@Icons.Material.Filled.Search" 
                   Class="mb-2" 
-                  Immediate="true" 
-                  @oninput="OnSearchChanged" />
+                  Immediate="true"
+                  DebounceInterval="300" />
     @if (loading)
     {
         <MudProgressCircular Indeterminate="true" />
@@ -123,9 +124,9 @@
         new BreadcrumbItem("Magasins", href: "/stores", disabled: true)
     ];
 
-    private void OnSearchChanged(ChangeEventArgs e)
+    private void OnSearchChanged(string value)
     {
-        searchTerm = e.Value?.ToString() ?? string.Empty;
+        searchTerm = value ?? string.Empty;
         FilterStores();
         StateHasChanged();
     }
