@@ -58,15 +58,19 @@
     <RecipeAdvancedFilters SearchTerm="@searchTerm"
                           RatingFilter="@ratingFilter"
                           BookFilter="@bookFilter"
+                          StoreFilter="@storeFilter"
                           AuthorFilter="@authorFilter"
                           ActiveFilterCount="@GetActiveFilterCount()"
                           Books="@books"
+                          Stores="@stores"
                           Authors="@authors"
                           BookRecipeCounts="@bookRecipeCounts"
+                          StoreRecipeCounts="@storeRecipeCounts"
                           AuthorRecipeCounts="@authorRecipeCounts"
                           OnSearchChanged="OnSearchChanged"
                           OnRatingChanged="OnRatingChanged"
                           OnBookChanged="OnBookChanged"
+                          OnStoreChanged="OnStoreChanged"
                           OnAuthorChanged="OnAuthorChanged"
                           OnClearAllFilters="ClearAllFilters" />
 
@@ -75,12 +79,15 @@
                         SearchTerm="@searchTerm"
                         RatingFilter="@ratingFilter"
                         BookFilter="@bookFilter"
+                        StoreFilter="@storeFilter"
                         AuthorFilter="@authorFilter"
                         Books="@books"
+                        Stores="@stores"
                         Authors="@authors"
                         OnClearSearch="ClearSearch"
                         OnClearRating="ClearRating"
                         OnClearBook="ClearBook"
+                        OnClearStore="ClearStore"
                         OnClearAuthor="ClearAuthor" />
 
     <!-- Loading State -->
@@ -109,6 +116,7 @@
         {
             <RecipeGridView Recipes="@currentRecipes"
                            Books="@books"
+                           Stores="@stores"
                            FavoriteRecipeIds="@favoriteRecipeIds"
                            IsAuthenticated="@AuthService.IsAuthenticated"
                            CurrentPage="@currentPage"
@@ -142,6 +150,7 @@
     private RecipeTableView? tableViewRef;
     private List<Book> books = [];
     private List<Author> authors = [];
+    private List<Store> stores = [];
     private List<BreadcrumbItem> breadcrumbs =>
     [
         new BreadcrumbItem("Accueil", href: ""),
@@ -152,6 +161,7 @@
     private string searchTerm = string.Empty;
     private string? ratingFilter;
     private string? bookFilter;
+    private string? storeFilter;
     private string? authorFilter;
     
     // Quick filter state
@@ -169,6 +179,7 @@
     private int unratedCount = 0;
     private int favoritesCount = 0;
     private Dictionary<int, int> bookRecipeCounts = new();
+    private Dictionary<int, int> storeRecipeCounts = new();
     private Dictionary<int, int> authorRecipeCounts = new();
     
     // Memoized active filter count
@@ -280,6 +291,7 @@
     {
         books = (await RecipeService.GetBooksAsync())?.ToList() ?? new();
         authors = (await RecipeService.GetAuthorsAsync())?.ToList() ?? new();
+        stores = (await RecipeService.GetStoresAsync())?.ToList() ?? new();
     }
 
     private async Task LoadFilterCounts()
@@ -299,6 +311,11 @@
             bookRecipeCounts = allRecipes
                 .Where(r => r.BookId.HasValue)
                 .GroupBy(r => r.BookId!.Value)
+                .ToDictionary(g => g.Key, g => g.Count());
+            
+            storeRecipeCounts = allRecipes
+                .Where(r => r.StoreId.HasValue)
+                .GroupBy(r => r.StoreId!.Value)
                 .ToDictionary(g => g.Key, g => g.Count());
             
             authorRecipeCounts = new Dictionary<int, int>();
@@ -337,10 +354,11 @@
         {
             int? rating = GetRatingFilter();
             int? bookId = GetBookIdFilter();
+            int? storeId = GetStoreIdFilter();
             int? authorId = GetAuthorIdFilter();
             
             var result = await RecipeService.SearchAsync(
-                searchTerm, rating, bookId, null, authorId, currentPage, pageSize, "created_at", true);
+                searchTerm, rating, bookId, storeId, authorId, currentPage, pageSize, "created_at", true);
             
             if (result.IsSuccess)
             {
@@ -409,12 +427,13 @@
         }
         
         int? bookId = GetBookIdFilter();
+        int? storeId = GetStoreIdFilter();
         int? authorId = GetAuthorIdFilter();
         
         var sortLabel = state.SortLabel;
         var sortDescending = state.SortDirection == SortDirection.Descending;
         
-        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, null, authorId, page, pageSize, sortLabel, sortDescending);
+        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending);
         if (!result.IsSuccess)
             return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
         
@@ -469,6 +488,7 @@
         if (!string.IsNullOrWhiteSpace(searchTerm)) count++;
         if (ratingFilter != null && ratingFilter != "all") count++;
         if (bookFilter != null && bookFilter != "all") count++;
+        if (storeFilter != null && storeFilter != "all") count++;
         if (authorFilter != null && authorFilter != "all") count++;
         
         _cachedActiveFilterCount = count;
@@ -482,6 +502,7 @@
         return !string.IsNullOrWhiteSpace(searchTerm) 
             || (ratingFilter != null && ratingFilter != "all") 
             || (bookFilter != null && bookFilter != "all") 
+            || (storeFilter != null && storeFilter != "all")
             || (authorFilter != null && authorFilter != "all");
     }
     
@@ -501,6 +522,13 @@
         return (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) 
             ? null 
             : (int.TryParse(bookFilter, out var b) ? b : null);
+    }
+    
+    private int? GetStoreIdFilter()
+    {
+        return (storeFilter == "all" || string.IsNullOrWhiteSpace(storeFilter)) 
+            ? null 
+            : (int.TryParse(storeFilter, out var s) ? s : null);
     }
     
     private int? GetAuthorIdFilter()
@@ -644,6 +672,7 @@
         searchTerm = string.Empty;
         ratingFilter = null;
         bookFilter = null;
+        storeFilter = null;
         authorFilter = null;
         showAllRecipes = true;
         showRecentRecipes = false;
@@ -703,6 +732,18 @@
             await Reload();
     }
 
+    private async Task ClearStore()
+    {
+        storeFilter = null;
+        currentPage = 1;
+        InvalidateFilterCountCache();
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
     private async Task ClearAuthor()
     {
         authorFilter = null;
@@ -737,6 +778,18 @@
     private async Task OnBookChanged(string? value)
     {
         bookFilter = value;
+        currentPage = 1;
+        InvalidateFilterCountCache();
+        
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
+    private async Task OnStoreChanged(string? value)
+    {
+        storeFilter = value;
         currentPage = 1;
         InvalidateFilterCountCache();
         

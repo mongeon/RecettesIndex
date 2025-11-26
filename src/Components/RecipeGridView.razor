@@ -7,9 +7,11 @@
     @foreach (var recipe in Recipes)
     {
         var book = Books.FirstOrDefault(b => b.Id == recipe.BookId);
+        var store = Stores.FirstOrDefault(s => s.Id == recipe.StoreId);
         <MudItem xs="12" sm="6" md="4" lg="3" Style="animation: fadeIn 0.3s ease-out;">
             <RecipeCard Recipe="@recipe"
                        Book="@book"
+                       Store="@store"
                        IsAuthenticated="@IsAuthenticated"
                        IsFavorite="@FavoriteRecipeIds.Contains(recipe.Id)"
                        OnView="OnViewRecipe"
@@ -34,6 +36,7 @@
 @code {
     [Parameter, EditorRequired] public List<Recipe> Recipes { get; set; } = new();
     [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
+    [Parameter, EditorRequired] public List<Store> Stores { get; set; } = new();
     [Parameter, EditorRequired] public List<int> FavoriteRecipeIds { get; set; } = new();
     [Parameter, EditorRequired] public bool IsAuthenticated { get; set; }
     [Parameter, EditorRequired] public int CurrentPage { get; set; }
