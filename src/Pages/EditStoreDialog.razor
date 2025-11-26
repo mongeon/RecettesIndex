@@ -1,0 +1,180 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
+@inject ILogger<EditStoreDialog> Logger
+@inject IStoreService StoreService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">@(store.Id > 0 ? "Modifier" : "Ajouter") le Magasin ou Restaurant</MudText>
+        
+        <MudTextField @bind-Value="store.Name" 
+                      Label="Nom *" 
+                      Required="true" 
+                      Variant="Variant.Outlined" 
+                      Class="mb-3"
+                      HelperText="Nom du magasin ou restaurant" />
+        
+        <MudTextField @bind-Value="store.Address" 
+                      Label="Adresse" 
+                      Variant="Variant.Outlined" 
+                      Class="mb-3"
+                      Lines="2"
+                      HelperText="Adresse complète (optionnel)" />
+        
+        <MudTextField @bind-Value="store.Phone" 
+                      Label="Téléphone" 
+                      Variant="Variant.Outlined" 
+                      Class="mb-3"
+                      HelperText="Numéro de téléphone (optionnel)" />
+        
+        <MudTextField @bind-Value="store.Website" 
+                      Label="Site Web" 
+                      Variant="Variant.Outlined" 
+                      Class="mb-3"
+                      HelperText="URL du site web (optionnel)"
+                      InputType="InputType.Url" />
+        
+        <MudTextField @bind-Value="store.Notes" 
+                      Label="Notes" 
+                      Variant="Variant.Outlined" 
+                      Class="mb-3"
+                      Lines="3"
+                      HelperText="Notes additionnelles (optionnel)" />
+        
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="SaveAsync" 
+                   Color="Color.Primary" 
+                   Variant="Variant.Filled" 
+                   Disabled="@isSaving"
+                   StartIcon="@Icons.Material.Filled.Save">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <span class="ml-2">Enregistrement...</span>
+            }
+            else
+            {
+                <span>Enregistrer</span>
+            }
+        </MudButton>
+        <MudButton OnClick="Cancel" 
+                   Color="Color.Secondary" 
+                   Variant="Variant.Text" 
+                   Disabled="@isSaving">
+            Annuler
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] 
+    public Store? StoreToEdit { get; set; }
+    
+    [CascadingParameter] 
+    public required IMudDialogInstance MudDialog { get; set; }
+    
+    private Store store = new();
+    private string? errorMessage;
+    private bool isSaving = false;
+    
+    protected override void OnInitialized()
+    {
+        if (StoreToEdit != null)
+        {
+            // Editing existing store
+            store = new Store
+            {
+                Id = StoreToEdit.Id,
+                Name = StoreToEdit.Name,
+                Address = StoreToEdit.Address,
+                Phone = StoreToEdit.Phone,
+                Website = StoreToEdit.Website,
+                Notes = StoreToEdit.Notes,
+                CreationDate = StoreToEdit.CreationDate
+            };
+        }
+        else
+        {
+            // Adding new store
+            store = new Store();
+        }
+    }
+    
+    private async Task SaveAsync()
+    {
+        errorMessage = null;
+        isSaving = true;
+        
+        try
+        {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(store.Name))
+            {
+                errorMessage = "Le nom du magasin ou restaurant est requis.";
+                isSaving = false;
+                return;
+            }
+
+            // Validate URL if provided
+            if (!string.IsNullOrWhiteSpace(store.Website))
+            {
+                if (!Uri.TryCreate(store.Website, UriKind.Absolute, out var uriResult) 
+                    || (uriResult.Scheme != Uri.UriSchemeHttp && uriResult.Scheme != Uri.UriSchemeHttps))
+                {
+                    errorMessage = "Le site web doit être une URL valide (http:// ou https://).";
+                    isSaving = false;
+                    return;
+                }
+            }
+            
+            Result<Store> result;
+            if (store.Id > 0)
+            {
+                // Update existing store
+                result = await StoreService.UpdateAsync(store);
+            }
+            else
+            {
+                // Create new store
+                result = await StoreService.CreateAsync(store);
+            }
+            
+            if (result.IsSuccess)
+            {
+                var message = store.Id > 0 ? "Magasin modifié avec succès!" : "Magasin ajouté avec succès!";
+                Snackbar.Add(message, Severity.Success);
+                MudDialog.Close(DialogResult.Ok(result.Value));
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Échec lors de l'enregistrement du magasin.";
+                Snackbar.Add(errorMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Une erreur inattendue s'est produite.";
+            Logger.LogError(ex, "Error saving store {StoreId}", store.Id);
+            Snackbar.Add(errorMessage, Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

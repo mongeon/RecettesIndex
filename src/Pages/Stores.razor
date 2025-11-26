@@ -1,0 +1,246 @@
+@page "/stores"
+@using Microsoft.Extensions.Logging
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject ILogger<Stores> Logger
+@inject IRecipeService RecipeService
+@inject ISnackbar Snackbar
+@inject IStoreService StoreService
+
+<PageTitle>Magasins et Restaurants</PageTitle>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5">Magasins et Restaurants</MudText>
+    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+    <MudTextField @bind-Value="searchTerm" 
+                  Placeholder="Rechercher des magasins ou restaurants..." 
+                  Adornment="Adornment.Start" 
+                  AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Class="mb-2" 
+                  Immediate="true" 
+                  @oninput="OnSearchChanged" />
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (stores.Count == 0)
+    {
+        <MudText>Aucun magasin ou restaurant trouvé.</MudText>
+    }
+    else
+    {
+        <MudTable Items="filteredStores" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
+            <PagerContent>
+                <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
+                               RowsPerPageString="Lignes par page:" 
+                               PageSizeOptions="[10, 25, 50, 100]" />
+            </PagerContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<Store, object>(x=>x.Name)">Nom</MudTableSortLabel></MudTh>
+                <MudTh>Adresse</MudTh>
+                <MudTh>Téléphone</MudTh>
+                <MudTh>Recettes</MudTh>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTh>Actions</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Nom">
+                    <MudLink Href="@($"/stores/{context.Id}")" Style="cursor:pointer">
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" />
+                            <span>@context.Name</span>
+                        </MudStack>
+                    </MudLink>
+                </MudTd>
+                <MudTd DataLabel="Adresse">
+                    @if (!string.IsNullOrWhiteSpace(context.Address))
+                    {
+                        <MudText Typo="Typo.body2">@context.Address</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Téléphone">
+                    @if (!string.IsNullOrWhiteSpace(context.Phone))
+                    {
+                        <MudText Typo="Typo.body2">@context.Phone</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Recettes">
+                    @if (recipeCountsByStore.TryGetValue(context.Id, out var count) && count > 0)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">@count</MudChip>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">0</MudText>
+                    }
+                </MudTd>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <MudTd>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteStore(context)">Supprimer</MudButton>
+                    </MudTd>
+                }
+            </RowTemplate>
+        </MudTable>
+    }
+    @if (AuthService.IsAuthenticated)
+    {
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Class="mt-2" 
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="ShowAddDialog">
+            Ajouter un magasin ou restaurant
+        </MudButton>
+    }
+</MudPaper>
+
+@code {
+    private List<Store> stores = [];
+    private Dictionary<int, int> recipeCountsByStore = new();
+    private bool loading = true;
+    private List<BreadcrumbItem> breadcrumbs =
+    [
+        new BreadcrumbItem("Accueil", href: "/"),
+        new BreadcrumbItem("Magasins", href: "/stores", disabled: true)
+    ];
+    private string searchTerm = string.Empty;
+    private IEnumerable<Store> filteredStores => string.IsNullOrWhiteSpace(searchTerm)
+        ? stores
+        : stores.Where(s => s.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) 
+                        || (s.Address != null && s.Address.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStores();
+        await LoadRecipeCounts();
+    }
+
+    private async Task LoadStores()
+    {
+        loading = true;
+        try
+        {
+            stores = (await StoreService.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading stores");
+            stores = [];
+        }
+        loading = false;
+    }
+
+    private async Task LoadRecipeCounts()
+    {
+        try
+        {
+            // Get all recipes to count by store
+            var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
+            if (result.IsSuccess)
+            {
+                recipeCountsByStore = result.Value.Items
+                    .Where(r => r.StoreId.HasValue)
+                    .GroupBy(r => r.StoreId!.Value)
+                    .ToDictionary(g => g.Key, g => g.Count());
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading recipe counts");
+            recipeCountsByStore = new();
+        }
+    }
+
+    private async Task ShowAddDialog()
+    {
+        var dialog = await DialogService.ShowAsync<EditStoreDialog>("Ajouter un magasin ou restaurant");
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            await LoadStores();
+            await LoadRecipeCounts();
+            Snackbar.Add("Magasin ajouté avec succès!", Severity.Success);
+        }
+    }
+
+    private async Task ShowEditDialog(Store storeToEdit)
+    {
+        var parameters = new DialogParameters { ["StoreToEdit"] = storeToEdit };
+        var dialog = await DialogService.ShowAsync<EditStoreDialog>("Modifier le magasin ou restaurant", parameters);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            await LoadStores();
+            await LoadRecipeCounts();
+            Snackbar.Add("Magasin modifié avec succès!", Severity.Success);
+        }
+    }
+
+    private async Task DeleteStore(Store storeToDelete)
+    {
+        try
+        {
+            // Show confirmation dialog
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Confirmer la suppression",
+                $"Êtes-vous sûr de vouloir supprimer '{storeToDelete.Name}' ? Cette action est irréversible.",
+                yesText: "Supprimer",
+                cancelText: "Annuler");
+
+            if (confirm != true)
+            {
+                return;
+            }
+
+            // Check if there are recipes associated with this store
+            if (recipeCountsByStore.TryGetValue(storeToDelete.Id, out var count) && count > 0)
+            {
+                await DialogService.ShowMessageBox(
+                    "Suppression impossible",
+                    $"Ce magasin ne peut pas être supprimé car {count} recette(s) y sont associées. Veuillez d'abord supprimer ou modifier ces recettes.",
+                    cancelText: "OK");
+                return;
+            }
+
+            // Delete the store
+            var result = await StoreService.DeleteAsync(storeToDelete.Id);
+            if (result.IsSuccess)
+            {
+                Snackbar.Add($"'{storeToDelete.Name}' a été supprimé avec succès.", Severity.Success);
+                await LoadStores();
+                await LoadRecipeCounts();
+            }
+            else
+            {
+                Snackbar.Add(result.ErrorMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting store {StoreId}", storeToDelete.Id);
+            Snackbar.Add("Une erreur s'est produite lors de la suppression. Veuillez réessayer.", Severity.Error);
+        }
+    }
+}
