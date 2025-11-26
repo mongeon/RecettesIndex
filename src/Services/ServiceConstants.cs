@@ -19,6 +19,11 @@ public static class CacheConstants
     /// Cache key for authors list.
     /// </summary>
     public const string AuthorsListKey = "authors:list";
+
+    /// <summary>
+    /// Cache key for stores list.
+    /// </summary>
+    public const string StoresListKey = "stores:list";
 }
 
 /// <summary>

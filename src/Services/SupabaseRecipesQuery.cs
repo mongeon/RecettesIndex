@@ -243,6 +243,76 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
             throw new ServiceException("An unexpected error occurred while fetching authors", ex);
         }
     }
+
+    public async Task<List<int>> GetRecipeIdsByStoreIdsAsync(IReadOnlyCollection<int> storeIds, int? rating, CancellationToken ct = default)
+    {
+        if (storeIds.Count == 0)
+        {
+            return [];
+        }
+
+        try
+        {
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
+            q = q.Filter("store_id", Operator.In, storeIds.ToList());
+            if (rating is >= 1 and <= 5)
+            {
+                q = q.Filter("rating", Operator.Equals, rating.Value);
+            }
+
+            var res = await q.Get(cancellationToken: ct);
+            return res.Models?.Select(r => r.Id).ToList() ?? [];
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while fetching recipes by store IDs");
+            throw new ServiceException("Network error. Please check your connection", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Unexpected error while fetching recipes by store IDs");
+            throw new ServiceException("An unexpected error occurred while fetching recipes", ex);
+        }
+    }
+
+    public async Task<List<int>> GetStoreIdsByNameAsync(string term, CancellationToken ct = default)
+    {
+        try
+        {
+            var like = $"%{term}%";
+            var res = await _supabaseClient.From<Store>().Filter("name", Operator.ILike, like).Get(cancellationToken: ct);
+            return res.Models?.Select(s => s.Id).Distinct().ToList() ?? [];
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while searching stores by name: {Term}", term);
+            throw new ServiceException("Network error. Please check your connection", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error while searching stores by name: {Term}", term);
+            throw new ServiceException("An error occurred while searching stores", ex);
+        }
+    }
+
+    public async Task<IReadOnlyList<Store>> GetStoresAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var res = await _supabaseClient.From<Store>().Get(cancellationToken: ct);
+            return (IReadOnlyList<Store>)(res.Models ?? []);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while fetching all stores");
+            throw new ServiceException("Network error. Please check your connection", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Unexpected error while fetching all stores");
+            throw new ServiceException("An unexpected error occurred while fetching stores", ex);
+        }
+    }
 }
 
 

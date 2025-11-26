@@ -401,7 +401,7 @@
     /// </summary>
     private async Task<(List<Recipe>? recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)> LoadBaseDataAsync()
     {
-        var recipesResult = await RecipeService.SearchAsync(null, null, null, null, 1, 10000);
+        var recipesResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
         var books = await RecipeService.GetBooksAsync();
         var authors = await RecipeService.GetAuthorsAsync();
 
