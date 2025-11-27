@@ -4,25 +4,21 @@ using RecettesIndex.Services.Abstractions;
 
 namespace RecettesIndex.Services;
 
-// <summary>
-// Service for managing book operations with caching and error handling.
-// </summary>
+/// <summary>
+/// Service for managing book operations with caching and error handling.
+/// </summary>
 public class BookService(
     IBookAuthorService bookAuthorService,
     ICacheService cache,
     Supabase.Client supabaseClient,
-    ILogger<BookService> logger) : IBookService
+    ILogger<BookService> logger) : CrudServiceBase<Book, BookService>(cache, supabaseClient, logger), IBookService
 {
     private readonly IBookAuthorService _bookAuthorService = bookAuthorService ?? throw new ArgumentNullException(nameof(bookAuthorService));
-    private readonly ICacheService _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-    private readonly Supabase.Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
-    private readonly ILogger<BookService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<IReadOnlyList<Book>> GetAllAsync(CancellationToken ct = default)
     {
-        return await _cache.GetOrEmptyAsync(
+        return await GetAllCachedAsync(
             CacheConstants.BooksListKey,
-            CacheConstants.DefaultTtl,
             async token =>
             {
                 var response = await _supabaseClient.From<Book>().Get(cancellationToken: token);
@@ -35,173 +31,105 @@ public class BookService(
                 
                 return (IReadOnlyList<Book>)books;
             },
-            _logger,
             ct);
     }
 
-    public async Task<Result<Book>> GetByIdAsync(int id, CancellationToken ct = default)
-    {
-        try
-        {
-            var book = await _supabaseClient.From<Book>()
-                .Where(x => x.Id == id)
-                .Single();
+    public Task<Result<Book>> GetByIdAsync(int id, CancellationToken ct = default)
+        => GetByIdCoreAsync(
+            id,
+            async () => await _supabaseClient.From<Book>().Where(x => x.Id == id).Single(),
+            $"Book with ID {id} not found",
+            "getting book by id",
+            "An unexpected error occurred while loading the book");
 
-            if (book == null)
+    public Task<Result<Book>> CreateAsync(Book book, IEnumerable<int> authorIds, CancellationToken ct = default)
+        => CreateCoreAsync(
+            book,
+            () =>
             {
-                return Result<Book>.Failure($"Book with ID {id} not found");
-            }
-
-            await _bookAuthorService.LoadAuthorsForBookAsync(book);
-            
-            return Result<Book>.Success(book);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Network error while getting book by id: {BookId}", id);
-            return Result<Book>.Failure("Network error. Please check your connection.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while getting book by id: {BookId}", id);
-            return Result<Book>.Failure("An unexpected error occurred while loading the book");
-        }
-    }
-
-    public async Task<Result<Book>> CreateAsync(Book book, IEnumerable<int> authorIds, CancellationToken ct = default)
-    {
-        try
-        {
-            var err = ValidationGuards.RequireNotNull(book, "Book");
-            if (err != null) return Result<Book>.Failure(err);
-            
-            err = ValidationGuards.RequireNonEmpty(book.Name, "Book name");
-            if (err != null) return Result<Book>.Failure(err);
-
-            book.CreationDate = DateTime.UtcNow;
-
-            var response = await _supabaseClient.From<Book>().Insert(book);
-            var createdBook = response.Models?.FirstOrDefault();
-
-            if (createdBook == null)
+                var err = ValidationGuards.RequireNotNull(book, "Book");
+                if (err != null) return err;
+                err = ValidationGuards.RequireNonEmpty(book.Name, "Book name");
+                if (err != null) return err;
+                return null;
+            },
+            async () =>
             {
-                return Result<Book>.Failure("Failed to create book");
-            }
+                book.CreationDate = DateTime.UtcNow;
+                var response = await _supabaseClient.From<Book>().Insert(book);
+                var createdBook = response.Models?.FirstOrDefault();
+                if (createdBook == null) return null;
 
-            var authorIdsList = authorIds.ToList();
-            if (authorIdsList.Any())
+                var authorIdsList = authorIds.ToList();
+                if (authorIdsList.Any())
+                {
+                    var authorsResponse = await _supabaseClient.From<Author>()
+                        .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIdsList)
+                        .Get(cancellationToken: ct);
+                    var authors = authorsResponse.Models ?? [];
+                    await _bookAuthorService.CreateBookAuthorAssociationsAsync(createdBook.Id, authors);
+                    createdBook.Authors = authors;
+                }
+                return createdBook;
+            },
+            onSuccess: created =>
             {
+                _cache.Remove(CacheConstants.BooksListKey);
+                _logger.LogInformation("Book created successfully: {BookId}", created.Id);
+            },
+            unexpectedUserMessage: "An unexpected error occurred while creating the book");
+
+    public Task<Result<Book>> UpdateAsync(Book book, IEnumerable<int> authorIds, CancellationToken ct = default)
+        => UpdateCoreAsync(
+            book,
+            () =>
+            {
+                var err = ValidationGuards.RequireNotNull(book, "Book");
+                if (err != null) return err;
+                err = ValidationGuards.RequireNonEmpty(book.Name, "Book name");
+                if (err != null) return err;
+                err = ValidationGuards.RequirePositive(book.Id, "book ID");
+                if (err != null) return err;
+                return null;
+            },
+            async () =>
+            {
+                var response = await _supabaseClient.From<Book>()
+                    .Where(x => x.Id == book.Id)
+                    .Update(book);
+                var updatedBook = response.Models?.FirstOrDefault();
+                if (updatedBook == null) return null;
+
+                var authorIdsList = authorIds.ToList();
                 var authorsResponse = await _supabaseClient.From<Author>()
                     .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIdsList)
                     .Get(cancellationToken: ct);
-                
                 var authors = authorsResponse.Models ?? [];
-                
-                await _bookAuthorService.CreateBookAuthorAssociationsAsync(createdBook.Id, authors);
-                createdBook.Authors = authors;
-            }
+                await _bookAuthorService.UpdateBookAuthorAssociationsAsync(updatedBook.Id, authors);
+                updatedBook.Authors = authors;
 
-            _cache.Remove(CacheConstants.BooksListKey);
-
-            _logger.LogInformation("Book created successfully: {BookId}", createdBook.Id);
-            return Result<Book>.Success(createdBook);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Network error while creating book");
-            return Result<Book>.Failure("Network error. Please check your connection.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while creating book");
-            return Result<Book>.Failure("An unexpected error occurred while creating the book");
-        }
-    }
-
-    public async Task<Result<Book>> UpdateAsync(Book book, IEnumerable<int> authorIds, CancellationToken ct = default)
-    {
-        try
-        {
-            var err = ValidationGuards.RequireNotNull(book, "Book");
-            if (err != null) return Result<Book>.Failure(err);
-            
-            err = ValidationGuards.RequireNonEmpty(book.Name, "Book name");
-            if (err != null) return Result<Book>.Failure(err);
-            
-            err = ValidationGuards.RequirePositive(book.Id, "book ID");
-            if (err != null) return Result<Book>.Failure(err);
-
-            var response = await _supabaseClient.From<Book>()
-                .Where(x => x.Id == book.Id)
-                .Update(book);
-                
-            var updatedBook = response.Models?.FirstOrDefault();
-
-            if (updatedBook == null)
+                return updatedBook;
+            },
+            onSuccess: updated =>
             {
-                return Result<Book>.Failure("Failed to update book");
-            }
+                _cache.Remove(CacheConstants.BooksListKey);
+                _logger.LogInformation("Book updated successfully: {BookId}", updated.Id);
+            },
+            unexpectedUserMessage: "An unexpected error occurred while updating the book",
+            idForLogging: book?.Id,
+            entityNameForLogging: "book");
 
-            var authorIdsList = authorIds.ToList();
-            var authorsResponse = await _supabaseClient.From<Author>()
-                .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIdsList)
-                .Get(cancellationToken: ct);
-            
-            var authors = authorsResponse.Models ?? [];
-            await _bookAuthorService.UpdateBookAuthorAssociationsAsync(updatedBook.Id, authors);
-            updatedBook.Authors = authors;
-
-            _cache.Remove(CacheConstants.BooksListKey);
-
-            _logger.LogInformation("Book updated successfully: {BookId}", updatedBook.Id);
-            return Result<Book>.Success(updatedBook);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Network error while updating book: {BookId}", book.Id);
-            return Result<Book>.Failure("Network error. Please check your connection.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while updating book: {BookId}", book.Id);
-            return Result<Book>.Failure("An unexpected error occurred while updating the book");
-        }
-    }
-
-    public async Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default)
-    {
-        try
-        {
-            var err = ValidationGuards.RequirePositive(id, "book ID");
-            if (err != null) return Result<bool>.Failure(err);
-
-            var existingBook = await _supabaseClient.From<Book>()
-                .Where(x => x.Id == id)
-                .Single();
-
-            if (existingBook == null)
+    public Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default)
+        => DeleteCoreAsync(
+            id,
+            async () => await _supabaseClient.From<Book>().Where(x => x.Id == id).Single(),
+            async () => await _supabaseClient.From<Book>().Where(x => x.Id == id).Delete(),
+            onSuccess: () =>
             {
-                return Result<bool>.Failure($"Book with ID {id} not found");
-            }
-
-            await _supabaseClient.From<Book>()
-                .Where(x => x.Id == id)
-                .Delete();
-
-            _cache.Remove(CacheConstants.BooksListKey);
-
-            _logger.LogInformation("Book deleted successfully: {BookId}", id);
-            return Result<bool>.Success(true);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Network error while deleting book: {BookId}", id);
-            return Result<bool>.Failure("Network error. Please check your connection.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while deleting book: {BookId}", id);
-            return Result<bool>.Failure("An unexpected error occurred while deleting the book");
-        }
-    }
+                _cache.Remove(CacheConstants.BooksListKey);
+                _logger.LogInformation("Book deleted successfully: {BookId}", id);
+            },
+            notFoundMessage: $"Book with ID {id} not found",
+            unexpectedUserMessage: "An unexpected error occurred while deleting the book",
+            entityNameForLogging: "book");
 }
