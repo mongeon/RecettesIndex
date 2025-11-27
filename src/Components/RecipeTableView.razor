@@ -31,7 +31,7 @@
             <MudLink Href="@($"/recipes/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
         </MudTd>
         <MudTd DataLabel="Évaluation" Style="@GetRowStyle(context)">
-            <PizzaRating Value="@context.Rating" />
+            <PizzaRating Value="@context.Rating" ReadOnly="true" Size="Size.Small" />
         </MudTd>
         <MudTd DataLabel="Créée le" Style="@GetRowStyle(context)">@context.CreationDate.ToShortDateString()</MudTd>
         <MudTd DataLabel="Notes" Style="@GetRowStyle(context)">
