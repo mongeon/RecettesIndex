@@ -371,8 +371,9 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         // Note: Books, authors, and stores lists rarely change based on recipe modifications,
         // but we invalidate them to ensure consistency if relationships change
-        _cache.Remove(CacheConstants.BooksListKey);
-        _cache.Remove(CacheConstants.AuthorsListKey);
-        _cache.Remove(CacheConstants.StoresListKey);
+        _cache.RemoveMany(
+            CacheConstants.BooksListKey,
+            CacheConstants.AuthorsListKey,
+            CacheConstants.StoresListKey);
     }
 }
