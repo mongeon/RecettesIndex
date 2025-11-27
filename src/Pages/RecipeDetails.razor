@@ -192,6 +192,7 @@ else
                         <MudItem xs="12" sm="6" md="4" lg="2">
                             <RecipeCard Recipe="@relatedRecipe"
                                        Book="@relatedRecipe.Book"
+                                       Store="@relatedRecipe.Store"
                                        IsAuthenticated="@AuthService.IsAuthenticated"
                                        IsFavorite="@favoriteRecipeIds.Contains(relatedRecipe.Id)"
                                        OnView="@HandleViewRelatedRecipe"
