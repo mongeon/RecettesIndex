@@ -4,12 +4,15 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Components
 @using Supabase
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ILogger<BookDetails> Logger
 @inject NavigationManager NavigationManager
 @inject Client SupabaseClient
+@inject LocalStorageService LocalStorage
+@inject ISnackbar Snackbar
 
 <PageTitle>Livre - @(book?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -77,37 +80,22 @@ else
                         <MudTabPanel Text="Recettes" Icon="@Icons.Material.Filled.Restaurant">
                             @if (relatedRecipes != null && relatedRecipes.Count > 0)
                             {
-                                <MudPaper Elevation="0" Class="pa-2">
-                                    <MudGrid>
-                                        @foreach (var recipe in relatedRecipes)
-                                        {
-                                            <MudItem xs="12" sm="6" md="4">
-                                                <MudCard Elevation="2" Class="ma-2 recipe-card">
-                                                    <MudCardHeader>
-                                                        <CardHeaderContent>
-                                                            <MudText Typo="Typo.h6">@recipe.Name</MudText>
-                                                        </CardHeaderContent>
-                                                        <CardHeaderActions>
-                                                            <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
-                                                        </CardHeaderActions>
-                                                    </MudCardHeader>
-                                                    <MudCardContent>
-                                                        @if (recipe.BookPage != null)
-                                                        {
-                                                            <MudText>Page: @recipe.BookPage</MudText>
-                                                        }
-                                                    </MudCardContent>
-                                                    <MudCardActions>
-                                                        <MudButton Variant="Variant.Text" Color="Color.Primary" 
-                                                                Href="@($"/recipes/{recipe.Id}")">
-                                                            Voir les détails
-                                                        </MudButton>
-                                                    </MudCardActions>
-                                                </MudCard>
-                                            </MudItem>
-                                        }
-                                    </MudGrid>
-                                </MudPaper>
+                                <MudGrid Spacing="3" Class="mt-4">
+                                    @foreach (var recipe in relatedRecipes)
+                                    {
+                                        <MudItem xs="12" sm="6" md="4" lg="3">
+                                            <RecipeCard Recipe="@recipe"
+                                                       Book="@book"
+                                                       IsAuthenticated="@AuthService.IsAuthenticated"
+                                                       IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
+                                                       OnView="@ViewRecipe"
+                                                       OnEdit="@(async (r) => await Task.CompletedTask)"
+                                                       OnDelete="@(async (r) => await Task.CompletedTask)"
+                                                       OnPrint="@PrintRecipe"
+                                                       OnToggleFavorite="@ToggleFavorite" />
+                                        </MudItem>
+                                    }
+                                </MudGrid>
                             }
                             else
                             {
@@ -135,9 +123,13 @@ else
     ];
     
     private List<Recipe> relatedRecipes = [];
+    private List<int> favoriteRecipeIds = [];
     
     protected override async Task OnInitializedAsync()
     {
+        // Load favorites from localStorage
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
         loading = true;
         
         try 
@@ -199,6 +191,33 @@ else
             Logger.LogError(ex, "Error loading authors for book {BookId}", bookToLoad.Id);
             bookToLoad.Authors = [];
         }
+    }
+    
+    private void ViewRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipe.Id}");
+    }
+    
+    private void PrintRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
+    }
+    
+    private async Task ToggleFavorite(Recipe recipe)
+    {
+        await LocalStorage.ToggleFavoriteAsync(recipe.Id);
+        
+        // Refresh favorites list
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
+        StateHasChanged();
+        
+        // Show toast notification
+        var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
+        Snackbar.Add(
+            isFavorite ? $"'{recipe.Name}' ajouté aux favoris ❤️" : $"'{recipe.Name}' retiré des favoris",
+            isFavorite ? Severity.Success : Severity.Info
+        );
     }
     
     private async Task OpenEditDialog()

@@ -69,14 +69,15 @@
                     </MudChip>
                 }
             }
-            else if (Recipe.IsFromStore && Recipe.Store != null)
+            else if (Recipe.IsFromStore && (Store != null || Recipe.Store != null))
             {
+                var storeToDisplay = Store ?? Recipe.Store;
                 <MudChip T="string" 
                          Size="Size.Small" 
                          Icon="@Icons.Material.Filled.Storefront" 
                          Color="Color.Secondary"
                          Variant="Variant.Filled">
-                    @Recipe.Store.Name
+                    @storeToDisplay?.Name
                 </MudChip>
             }
             else

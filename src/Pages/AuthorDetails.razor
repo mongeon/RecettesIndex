@@ -4,6 +4,7 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Components
 @using Supabase.Postgrest
 @using SupabaseClient = Supabase.Client
 @inject AuthService AuthService
@@ -11,6 +12,8 @@
 @inject ILogger<AuthorDetails> Logger
 @inject NavigationManager NavigationManager
 @inject SupabaseClient SupabaseClient
+@inject LocalStorageService LocalStorage
+@inject ISnackbar Snackbar
 
 <PageTitle>Auteur - @(author?.FullName ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -100,53 +103,43 @@ else
                             }
                         </MudTabPanel>
                         <MudTabPanel Text="Recettes" Icon="@Icons.Material.Filled.Restaurant">
+                            <!-- Search Bar -->
                             @if (relatedRecipes != null && relatedRecipes.Count > 0)
                             {
-                                <MudTable Items="@filteredRecipes" Dense="true" Hover="true" Bordered="false" Striped="true" SortLabel="Sort By">
-                                    <ToolBarContent>
-                                        <MudText Typo="Typo.h6">Recettes par @author.Name @author.LastName</MudText>
-                                        <MudSpacer />
-                                        <MudTextField T="string" ValueChanged="@(s => FilterRecipes(s))" 
-                                                    Placeholder="Rechercher" Adornment="Adornment.Start" 
-                                                    AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" 
-                                                    Class="mt-0 ml-2" />
-                                    </ToolBarContent>
-                                    <HeaderContent>
-                                        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Name)">Nom</MudTableSortLabel></MudTh>
-                                        <MudTh>Livre</MudTh>
-                                        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Rating)">Évaluation</MudTableSortLabel></MudTh>
-                                        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.CreationDate)">Date de création</MudTableSortLabel></MudTh>
-                                        <MudTh>Page</MudTh>
-                                        <MudTh>Actions</MudTh>
-                                    </HeaderContent>
-                                    <RowTemplate>
-                                        <MudTd DataLabel="Nom">@context.Name</MudTd>
-                                        <MudTd DataLabel="Livre">
-                                            @if (context.Book != null)
-                                            {
-                                                <MudLink Href="@($"/books/{context.Book.Id}")">@context.Book.Name</MudLink>
-                                            }
-                                            else
-                                            {
-                                                <span>-</span>
-                                            }
-                                        </MudTd>
-                                        <MudTd DataLabel="Évaluation">
-                                            <PizzaRating ReadOnly="true" Value="@context.Rating" />
-                                        </MudTd>
-                                        <MudTd DataLabel="Date de création">@context.CreationDate.ToShortDateString()</MudTd>
-                                        <MudTd DataLabel="Page">@(context.BookPage.HasValue ? context.BookPage.Value.ToString() : "-")</MudTd>
-                                        <MudTd DataLabel="Actions">
-                                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
-                                                    Href="@($"/recipes/{context.Id}")">
-                                                Voir
-                                            </MudButton>
-                                        </MudTd>
-                                    </RowTemplate>
-                                    <PagerContent>
-                                        <MudTablePager />
-                                    </PagerContent>
-                                </MudTable>
+                                <MudPaper Elevation="0" Class="pa-4 mb-4">
+                                    <MudTextField T="string" 
+                                                ValueChanged="@(s => FilterRecipes(s))" 
+                                                Placeholder="Rechercher une recette..." 
+                                                Adornment="Adornment.Start" 
+                                                AdornmentIcon="@Icons.Material.Filled.Search" 
+                                                IconSize="Size.Medium"
+                                                FullWidth="true" />
+                                </MudPaper>
+                            }
+                            
+                            @if (filteredRecipes != null && filteredRecipes.Count > 0)
+                            {
+                                <MudGrid Spacing="3" Class="mt-2">
+                                    @foreach (var recipe in filteredRecipes)
+                                    {
+                                        var recipeBook = books.FirstOrDefault(b => b.Id == recipe.BookId);
+                                        <MudItem xs="12" sm="6" md="4" lg="3">
+                                            <RecipeCard Recipe="@recipe"
+                                                       Book="@recipeBook"
+                                                       IsAuthenticated="@AuthService.IsAuthenticated"
+                                                       IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
+                                                       OnView="@ViewRecipe"
+                                                       OnEdit="@(async (r) => await Task.CompletedTask)"
+                                                       OnDelete="@(async (r) => await Task.CompletedTask)"
+                                                       OnPrint="@PrintRecipe"
+                                                       OnToggleFavorite="@ToggleFavorite" />
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            }
+                            else if (relatedRecipes != null && relatedRecipes.Count > 0)
+                            {
+                                <MudAlert Severity="Severity.Info" Class="mt-3">Aucune recette ne correspond à votre recherche.</MudAlert>
                             }
                             else
                             {
@@ -176,10 +169,14 @@ else
     private List<Book> books = [];
     private List<Recipe> relatedRecipes = [];
     private List<Recipe> filteredRecipes = [];
+    private List<int> favoriteRecipeIds = [];
     private string searchString = "";
     
     protected override async Task OnInitializedAsync()
     {
+        // Load favorites from localStorage
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
         loading = true;
         
         try 
@@ -239,6 +236,33 @@ else
                 (r.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true)
             ).ToList();
         }
+    }
+    
+    private void ViewRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipe.Id}");
+    }
+    
+    private void PrintRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
+    }
+    
+    private async Task ToggleFavorite(Recipe recipe)
+    {
+        await LocalStorage.ToggleFavoriteAsync(recipe.Id);
+        
+        // Refresh favorites list
+        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        
+        StateHasChanged();
+        
+        // Show toast notification
+        var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
+        Snackbar.Add(
+            isFavorite ? $"'{recipe.Name}' ajouté aux favoris ❤️" : $"'{recipe.Name}' retiré des favoris",
+            isFavorite ? Severity.Success : Severity.Info
+        );
     }
     
     private async Task OpenEditDialog()
