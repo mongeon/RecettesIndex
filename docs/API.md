@@ -59,7 +59,6 @@ public class Recipe : BaseModel
 - `Rating`: **REQUIRED**, range 1-5 stars with enforced validation
 - `Notes`: Optional, unlimited text
 - `PageNumber`: Optional, must be positive when provided
-- `PageNumber`: Optional, positive integer
 - `Url`: Must be a valid URL format if provided
 
 ### Book Model
