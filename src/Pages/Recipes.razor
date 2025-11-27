@@ -95,7 +95,11 @@
     {
         <RecipeLoadingState IsCardView="@isCardView" SkeletonCount="8" />
     }
-    else if (currentRecipes.Count == 0)
+    else if (errorMessage != null)
+    {
+        <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+    }
+    else if (isCardView && currentRecipes.Count == 0)
     {
         <!-- Empty State -->
         <EmptyState Icon="@Icons.Material.Filled.RestaurantMenu"
@@ -207,6 +211,7 @@
     private int pageSize = 12;
     private int totalPages = 0;
     private const string ViewModeKey = "recipeViewMode";
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -351,6 +356,7 @@
     private async Task LoadCardViewData()
     {
         isLoading = true;
+        errorMessage = null;
         try
         {
             int? rating = GetRatingFilter();
@@ -384,6 +390,7 @@
             }
             else
             {
+                errorMessage = result.ErrorMessage ?? "Failed to load recipes";
                 currentRecipes = [];
                 totalPages = 0;
             }
@@ -391,6 +398,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading card view data");
+            errorMessage = "An error occurred while loading recipes";
             currentRecipes = [];
             totalPages = 0;
         }
