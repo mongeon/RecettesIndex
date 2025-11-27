@@ -42,7 +42,7 @@ graph TB
         H[GitHub Actions CI/CD]
         I[GitHub MCP Server]
         J[xUnit + bUnit Testing]
-        K[318 Unit Tests]
+        K[524 Unit Tests]
     end
     
     subgraph "Quality Assurance"
@@ -82,6 +82,16 @@ graph LR
     end
 ```
 
+### Service Layer Reuse
+
+To reduce duplication and standardize error handling and validation, the service layer uses shared helpers:
+
+- `CrudServiceBase<TModel, TService>`: centralizes common CRUD patterns (get by id, create, update, delete) with logging
+- `ValidationGuards`: reusable validation helpers for null/empty/positive/range checks
+- `CacheServiceExtensions`: utilities for cached list retrieval (`GetOrEmptyAsync`) and multi-key invalidation (`RemoveMany`)
+
+These helpers are used by `AuthorService`, `BookService`, and `StoreService` while preserving domain-specific logic (e.g., author associations for books).
+
 ### Project Structure
 
 ```
@@ -114,6 +124,9 @@ RecettesIndex/
 │   │   ├── AuthService.cs
 │   │   ├── BookAuthorService.cs
 │   │   ├── CacheService.cs
+│   │   ├── CacheServiceExtensions.cs
+│   │   ├── CrudServiceBase.cs
+│   │   ├── ValidationGuards.cs
 │   │   ├── RecipeService.cs
 │   │   ├── SupabaseRecipesQuery.cs
 │   │   ├── SupabaseAuthWrapper.cs
@@ -129,7 +142,7 @@ RecettesIndex/
 │   │   └── icons/
 │   ├── 📄 Program.cs          # Application entry point
 │   └── 📄 _Imports.razor      # Global using statements
-├── 📁 tests/                  # Comprehensive unit test suite (318 tests)
+├── 📁 tests/                  # Comprehensive unit test suite (524 tests)
 │   ├── � Integration/        # Integration and relationship tests
 │   │   └── ModelIntegrationTests.cs
 │   ├── 📁 Models/             # Model validation tests
@@ -141,6 +154,9 @@ RecettesIndex/
 │   ├── 📁 Services/           # Service layer tests
 │   │   ├── 📁 Exceptions/     # Exception tests
 │   │   │   └── CustomExceptionTests.cs
+│   │   ├── CrudServiceBaseTests.cs
+│   │   ├── ValidationGuardsTests.cs
+│   │   ├── CacheServiceExtensionsTests.cs
 │   │   ├── RecipeServiceTests.cs
 │   │   ├── BookAuthorServiceTests.cs
 │   │   ├── CacheServiceTests.cs
@@ -340,7 +356,7 @@ dotnet clean && dotnet build
 # Run with specific port
 dotnet run --urls "http://localhost:5030"
 
-# Run tests (comprehensive unit test suite - 318 tests)
+# Run tests (comprehensive unit test suite - 524 tests)
 dotnet test
 
 # Run tests with detailed output
