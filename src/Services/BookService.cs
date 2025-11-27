@@ -4,9 +4,9 @@ using RecettesIndex.Services.Abstractions;
 
 namespace RecettesIndex.Services;
 
-/// <summary>
-/// Service for managing book operations with caching and error handling.
-/// </summary>
+// <summary>
+// Service for managing book operations with caching and error handling.
+// </summary>
 public class BookService(
     IBookAuthorService bookAuthorService,
     ICacheService cache,
@@ -20,30 +20,22 @@ public class BookService(
 
     public async Task<IReadOnlyList<Book>> GetAllAsync(CancellationToken ct = default)
     {
-        return await _cache.GetOrCreateAsync(
+        return await _cache.GetOrEmptyAsync(
             CacheConstants.BooksListKey,
             CacheConstants.DefaultTtl,
-            async ct =>
+            async token =>
             {
-                try
+                var response = await _supabaseClient.From<Book>().Get(cancellationToken: token);
+                var books = response.Models ?? [];
+                
+                foreach (var book in books)
                 {
-                    var response = await _supabaseClient.From<Book>().Get(cancellationToken: ct);
-                    var books = response.Models ?? [];
-                    
-                    // Load authors for each book
-                    foreach (var book in books)
-                    {
-                        await _bookAuthorService.LoadAuthorsForBookAsync(book);
-                    }
-                    
-                    return (IReadOnlyList<Book>)books;
+                    await _bookAuthorService.LoadAuthorsForBookAsync(book);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error loading all books");
-                    return Array.Empty<Book>();
-                }
+                
+                return (IReadOnlyList<Book>)books;
             },
+            _logger,
             ct);
     }
 
@@ -80,21 +72,14 @@ public class BookService(
     {
         try
         {
-            // Validate input
-            if (book == null)
-            {
-                return Result<Book>.Failure("Book cannot be null");
-            }
+            var err = ValidationGuards.RequireNotNull(book, "Book");
+            if (err != null) return Result<Book>.Failure(err);
             
-            if (string.IsNullOrWhiteSpace(book.Name))
-            {
-                return Result<Book>.Failure("Book name is required");
-            }
+            err = ValidationGuards.RequireNonEmpty(book.Name, "Book name");
+            if (err != null) return Result<Book>.Failure(err);
 
-            // Set creation date
             book.CreationDate = DateTime.UtcNow;
 
-            // Insert book
             var response = await _supabaseClient.From<Book>().Insert(book);
             var createdBook = response.Models?.FirstOrDefault();
 
@@ -103,11 +88,9 @@ public class BookService(
                 return Result<Book>.Failure("Failed to create book");
             }
 
-            // Create author associations
             var authorIdsList = authorIds.ToList();
             if (authorIdsList.Any())
             {
-                // Get author objects to populate the Authors list
                 var authorsResponse = await _supabaseClient.From<Author>()
                     .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIdsList)
                     .Get(cancellationToken: ct);
@@ -118,7 +101,6 @@ public class BookService(
                 createdBook.Authors = authors;
             }
 
-            // Invalidate cache
             _cache.Remove(CacheConstants.BooksListKey);
 
             _logger.LogInformation("Book created successfully: {BookId}", createdBook.Id);
@@ -140,23 +122,15 @@ public class BookService(
     {
         try
         {
-            // Validate input
-            if (book == null)
-            {
-                return Result<Book>.Failure("Book cannot be null");
-            }
+            var err = ValidationGuards.RequireNotNull(book, "Book");
+            if (err != null) return Result<Book>.Failure(err);
             
-            if (string.IsNullOrWhiteSpace(book.Name))
-            {
-                return Result<Book>.Failure("Book name is required");
-            }
+            err = ValidationGuards.RequireNonEmpty(book.Name, "Book name");
+            if (err != null) return Result<Book>.Failure(err);
             
-            if (book.Id <= 0)
-            {
-                return Result<Book>.Failure("Invalid book ID");
-            }
+            err = ValidationGuards.RequirePositive(book.Id, "book ID");
+            if (err != null) return Result<Book>.Failure(err);
 
-            // Update book
             var response = await _supabaseClient.From<Book>()
                 .Where(x => x.Id == book.Id)
                 .Update(book);
@@ -168,7 +142,6 @@ public class BookService(
                 return Result<Book>.Failure("Failed to update book");
             }
 
-            // Update author associations
             var authorIdsList = authorIds.ToList();
             var authorsResponse = await _supabaseClient.From<Author>()
                 .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIdsList)
@@ -178,7 +151,6 @@ public class BookService(
             await _bookAuthorService.UpdateBookAuthorAssociationsAsync(updatedBook.Id, authors);
             updatedBook.Authors = authors;
 
-            // Invalidate cache
             _cache.Remove(CacheConstants.BooksListKey);
 
             _logger.LogInformation("Book updated successfully: {BookId}", updatedBook.Id);
@@ -200,13 +172,9 @@ public class BookService(
     {
         try
         {
-            // Validate input
-            if (id <= 0)
-            {
-                return Result<bool>.Failure("Invalid book ID");
-            }
+            var err = ValidationGuards.RequirePositive(id, "book ID");
+            if (err != null) return Result<bool>.Failure(err);
 
-            // Check if book exists
             var existingBook = await _supabaseClient.From<Book>()
                 .Where(x => x.Id == id)
                 .Single();
@@ -216,12 +184,10 @@ public class BookService(
                 return Result<bool>.Failure($"Book with ID {id} not found");
             }
 
-            // Delete book (cascade will handle book-author associations)
             await _supabaseClient.From<Book>()
                 .Where(x => x.Id == id)
                 .Delete();
 
-            // Invalidate cache
             _cache.Remove(CacheConstants.BooksListKey);
 
             _logger.LogInformation("Book deleted successfully: {BookId}", id);

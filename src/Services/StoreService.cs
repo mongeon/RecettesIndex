@@ -17,25 +17,16 @@ public class StoreService(
     private readonly ILogger<StoreService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<IReadOnlyList<Store>> GetAllAsync(CancellationToken ct = default)
-    {
-        return await _cache.GetOrCreateAsync(
+        => await _cache.GetOrEmptyAsync(
             CacheConstants.StoresListKey,
             CacheConstants.DefaultTtl,
-            async ct =>
+            async token =>
             {
-                try
-                {
-                    var response = await _supabaseClient.From<Store>().Get(cancellationToken: ct);
-                    return (IReadOnlyList<Store>)(response.Models ?? []);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error loading all stores");
-                    return Array.Empty<Store>();
-                }
+                var response = await _supabaseClient.From<Store>().Get(cancellationToken: token);
+                return (IReadOnlyList<Store>)(response.Models ?? []);
             },
+            _logger,
             ct);
-    }
 
     public async Task<Result<Store>> GetByIdAsync(int id, CancellationToken ct = default)
     {
@@ -68,15 +59,11 @@ public class StoreService(
     {
         try
         {
-            if (store == null)
-            {
-                return Result<Store>.Failure("Store cannot be null");
-            }
+            var err = ValidationGuards.RequireNotNull(store, "Store");
+            if (err != null) return Result<Store>.Failure(err);
             
-            if (string.IsNullOrWhiteSpace(store.Name))
-            {
-                return Result<Store>.Failure("Store name is required");
-            }
+            err = ValidationGuards.RequireNonEmpty(store.Name, "Store name");
+            if (err != null) return Result<Store>.Failure(err);
 
             store.CreationDate = DateTime.UtcNow;
 
@@ -109,20 +96,14 @@ public class StoreService(
     {
         try
         {
-            if (store == null)
-            {
-                return Result<Store>.Failure("Store cannot be null");
-            }
+            var err = ValidationGuards.RequireNotNull(store, "Store");
+            if (err != null) return Result<Store>.Failure(err);
             
-            if (string.IsNullOrWhiteSpace(store.Name))
-            {
-                return Result<Store>.Failure("Store name is required");
-            }
+            err = ValidationGuards.RequireNonEmpty(store.Name, "Store name");
+            if (err != null) return Result<Store>.Failure(err);
             
-            if (store.Id <= 0)
-            {
-                return Result<Store>.Failure("Invalid store ID");
-            }
+            err = ValidationGuards.RequirePositive(store.Id, "store ID");
+            if (err != null) return Result<Store>.Failure(err);
 
             var response = await _supabaseClient.From<Store>()
                 .Where(x => x.Id == store.Id)
@@ -156,10 +137,8 @@ public class StoreService(
     {
         try
         {
-            if (id <= 0)
-            {
-                return Result<bool>.Failure("Invalid store ID");
-            }
+            var err = ValidationGuards.RequirePositive(id, "store ID");
+            if (err != null) return Result<bool>.Failure(err);
 
             var existingStore = await _supabaseClient.From<Store>()
                 .Where(x => x.Id == id)

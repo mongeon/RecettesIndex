@@ -17,25 +17,16 @@ public class AuthorService(
     private readonly ILogger<AuthorService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<IReadOnlyList<Author>> GetAllAsync(CancellationToken ct = default)
-    {
-        return await _cache.GetOrCreateAsync(
+        => await _cache.GetOrEmptyAsync(
             CacheConstants.AuthorsListKey,
             CacheConstants.DefaultTtl,
-            async ct =>
+            async token =>
             {
-                try
-                {
-                    var response = await _supabaseClient.From<Author>().Get(cancellationToken: ct);
-                    return (IReadOnlyList<Author>)(response.Models ?? []);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error loading all authors");
-                    return Array.Empty<Author>();
-                }
+                var response = await _supabaseClient.From<Author>().Get(cancellationToken: token);
+                return (IReadOnlyList<Author>)(response.Models ?? []);
             },
+            _logger,
             ct);
-    }
 
     public async Task<Result<Author>> GetByIdAsync(int id, CancellationToken ct = default)
     {
@@ -68,21 +59,14 @@ public class AuthorService(
     {
         try
         {
-            // Validate input
-            if (author == null)
-            {
-                return Result<Author>.Failure("Author cannot be null");
-            }
+            var err = ValidationGuards.RequireNotNull(author, "Author");
+            if (err != null) return Result<Author>.Failure(err);
 
-            if (string.IsNullOrWhiteSpace(author.Name))
-            {
-                return Result<Author>.Failure("Author first name is required");
-            }
+            err = ValidationGuards.RequireNonEmpty(author.Name, "Author first name");
+            if (err != null) return Result<Author>.Failure(err);
 
-            // Set creation date
             author.CreationDate = DateTime.UtcNow;
 
-            // Insert author
             var response = await _supabaseClient.From<Author>().Insert(author);
             var createdAuthor = response.Models?.FirstOrDefault();
 
@@ -91,7 +75,6 @@ public class AuthorService(
                 return Result<Author>.Failure("Failed to create author");
             }
 
-            // Invalidate cache
             _cache.Remove(CacheConstants.AuthorsListKey);
 
             _logger.LogInformation("Author created successfully: {AuthorId}", createdAuthor.Id);
@@ -113,23 +96,15 @@ public class AuthorService(
     {
         try
         {
-            // Validate input
-            if (author == null)
-            {
-                return Result<Author>.Failure("Author cannot be null");
-            }
+            var err = ValidationGuards.RequireNotNull(author, "Author");
+            if (err != null) return Result<Author>.Failure(err);
 
-            if (string.IsNullOrWhiteSpace(author.Name))
-            {
-                return Result<Author>.Failure("Author first name is required");
-            }
+            err = ValidationGuards.RequireNonEmpty(author.Name, "Author first name");
+            if (err != null) return Result<Author>.Failure(err);
 
-            if (author.Id <= 0)
-            {
-                return Result<Author>.Failure("Invalid author ID");
-            }
+            err = ValidationGuards.RequirePositive(author.Id, "author ID");
+            if (err != null) return Result<Author>.Failure(err);
 
-            // Update author
             var response = await _supabaseClient.From<Author>()
                 .Where(x => x.Id == author.Id)
                 .Update(author);
@@ -141,7 +116,6 @@ public class AuthorService(
                 return Result<Author>.Failure("Failed to update author");
             }
 
-            // Invalidate cache
             _cache.Remove(CacheConstants.AuthorsListKey);
 
             _logger.LogInformation("Author updated successfully: {AuthorId}", updatedAuthor.Id);
@@ -163,13 +137,9 @@ public class AuthorService(
     {
         try
         {
-            // Validate input
-            if (id <= 0)
-            {
-                return Result<bool>.Failure("Invalid author ID");
-            }
+            var err = ValidationGuards.RequirePositive(id, "author ID");
+            if (err != null) return Result<bool>.Failure(err);
 
-            // Check if author exists
             var existingAuthor = await _supabaseClient.From<Author>()
                 .Where(x => x.Id == id)
                 .Single();
@@ -179,12 +149,10 @@ public class AuthorService(
                 return Result<bool>.Failure($"Author with ID {id} not found");
             }
 
-            // Delete author
             await _supabaseClient.From<Author>()
                 .Where(x => x.Id == id)
                 .Delete();
 
-            // Invalidate cache
             _cache.Remove(CacheConstants.AuthorsListKey);
 
             _logger.LogInformation("Author deleted successfully: {AuthorId}", id);
