@@ -223,7 +223,7 @@ graph LR
     
     subgraph "Testing Framework"
         H[xUnit]
-        I[318 Unit Tests]
+        I[533 Unit Tests]
         J[bUnit Component Tests]
         K[Test Coverage]
     end
@@ -410,7 +410,7 @@ graph TD
 
 ### Test Structure Overview
 
-Our testing architecture ensures comprehensive coverage of business logic, validation rules, data relationships, and component behavior with **318 unit tests** organized across multiple test files and categories.
+Our testing architecture ensures comprehensive coverage of business logic, validation rules, data relationships, and component behavior with **533 unit tests** organized across multiple test files and categories (counted via `dotnet test --list-tests | Measure-Object`).
 
 ```mermaid
 graph TB
