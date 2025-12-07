@@ -24,43 +24,37 @@ public class Recipe : BaseModel
     public int Id { get; set; }
     
     [Column("name")]
-    [Required(ErrorMessage = "Recipe name is required")]
-    [MaxLength(255, ErrorMessage = "Recipe name cannot exceed 255 characters")]
+    [Required(ErrorMessage = "The Name field is required.")]
     public string Name { get; set; } = string.Empty;
-    
-    [Column("notes")]
-    public string? Notes { get; set; }
     
     [Column("rating")]
     [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
-    public int Rating { get; set; } = 0;
+    public int Rating { get; set; }
+    
+    [Column("created_at")]
+    public DateTime CreationDate { get; set; }
+    
+    [Column("notes")]
+    public string? Notes { get; set; }
     
     [Column("book_id")]
     public int? BookId { get; set; }
     
     [Column("page")]
-    [Range(1, int.MaxValue, ErrorMessage = "Page number must be positive")]
     public int? BookPage { get; set; }
+
+    [Column("store_id")]
+    public int? StoreId { get; set; }
     
     [Column("url")]
     [Url(ErrorMessage = "Please enter a valid URL")]
     public string? Url { get; set; }
 
-    [Column("created_at")]
-    public DateTime CreationDate { get; set; } = DateTime.UtcNow;
-    
-    // Navigation properties (not stored in DB)
-    public Book? Book { get; set; }
-    public Store? Store { get; set; }
-}
-```
-
-**Validation Rules:**
-- `Name`: Required, max 255 characters
-- `Rating`: **REQUIRED**, range 1-5 stars with enforced validation
-- `Notes`: Optional, unlimited text
-- `PageNumber`: Optional, must be positive when provided
+- `Name`: Required
+- `Rating`: Required, range 1-5 (default of 0 fails validation)
+- `BookPage`: Optional (validated in services to be positive when present)
 - `Url`: Must be a valid URL format if provided
+- `StoreId`/`BookId`: Optional foreign keys
 
 ### Book Model
 
@@ -72,23 +66,53 @@ public class Book : BaseModel
     public int Id { get; set; }
     
     [Column("title")]
-    public string Title { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
     
-    [Column("author_id")]
-    public int? AuthorId { get; set; }
-    
-    [Column("creation_date")]
-    public DateTime CreationDate { get; set; } = DateTime.UtcNow;
-    
-    // Navigation properties
-    public Author? Author { get; set; }
-    public List<Recipe> Recipes { get; set; } = new();
+    [Column("created_at")]
+    public DateTime CreationDate { get; set; }
+
+    [Reference(typeof(Author), includeInQuery: true, useInnerJoin: false)]
+    public List<Author> Authors { get; set; } = new();
 }
 ```
 
 **Validation Rules:**
-- `Title`: Required, max 255 characters
-- `AuthorId`: Optional foreign key to Authors table
+- `Title`: Required (stored as `title` column)
+- `Authors`: Many-to-many via `books_authors`
+
+### Store Model
+
+```csharp
+[Table("stores")]
+public class Store : BaseModel
+{
+    [PrimaryKey("id")]
+    public int Id { get; set; }
+
+    [Column("name")]
+    [Required(ErrorMessage = "The store name is required.")]
+    [MaxLength(255, ErrorMessage = "Store name cannot exceed 255 characters")]
+    public string Name { get; set; } = string.Empty;
+
+    [Column("address")]
+    [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
+    [MaxLength(50, ErrorMessage = "Phone number cannot exceed 50 characters")]
+    public string? Phone { get; set; }
+
+    [Column("website")]
+    [MaxLength(500, ErrorMessage = "Website URL cannot exceed 500 characters")]
+    [Url(ErrorMessage = "Please enter a valid URL")]
+    public string? Website { get; set; }
+
+    [Column("notes")]
+    public string? Notes { get; set; }
+
+    [Column("created_at")]
+
+**Validation Rules:**
+- `Address`: Optional, max 500 characters
+- `Phone`: Optional, max 50 characters
+- `Notes`: Optional
 
 ### Author Model
 
@@ -99,46 +123,76 @@ public class Author : BaseModel
     [PrimaryKey("id")]
     public int Id { get; set; }
     
-    [Column("name")]
+    [Column("first_name")]
     public string Name { get; set; } = string.Empty;
+
+    [Column("last_name")]
+    public string? LastName { get; set; }
     
-    [Column("creation_date")]
-    public DateTime CreationDate { get; set; } = DateTime.UtcNow;
-    
-    // Navigation properties
-    public List<Book> Books { get; set; } = new();
+    [Column("created_at")]
+    public DateTime CreationDate { get; set; }
+
+    [Reference(typeof(Book), useInnerJoin: false, includeInQuery: true)]
+    public List<Book> Books { get; set; } = [];
+
+    [JsonIgnore]
+    public string FullName => string.IsNullOrWhiteSpace(LastName)
+        ? Name
+        : $"{Name} {LastName}".Trim();
 }
 ```
 
 **Validation Rules:**
-- `Name`: Required, max 255 characters
+- `FirstName`: Required
+- `LastName`: Optional
 
 ### Entity Relationships
 
 ```mermaid
 erDiagram
-    Author ||--o{ Book : "writes"
+    Author ||--o{ BookAuthor : "has"
+    Book ||--o{ BookAuthor : "has"
+    BookAuthor }o--|| Author : "references"
+    BookAuthor }o--|| Book : "references"
     Book ||--o{ Recipe : "contains"
+    Store ||--o{ Recipe : "sells"
     
     Author {
         int id PK
-        string name
-        datetime creation_date
+        string first_name
+        string last_name
+        datetime created_at
     }
     
     Book {
         int id PK
         string title
+        datetime created_at
+    }
+
+    BookAuthor {
+        int book_id FK
         int author_id FK
-        datetime creation_date
+        datetime created_at
+    }
+    
+    Store {
+        int id PK
+        string name
+        string address
+        string phone
+        string website
+        string notes
+        datetime created_at
     }
     
     Recipe {
         int id PK
         string name
         text notes
-        int rating "1-5 stars validated"
+        int rating "1-5 stars with validation"
         int book_id FK
+        int store_id FK
         int page
         string url "optional website URL"
         datetime created_at
@@ -155,27 +209,39 @@ The application uses comprehensive validation through System.ComponentModel.Data
 
 | Property | Validation Rule | Error Message |
 |----------|----------------|---------------|
-| `Name` | Required, MaxLength(255) | "Recipe name is required" / "Recipe name cannot exceed 255 characters" |
+| `Name` | Required | "The Name field is required." |
 | `Rating` | Range(1, 5) | "Rating must be between 1 and 5" |
-| `PageNumber` | Range(1, int.MaxValue) | "Page number must be positive" |
+| `PageNumber` | Optional, validated positive when provided | "Book page number must be positive" |
 | `Url` | Url format | "Please enter a valid URL" |
+| `StoreId`/`BookId` | Optional foreign keys | N/A |
 
 #### Author Validation
 
 | Property | Validation Rule | Error Message |
 |----------|----------------|---------------|
-| `Name` | Required, MaxLength(255) | "Author name is required" / "Author name cannot exceed 255 characters" |
+| `FirstName` | Required | "The Name field is required." |
+| `LastName` | Optional | N/A |
 
 #### Book Validation
 
 | Property | Validation Rule | Error Message |
 |----------|----------------|---------------|
-| `Title` | Required, MaxLength(255) | "Book title is required" / "Book title cannot exceed 255 characters" |
-| `AuthorId` | Required | "Author is required" |
+| `Title` | Required | "Book title is required" |
+| `Authors` | Optional collection | N/A |
+
+#### Store Validation
+
+| Property | Validation Rule | Error Message |
+|----------|----------------|---------------|
+| `Name` | Required, MaxLength(255) | "The store name is required." / "Store name cannot exceed 255 characters" |
+| `Address` | MaxLength(500) | "Address cannot exceed 500 characters" |
+| `Phone` | MaxLength(50) | "Phone number cannot exceed 50 characters" |
+| `Website` | MaxLength(500), Url | "Please enter a valid URL" / "Website URL cannot exceed 500 characters" |
+| `Notes` | Optional | N/A |
 
 ### Validation Testing
 
-Our comprehensive test suite includes **524 tests** covering all validation scenarios, services, components, and integration testing:
+Our comprehensive test suite includes **533 tests** covering all validation scenarios, services, components, and integration testing (measured via `dotnet test --list-tests | Measure-Object`):
 
 ```csharp
 // Example: Rating validation test

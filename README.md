@@ -39,59 +39,60 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 3. **Configure Supabase**
    - Create a new project at [supabase.com](https://supabase.com)
    - Update `wwwroot/appsettings.json`:
-   ```json
-   {
-     "Supabase": {
-       "Url": "YOUR_SUPABASE_URL",
-       "Key": "YOUR_SUPABASE_ANON_KEY"
-     }
-   }
-   ```
+    ```json
+    {
+       "Supabase": {
+          "Url": "YOUR_SUPABASE_URL",
+          "Key": "YOUR_SUPABASE_ANON_KEY"
+       }
+    }
+    ```
 
 4. **Set up the database**
    Run this SQL in your Supabase SQL editor:
    ```sql
    -- Create tables
-   CREATE TABLE authors (
-       id SERIAL PRIMARY KEY,
-       name VARCHAR(255) NOT NULL,
-       last_name VARCHAR(255),
-       creation_date TIMESTAMP DEFAULT NOW()
-   );
+      CREATE TABLE authors (
+         id SERIAL PRIMARY KEY,
+         first_name VARCHAR(255) NOT NULL,
+         last_name VARCHAR(255),
+         created_at TIMESTAMP DEFAULT NOW()
+      );
 
-   CREATE TABLE books (
-       id SERIAL PRIMARY KEY,
-       name VARCHAR(255) NOT NULL,
-       creation_date TIMESTAMP DEFAULT NOW()
-   );
+      CREATE TABLE books (
+         id SERIAL PRIMARY KEY,
+         title VARCHAR(255) NOT NULL,
+         created_at TIMESTAMP DEFAULT NOW()
+      );
    
-   CREATE TABLE book_authors (
-       book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
-       author_id INTEGER REFERENCES authors(id) ON DELETE CASCADE,
-       PRIMARY KEY (book_id, author_id)
-   );
+      CREATE TABLE books_authors (
+         book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
+         author_id INTEGER REFERENCES authors(id) ON DELETE CASCADE,
+         created_at TIMESTAMP DEFAULT NOW(),
+         PRIMARY KEY (book_id, author_id)
+      );
    
-   CREATE TABLE stores (
-       id SERIAL PRIMARY KEY,
-       name VARCHAR(255) NOT NULL,
-       address TEXT,
-       phone VARCHAR(50),
-       website TEXT,
-       notes TEXT,
-       creation_date TIMESTAMP DEFAULT NOW()
-   );
+      CREATE TABLE stores (
+         id SERIAL PRIMARY KEY,
+         name VARCHAR(255) NOT NULL,
+         address TEXT,
+         phone VARCHAR(50),
+         website TEXT,
+         notes TEXT,
+         created_at TIMESTAMP DEFAULT NOW()
+      );
 
-   CREATE TABLE recettes (
-       id SERIAL PRIMARY KEY,
-       name VARCHAR(255) NOT NULL,
-       notes TEXT,
-       rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-       book_id INTEGER REFERENCES books(id),
-       book_page INTEGER,
-       store_id INTEGER REFERENCES stores(id),
-       url TEXT, -- Optional website URL for online recipes
-       creation_date TIMESTAMP DEFAULT NOW()
-   );
+      CREATE TABLE recettes (
+         id SERIAL PRIMARY KEY,
+         name VARCHAR(255) NOT NULL,
+         notes TEXT,
+         rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+         book_id INTEGER REFERENCES books(id),
+         page INTEGER,
+         store_id INTEGER REFERENCES stores(id),
+         url TEXT,
+         created_at TIMESTAMP DEFAULT NOW()
+      );
    ```
 
 5. **Run the application**
@@ -114,7 +115,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 
 ## 🧪 Testing
 
-This project maintains comprehensive unit test coverage with **318 tests** across all business logic:
+This project maintains comprehensive unit test coverage with **533 tests** across all business logic (counted via `dotnet test --list-tests | Measure-Object`):
 
 ```bash
 # Run all tests
