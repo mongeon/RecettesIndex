@@ -13,7 +13,7 @@
 7.  **Error Handling**: All service methods must return `Result<T>`.
 8.  **Namespaces**: Use **file-scoped** namespace declarations.
 9.  **Caching**: Use `ICacheService` for frequently accessed data (books, authors).
-10. **Validation**: **ALWAYS** ask the user to run the app and validate changes before committing.
+10. **Validation**: **ALWAYS** validate changes in local development before creating pull requests.
 
 ## 🏗️ System Context
 

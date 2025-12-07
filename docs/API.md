@@ -50,11 +50,13 @@ public class Recipe : BaseModel
     [Url(ErrorMessage = "Please enter a valid URL")]
     public string? Url { get; set; }
 
-- `Name`: Required
-- `Rating`: Required, range 1-5 (default of 0 fails validation)
-- `BookPage`: Optional (validated in services to be positive when present)
-- `Url`: Must be a valid URL format if provided
-- `StoreId`/`BookId`: Optional foreign keys
+**Validation Rules:**
+- `Name`: Required (cannot be empty)
+- `Rating`: Required, must be between 1 and 5 (inclusive)
+- `BookPage`: Optional, must be positive if provided
+- `Url`: Optional, must be a valid URL format if provided
+- `BookId`: Optional foreign key (reference to Book)
+- `StoreId`: Optional foreign key (reference to Store)
 
 ### Book Model
 
@@ -121,10 +123,6 @@ public class Store : BaseModel
 - `Phone`: Optional, max 50 chars
 - `Website`: Optional, max 500 chars, must be valid URL
 - `Notes`: Optional
-
-### Entity Relationships
-
-
 
 ### Author Model
 

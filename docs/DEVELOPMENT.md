@@ -26,7 +26,7 @@ Current development practices for Mes Recettes: Blazor WebAssembly + MudBlazor, 
 ## Development Workflow
 1) Create feature branch (`docs/cleanup`, `feature/…`, `fix/…`)
 2) Implement with MudBlazor components and async services
-3) Update/ add tests alongside code changes
+3) Update/add tests alongside code changes
 4) Run tests before PR
 5) Use GitHub MCP Server for PR creation/review
 
