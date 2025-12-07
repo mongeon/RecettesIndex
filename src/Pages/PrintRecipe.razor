@@ -9,6 +9,48 @@
 
 <PageTitle>Imprimer Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 
+<style>
+    /* Print Styles */
+    @@media print {
+        .no-print { display: none !important; }
+        .print-container { padding: 0; margin: 0; }
+        body { background-color: white; }
+        
+        /* Compact Mode Overrides */
+        .compact .print-header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .compact .print-section { margin-bottom: 1rem; page-break-inside: avoid; }
+        .compact .print-body { font-size: 0.9rem; }
+        .compact .print-notes { white-space: pre-wrap; font-size: 0.9rem; }
+        .compact .rating-color-bar { height: 2px; margin-top: 2px; }
+    }
+
+    /* Screen Styles for Preview */
+    .print-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    .print-content { background: white; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    
+    /* Compact Preview */
+    .compact.print-content { padding: 20px; }
+    .compact h1 { font-size: 1.5rem; }
+    .compact .print-section { margin-bottom: 1rem; }
+    
+    /* Standard Styles */
+    .print-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+    .print-header h1 { color: #333; margin: 0 0 10px 0; }
+    
+    .print-rating { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .star { font-size: 1.2rem; color: #ccc; }
+    .star.filled { color: #FFC107; }
+    .rating-color-bar { height: 4px; width: 100px; margin: 5px auto 0; border-radius: 2px; }
+
+    .print-section { margin-bottom: 25px; }
+    .print-section h2 { font-size: 1.1rem; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .print-notes { white-space: pre-wrap; line-height: 1.6; color: #333; }
+    
+    .metadata { margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-size: 0.8rem; color: #999; text-align: right; }
+    .print-footer { text-align: center; font-size: 0.8rem; color: #ccc; margin-top: 20px; }
+</style>
+
 <div class="print-container">
     @if (loading)
     {
@@ -49,6 +91,11 @@
                                     Color="Color.Primary"
                                     Disabled="@(store == null)" />
                     </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCheckBox @bind-Value="compactMode" 
+                                    Label="Mode Compact (Économique)" 
+                                    Color="Color.Secondary" />
+                    </MudItem>
                 </MudGrid>
                 <MudDivider Class="my-3" />
                 <MudStack Row Spacing="2">
@@ -68,7 +115,7 @@
         </div>
 
         <!-- Print Content -->
-        <div class="print-content">
+        <div class="print-content @(compactMode ? "compact" : "")">
             <div class="print-header">
                 <h1>@recipe.Name</h1>
                 
@@ -177,6 +224,7 @@
     private bool showNotes = true;
     private bool showBookInfo = true;
     private bool showStoreInfo = true;
+    private bool compactMode = false;
 
     protected override async Task OnInitializedAsync()
     {
