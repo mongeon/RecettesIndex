@@ -42,7 +42,7 @@ graph TB
         H[GitHub Actions CI/CD]
         I[GitHub MCP Server]
         J[xUnit + bUnit Testing]
-        K[524 Unit Tests]
+        K[533 Unit Tests]
     end
     
     subgraph "Quality Assurance"
@@ -118,7 +118,7 @@ RecettesIndex/
 │   │   ├── AuthorDetails.razor
 │   │   ├── PrintRecipe.razor
 │   │   └── *Dialog.razor      # Edit dialogs
-│   ├── 📁 Services/           # Business logic and data access
+│   ├── 📁 Services/           # Business logic and data access (query/service pattern + caching)
 │   │   ├── 📁 Abstractions/   # Service interfaces
 │   │   ├── 📁 Exceptions/     # Custom exceptions
 │   │   ├── AuthService.cs
@@ -142,7 +142,7 @@ RecettesIndex/
 │   │   └── icons/
 │   ├── 📄 Program.cs          # Application entry point
 │   └── 📄 _Imports.razor      # Global using statements
-├── 📁 tests/                  # Comprehensive unit test suite (524 tests)
+├── 📁 tests/                  # Comprehensive unit test suite (533 tests)
 │   ├── � Integration/        # Integration and relationship tests
 │   │   └── ModelIntegrationTests.cs
 │   ├── 📁 Models/             # Model validation tests
@@ -258,7 +258,7 @@ erDiagram
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Visual Studio Code](https://code.visualstudio.com/) with C# Dev Kit extension
-- [Git](https://git-scm.com/)
+# Run tests (comprehensive unit test suite - 533 tests)
 - A Supabase account (for backend services)
 
 ### Installation
@@ -327,6 +327,17 @@ CREATE TABLE books_authors (
     PRIMARY KEY (book_id, author_id)
 );
 
+-- Stores table
+CREATE TABLE stores (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address TEXT,
+    phone VARCHAR(50),
+    website TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Recipes table
 CREATE TABLE recettes (
     id SERIAL PRIMARY KEY,
@@ -335,6 +346,7 @@ CREATE TABLE recettes (
     rating INTEGER CHECK (rating >= 1 AND rating <= 5), -- Enforced validation
     book_id INTEGER REFERENCES books(id),
     page INTEGER,
+    store_id INTEGER REFERENCES stores(id),
     url TEXT, -- Optional website URL for online recipes
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -356,7 +368,7 @@ dotnet clean && dotnet build
 # Run with specific port
 dotnet run --urls "http://localhost:5030"
 
-# Run tests (comprehensive unit test suite - 524 tests)
+# Run tests (comprehensive unit test suite - 533 tests)
 dotnet test
 
 # Run tests with detailed output
@@ -382,6 +394,7 @@ flowchart TD
     D --> E{All Tests Pass?}
     E -->|No| F[Fix Tests/Code]
     F --> D
+-- Stores table
     E -->|Yes| G[Validate Changes]
     G --> H{git diff, git show}
     H --> I[Run Application]

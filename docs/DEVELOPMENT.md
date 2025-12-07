@@ -1,404 +1,47 @@
-# Development Guide
+# Development Guide (Updated December 2025)
 
-This guide covers development practices, coding standards, and workflows for the Mes Recettes project.
+Current development practices for Mes Recettes: Blazor WebAssembly + MudBlazor, Supabase backend, service/query pattern, and Result<T> for error handling.
 
-## 📋 Table of Contents
+## Development Environment
+- VS Code with C# Dev Kit and GitLens
+- .NET 9.0 SDK
+- Git + GitHub MCP Server for PRs/issues
+- Recommended setting: `dotnet.defaultSolution = "RecettesIndex.sln"`
 
-- [Development Environment](#development-environment)
-- [Coding Standards](#coding-standards)
-- [Project Patterns](#project-patterns)
-- [Development Workflow](#development-workflow)
-- [Testing Guidelines](#testing-guidelines)
-- [Troubleshooting](#troubleshooting)
+## Coding Standards
+- MudBlazor for all UI (no raw HTML)
+- Async/await everywhere; pass CancellationToken
+- Services return Result<T>; log failures with structured messages
+- C# 12 primary constructors + file-scoped namespaces
+- Nullable enabled; guard against nulls
+- Constants in dedicated classes (CacheConstants, PaginationConstants, etc.)
+- Use ICacheService for frequently accessed data
 
-## 🛠️ Development Environment
+## Project Patterns
+- Recipes page is modular: RecipeQuickFilters, RecipeAdvancedFilters, RecipeActiveFilters, RecipeLoadingState, RecipeGridView, RecipeTableView, EmptyState
+- Service/query pattern for data access; Supabase client wrapped in query classes
+- LocalStorage for view/favorite persistence
+- Feature branch workflow only; never commit to main directly
 
-### Required Tools
+## Development Workflow
+1) Create feature branch (`docs/cleanup`, `feature/…`, `fix/…`)
+2) Implement with MudBlazor components and async services
+3) Update/ add tests alongside code changes
+4) Run tests before PR
+5) Use GitHub MCP Server for PR creation/review
 
-- **Visual Studio Code** with extensions:
-  - C# Dev Kit
-  - GitHub Copilot (recommended)
-  - GitLens (recommended)
-- **.NET 9.0 SDK**
-- **Git** for version control
-- **GitHub MCP Server** for GitHub operations
+## Testing Guidelines
+- Frameworks: xUnit, bUnit (components), NSubstitute (mocks)
+- Follow Arrange/Act/Assert; use [Theory]/[InlineData] for matrix cases
+- Cover validation, error paths, and caching behaviors
+- Run `dotnet test` before pushing
 
-### Recommended VS Code Settings
-
-```json
-{
-  "dotnet.defaultSolution": "RecettesIndex.sln",
-  "csharp.format.enable": true,
-  "csharp.semanticHighlighting.enabled": true,
-  "files.exclude": {
-    "**/bin": true,
-    "**/obj": true
-  }
-}
-```
-
-## 📝 Coding Standards
-
-### C# Conventions
-
-```csharp
-// ✅ Good: Use nullable reference types
-public class Recipe
-{
-    public string Name { get; set; } = string.Empty;
-    public string? Notes { get; set; }
-}
-
-// ✅ Good: Async/await patterns
-public async Task<List<Recipe>> GetRecipesAsync()
-{
-    try
-    {
-        var response = await SupabaseClient.From<Recipe>().Get();
-        return response.Models ?? new List<Recipe>();
-    }
-    catch (Exception ex)
-    {
-        // Handle error appropriately
-        return new List<Recipe>();
-    }
-}
-
-// ✅ Good: Dependency injection
-[Inject] private SupabaseClient SupabaseClient { get; set; } = null!;
-```
-
-### Blazor Patterns
-
-```csharp
-// ✅ Good: Component parameters
-[Parameter] public string Title { get; set; } = string.Empty;
-[Parameter] public EventCallback<Recipe> OnRecipeSelected { get; set; }
-
-// ✅ Good: Lifecycle methods
-protected override async Task OnInitializedAsync()
-{
-    await LoadDataAsync();
-}
-
-// ✅ Good: Error handling in components
-private async Task LoadDataAsync()
-{
-    loading = true;
-    try
-    {
-        recipes = await RecipeService.GetRecipesAsync();
-    }
-    catch (Exception ex)
-    {
-        // Show error message to user
-        await ShowErrorDialog(ex.Message);
-    }
-    finally
-    {
-        loading = false;
-    }
-}
-```
-
-### Database Patterns
-
-```csharp
-// ✅ Good: Model definition with Supabase attributes
-[Table("recettes")]
-public class Recipe : BaseModel
-{
-    [PrimaryKey("id")]
-    public int Id { get; set; }
-    
-    [Column("name")]
-    public string Name { get; set; } = string.Empty;
-    
-    [Column("notes")]
-    public string? Notes { get; set; }
-    
-    [Column("rating")]
-    public int Rating { get; set; }
-}
-
-// ✅ Good: Data access with error handling
-public async Task<Recipe?> GetRecipeByIdAsync(int id)
-{
-    try
-    {
-        var response = await SupabaseClient
-            .From<Recipe>()
-            .Where(x => x.Id == id)
-            .Single();
-        return response;
-    }
-    catch (Exception)
-    {
-        return null;
-    }
-}
-```
-
-## 🏗️ Project Patterns
-
-### Component Structure
-
-```razor
-@page "/recipes"
-@using RecettesIndex.Models
-@using RecettesIndex.Services
-@inject SupabaseClient SupabaseClient
-@inject IDialogService DialogService
-
-<PageTitle>Mes Recettes - Recipes</PageTitle>
-
-<MudContainer MaxWidth="MaxWidth.Large">
-    <MudText Typo="Typo.h4" Class="mb-4">Recipes</MudText>
-    
-    @if (loading)
-    {
-        <MudProgressLinear Indeterminate="true" />
-    }
-    else if (recipes.Count == 0)
-    {
-        <MudAlert Severity="Severity.Info">No recipes found.</MudAlert>
-    }
-    else
-    {
-        <MudDataGrid Items="recipes" />
-    }
-</MudContainer>
-
-@code {
-    private List<Recipe> recipes = new();
-    private bool loading = true;
-    
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadRecipesAsync();
-    }
-    
-    private async Task LoadRecipesAsync()
-    {
-        // Implementation
-    }
-}
-```
-
-### Dialog Implementation
-
-```csharp
-public class AddRecipeDialog : ComponentBase
-{
-    [CascadingParameter] 
-    public MudDialogInstance MudDialog { get; set; } = null!;
-    
-    [Parameter] 
-    public Recipe Recipe { get; set; } = new();
-    
-    private async Task Submit()
-    {
-        if (IsValid())
-        {
-            MudDialog.Close(DialogResult.Ok(Recipe));
-        }
-    }
-    
-    private void Cancel() => MudDialog.Cancel();
-    
-    private bool IsValid()
-    {
-        return !string.IsNullOrWhiteSpace(Recipe.Name);
-    }
-}
-```
-
-### Service Implementation
-
-```csharp
-public class RecipeService
-{
-    private readonly SupabaseClient _supabaseClient;
-    private readonly ILogger<RecipeService> _logger;
-    
-    public RecipeService(SupabaseClient supabaseClient, ILogger<RecipeService> logger)
-    {
-        _supabaseClient = supabaseClient;
-        _logger = logger;
-    }
-    
-    public async Task<List<Recipe>> GetRecipesAsync()
-    {
-        try
-        {
-            _logger.LogInformation("Fetching recipes from database");
-            var response = await _supabaseClient.From<Recipe>().Get();
-            return response.Models ?? new List<Recipe>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching recipes");
-            throw;
-        }
-    }
-}
-```
-
-## 🔄 Development Workflow
-
-### 1. Branch Creation
-
-```bash
-# Always create a feature branch
-git checkout -b feature/add-recipe-search
-git checkout -b fix/rating-validation
-git checkout -b refactor/optimize-data-loading
-```
-
-### 2. Development Process
-
-```mermaid
-flowchart TD
-    A[Start Development] --> B[Create Feature Branch]
-    B --> C[Make Code Changes]
-    C --> D[Validate Changes]
-    D --> E{git diff review}
-    E --> F[Run Application]
-    F --> G{Test Functionality}
-    G --> H[Get User Approval]
-    H --> I[Update Documentation]
-    I --> J[Commit Changes]
-    J --> K[Push to Remote]
-    K --> L[Create Pull Request]
-```
-
-### 3. Change Validation Checklist
-
-Before committing any changes:
-
-- [ ] **Code Review**: Use `git diff` to review all changes
-- [ ] **Build Check**: Ensure `dotnet build` succeeds
-- [ ] **Application Test**: Run `dotnet run` and test functionality
-- [ ] **Responsive Test**: Check mobile, tablet, and desktop views
-- [ ] **Error Handling**: Verify error scenarios work correctly
-- [ ] **Documentation**: Update relevant docs and comments
-- [ ] **User Approval**: Get confirmation from stakeholders
-
-### 4. Commit Guidelines
-
-```bash
-# Good commit messages
-git commit -m "Add recipe search functionality
-
-- Implemented search by name and ingredients
-- Added filtering by rating and cookbook
-- Included debounced search input for performance
-- Updated UI with search results highlighting"
-
-git commit -m "Fix rating validation bug
-
-- Added client-side validation for 1-5 range
-- Improved error messages for invalid ratings
-- Added unit tests for validation logic"
-```
-
-### 5. Pull Request Process
-
-1. **Use GitHub MCP Server** for all GitHub operations
-2. **Create comprehensive PR description** with:
-   - Summary of changes
-   - Testing details
-   - Screenshots (if UI changes)
-   - Breaking changes (if any)
-3. **Request review** from appropriate team members
-4. **Address feedback** promptly
-5. **Merge using squash** to maintain clean history
-
-## 🧪 Testing Guidelines
-
-### Test Structure
-
-We maintain a comprehensive unit test suite with **318 tests** covering all business logic, validation rules, services, components, and integration scenarios. Tests are organized by functionality:
-
-```
-tests/
-├── RecipeModelTests.cs                    # Recipe model validation tests
-├── AuthorModelTests.cs                    # Author model and FullName property tests
-├── BookModelTests.cs                      # Book model functionality tests
-├── BookAuthorModelTests.cs                # Junction table relationship tests
-├── RecipeValidationTests.cs               # DataAnnotation validation tests
-├── RecipeRatingValidationTests.cs         # Rating constraint tests (1-5)
-├── ModelRelationshipTests.cs              # Cross-model relationship tests
-├── AuthServiceTests.cs                    # Authentication service tests
-├── Models/
-│   └── AdditionalModelValidationTests.cs  # Comprehensive model validation
-├── Services/
-│   ├── RecipeServiceTests.cs              # Recipe service layer tests
-│   ├── BookAuthorServiceTests.cs          # BookAuthor service tests
-│   ├── CacheServiceTests.cs               # Caching functionality tests
-│   ├── SupabaseRecipesQueryTests.cs       # Query service tests
-│   ├── ResultTests.cs                     # Result<T> pattern tests
-│   ├── ServiceConstantsTests.cs           # Service constants tests
-│   ├── SupabaseAuthWrapperTests.cs        # Auth wrapper tests
-│   └── Exceptions/
-│       └── CustomExceptionTests.cs        # Custom exception validation
-├── Pages/
-│   ├── EditRecipeDialogTests.cs           # Recipe edit component tests
-│   ├── EditBookDialogTests.cs             # Book edit component tests
-│   └── EditAuthorDialogTests.cs           # Author edit component tests
-└── Integration/
-    └── ModelIntegrationTests.cs           # Integration scenario tests
-```
-
-### Testing Framework
-
-- **xUnit**: Primary testing framework
-- **bUnit**: Blazor component testing library
-- **NSubstitute**: Mocking library for dependencies
-- **Theory Tests**: Data-driven testing with `[InlineData]`
-- **Arrange-Act-Assert**: Standard test pattern
-
-### Testing Principles
-
-1. **Comprehensive Coverage**: All business logic must have unit tests
-2. **Validation Testing**: Every validation rule must be tested with valid and invalid data
-3. **Arrange-Act-Assert Pattern**: All tests follow the AAA pattern
-4. **Theory-Driven Tests**: Use `[Theory]` and `[InlineData]` for data-driven test scenarios
-5. **Test Before Push**: Run all tests before creating pull requests
-6. **Mock Complex Dependencies**: Use NSubstitute for external services and complex dependencies
-
-### NSubstitute Mocking Patterns
-
-```csharp
-// ✅ Good: Basic substitution and verification
-[Fact]
-public async Task SignInAsync_WithValidCredentials_ReturnsTrue()
-{
-    // Arrange
-    var mockAuth = Substitute.For<IGotrueClient<User, Session>>();
-    var mockSession = Substitute.For<Session>();
-    var mockUser = Substitute.For<User>();
-    
-    mockSession.User.Returns(mockUser);
-    mockAuth.SignIn("test@example.com", "password").Returns(mockSession);
-    
-    var authService = new AuthService(mockSupabaseClient);
-
-    // Act
-    var result = await authService.SignInAsync("test@example.com", "password");
-
-    // Assert
-    Assert.True(result);
-    await mockAuth.Received(1).SignIn("test@example.com", "password");
-}
-
-// ✅ Good: Exception testing
-[Fact]
-public async Task SignInAsync_ThrowsException_ShouldPropagate()
-{
-    // Arrange
-    var mockAuth = Substitute.For<IGotrueClient<User, Session>>();
-    mockAuth.SignIn(Arg.Any<string>(), Arg.Any<string>()).Throws(new Exception("Network error"));
+## Troubleshooting
+- Verify CancellationToken flows for all async methods
+- Ensure Result<T> is used for service responses; return friendly messages
+- Check caching keys/invalidations when data changes
+- Confirm UI uses MudBlazor components and consistent spacing/typography
+- If tests fail, start with service mocks and component parameter binding
 
     // Act & Assert
     await Assert.ThrowsAsync<Exception>(() => authService.SignInAsync("test", "test"));
