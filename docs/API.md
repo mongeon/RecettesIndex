@@ -96,6 +96,9 @@ public class Store : BaseModel
 
     [Column("address")]
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
+    public string? Address { get; set; }
+
+    [Column("phone")]
     [MaxLength(50, ErrorMessage = "Phone number cannot exceed 50 characters")]
     public string? Phone { get; set; }
 
@@ -108,11 +111,20 @@ public class Store : BaseModel
     public string? Notes { get; set; }
 
     [Column("created_at")]
+    public DateTime CreationDate { get; set; }
+}
+```
 
 **Validation Rules:**
-- `Address`: Optional, max 500 characters
-- `Phone`: Optional, max 50 characters
+- `Name`: Required, max 255 chars
+- `Address`: Optional, max 500 chars
+- `Phone`: Optional, max 50 chars
+- `Website`: Optional, max 500 chars, must be valid URL
 - `Notes`: Optional
+
+### Entity Relationships
+
+
 
 ### Author Model
 

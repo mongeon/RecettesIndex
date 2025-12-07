@@ -208,6 +208,32 @@ public class RecipeService : IRecipeService
 }
 ```
 
+### Component Architecture Example: Recipes Page Refactoring
+
+The `Recipes.razor` page demonstrates our preferred component architecture, moving from a monolithic page to a composed UI.
+
+#### Before Refactoring
+- **Monolithic**: Single file with 800+ lines.
+- **Mixed Concerns**: UI logic, data loading, state management all mixed.
+- **Hard to Maintain**: Difficult to find specific logic or add features.
+
+#### After Refactoring
+- **Parent Component (`Recipes.razor`)**: Handles state management, data loading orchestration, and business logic.
+- **Child Components**:
+    - `RecipeQuickFilters`: Quick chips, filter counts.
+    - `RecipeAdvancedFilters`: Search input, dropdowns.
+    - `RecipeActiveFilters`: Active chips, remove buttons.
+    - `RecipeLoadingState`: Skeletons.
+    - `RecipeGridView` / `RecipeTableView`: Data display.
+    - `EmptyState`: Reused empty state.
+
+#### Data Flow
+1. **User Action** (e.g., clicks filter) -> **Child Component** emits event.
+2. **Parent Component** handles event -> Updates State -> Reloads Data if needed.
+3. **Parent Component** passes new data/state down to **Child Components** via parameters.
+
+This Unidirectional Data Flow ensures predictability and easier debugging.
+
 ## 🛠️ Technology Stack
 
 ### Frontend Technologies
