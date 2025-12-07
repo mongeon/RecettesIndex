@@ -36,6 +36,33 @@ Current development practices for Mes Recettes: Blazor WebAssembly + MudBlazor, 
 - Cover validation, error paths, and caching behaviors
 - Run `dotnet test` before pushing
 
+## UI/UX Patterns
+
+### Recipe List (Card/Table)
+- **View Modes**: Toggle between card and table views; preference stored in localStorage (`recipeViewMode`).
+- **Card View**: Uses `RecipeCard.razor` with rating-based gradients, pizza rating, book/store info, notes preview, creation date, and action buttons.
+- **Table View**: For dense data; same actions available.
+- **Skeletons**: `RecipeCardSkeleton.razor` for cards; rectangular/text skeletons for tables.
+- **Empty States**: `EmptyState.razor` with contextual messaging and call-to-action.
+
+### Home + Random Recipes
+- **Randomization**: Smart randomization (weighted by rating, recency, favorite bonus) with a pure random toggle.
+- **Favorites**: Quick toggle on cards, persisted in localStorage; snackbar feedback.
+- **Animations**: Fade-out, reload, fade-in to signal update.
+
+### Icons & Branding
+- **Colors**: Coral red (#FF6B6B) and turquoise (#4ECDC4).
+- **Icons**: MudBlazor Material icons.
+
+### Accessibility & Responsiveness
+- **MudBlazor**: Uses built-in ARIA and keyboard support.
+- **Responsive**: 1–4 columns depending on breakpoint; touch-friendly controls.
+
+### LocalStorage Features
+- **Recently Viewed**: Tracks last 5 viewed recipes.
+- **Favorites**: Persists favorite recipes across sessions.
+- **View Preferences**: Remembers card/table view choice.
+
 ## Troubleshooting
 - Verify CancellationToken flows for all async methods
 - Ensure Result<T> is used for service responses; return friendly messages
