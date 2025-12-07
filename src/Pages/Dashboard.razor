@@ -66,75 +66,53 @@
             </MudItem>
         </MudGrid>
 
-        <!-- Rating Distribution -->
+        <!-- Charts Section -->
         <MudGrid Class="mb-6">
+            <!-- Rating Distribution Chart -->
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
                     <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="mr-2" />
+                        <MudIcon Icon="@Icons.Material.Filled.PieChart" Class="mr-2" />
                         Distribution des Notes
                     </MudText>
-                    
-                    <!-- Color Legend -->
-                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
-                        <MudText Typo="Typo.caption" Style="font-weight: 500;">Légende des couleurs:</MudText>
-                        <MudStack Row Wrap="Wrap.Wrap" Spacing="1" Class="mt-1">
-                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.LocalPizza">5⭐</MudChip>
-                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.LocalPizza">4⭐</MudChip>
-                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.LocalPizza">3⭐</MudChip>
-                            <MudChip T="string" Size="Size.Small" Color="Color.Default" Icon="@Icons.Material.Filled.LocalPizza">2⭐</MudChip>
-                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.LocalPizza">1⭐</MudChip>
-                            <MudChip T="string" Size="Size.Small" Color="Color.Dark" Icon="@Icons.Material.Filled.HelpOutline">Non évalué</MudChip>
-                        </MudStack>
-                    </MudAlert>
-                    
-                    @foreach (var rating in statistics.RatingDistribution.OrderByDescending(r => r.Key))
+                    @if (ratingChartData.Any())
                     {
-                        var percentage = statistics.TotalRecipes > 0 
-                            ? (rating.Value * 100.0 / statistics.TotalRecipes) 
-                            : 0;
-                        var color = RatingColorService.GetRatingMudColor(rating.Key);
-                        
-                        <MudStack Row AlignItems="AlignItems.Center" Class="mb-3" Spacing="2">
-                            <MudText Typo="Typo.body1" Style="min-width: 80px;">
-                                @rating.Key ⭐
-                            </MudText>
-                            <MudProgressLinear Color="@color" 
-                                             Value="@percentage" 
-                                             Size="Size.Large" 
-                                             Class="flex-grow-1">
-                                <MudText Typo="Typo.body2" Color="Color.Dark">
-                                    @rating.Value recettes (@percentage.ToString("F1")%)
-                                </MudText>
-                            </MudProgressLinear>
-                        </MudStack>
+                        <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" 
+                                InputData="@ratingChartData" InputLabels="@ratingChartLabels"
+                                ChartOptions="@(new ChartOptions { ChartPalette = new[] { "#4CAF50", "#2196F3", "#FFC107", "#FF9800", "#F44336" } })">
+                        </MudChart>
                     }
-                    
-                    @if (statistics.UnratedCount > 0)
+                    else
                     {
-                        var unratedPercentage = statistics.TotalRecipes > 0 
-                            ? (statistics.UnratedCount * 100.0 / statistics.TotalRecipes) 
-                            : 0;
-                        <MudStack Row AlignItems="AlignItems.Center" Class="mb-3" Spacing="2">
-                            <MudText Typo="Typo.body1" Style="min-width: 80px;">
-                                Non évalué
-                            </MudText>
-                            <MudProgressLinear Color="Color.Dark" 
-                                             Value="@unratedPercentage" 
-                                             Size="Size.Large" 
-                                             Class="flex-grow-1">
-                                <MudText Typo="Typo.body2" Color="Color.Surface">
-                                    @statistics.UnratedCount recettes (@unratedPercentage.ToString("F1")%)
-                                </MudText>
-                            </MudProgressLinear>
-                        </MudStack>
+                        <MudAlert Severity="Severity.Info">Pas assez de données pour le graphique.</MudAlert>
                     }
                 </MudPaper>
             </MudItem>
 
-            <!-- Top Rated Recipes -->
+            <!-- Activity Trend Chart -->
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
+                    <MudText Typo="Typo.h5" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.ShowChart" Class="mr-2" />
+                        Activité (6 derniers mois)
+                    </MudText>
+                    @if (trendSeries.Any())
+                    {
+                        <MudChart ChartType="ChartType.Line" ChartSeries="@trendSeries" XAxisLabels="@trendXAxisLabels" Width="100%" Height="300px"
+                                ChartOptions="@(new ChartOptions { YAxisLines = true })"></MudChart>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info">Pas assez de données pour le graphique.</MudAlert>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Top Rated Recipes & Recent Activity -->
+        <MudGrid Class="mb-6">
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
                     <MudText Typo="Typo.h5" Class="mb-4">
                         <MudIcon Icon="@Icons.Material.Filled.Star" Class="mr-2" />
                         Meilleures Recettes
@@ -145,22 +123,14 @@
                         <MudList T="string" Dense="true">
                             @foreach (var recipe in statistics.TopRatedRecipes)
                             {
-                                <MudListItem Icon="@Icons.Material.Filled.Restaurant" 
-                                           IconColor="Color.Warning"
-                                           OnClick="() => NavigateToRecipe(recipe.Id)"
-                                           Style="cursor: pointer;">
-                                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                        <div>
-                                            <MudText Typo="Typo.body1">@recipe.Name</MudText>
-                                            @if (recipe.Book != null)
-                                            {
-                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                    @recipe.Book.Name
-                                                </MudText>
-                                            }
-                                        </div>
-                                        <PizzaRating Value="@recipe.Rating" />
-                                    </MudStack>
+                                <MudListItem OnClick="@(() => NavigateToRecipe(recipe.Id))">
+                                    <div class="d-flex justify-space-between align-center">
+                                        <MudText>@recipe.Name</MudText>
+                                        <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
+                                            <MudText>@recipe.Rating</MudText>
+                                        </MudStack>
+                                    </div>
                                 </MudListItem>
                             }
                         </MudList>
@@ -169,6 +139,64 @@
                     {
                         <MudAlert Severity="Severity.Info">Aucune recette évaluée pour le moment.</MudAlert>
                     }
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
+                    <MudText Typo="Typo.h5" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mr-2" />
+                        Activité Récente
+                    </MudText>
+                    
+                    <MudList T="string" Dense="true">
+                        <MudListItem>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">Dernière recette ajoutée</MudText>
+                            @if (statistics.MostRecentRecipe != null)
+                            {
+                                <MudLink OnClick="@(() => NavigateToRecipe(statistics.MostRecentRecipe.Id))">
+                                    @statistics.MostRecentRecipe.Name
+                                </MudLink>
+                                <MudText Typo="Typo.caption" Class="ml-2">
+                                    @statistics.MostRecentRecipe.CreationDate.ToString("d MMM yyyy")
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">Aucune recette</MudText>
+                            }
+                        </MudListItem>
+                        <MudDivider />
+                        <MudListItem>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Dernier livre ajouté</MudText>
+                            @if (statistics.MostRecentBook != null)
+                            {
+                                <MudLink OnClick="@(() => NavigateToBook(statistics.MostRecentBook.Id))">
+                                    @statistics.MostRecentBook.Name
+                                </MudLink>
+                                <MudText Typo="Typo.caption" Class="ml-2">
+                                    @statistics.MostRecentBook.CreationDate.ToString("d MMM yyyy")
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">Aucun livre</MudText>
+                            }
+                        </MudListItem>
+                        <MudDivider />
+                        <MudListItem>
+                            <div class="d-flex justify-space-between">
+                                <MudText>Recettes (7 jours)</MudText>
+                                <MudChip Size="Size.Small" Color="Color.Info">@statistics.RecipesAddedLast7Days</MudChip>
+                            </div>
+                        </MudListItem>
+                        <MudListItem>
+                            <div class="d-flex justify-space-between">
+                                <MudText>Recettes (30 jours)</MudText>
+                                <MudChip Size="Size.Small" Color="Color.Warning">@statistics.RecipesAddedLast30Days</MudChip>
+                            </div>
+                        </MudListItem>
+                    </MudList>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -185,23 +213,13 @@
                     @if (statistics.MostUsedBooks.Any())
                     {
                         <MudList T="string" Dense="true">
-                            @foreach (var bookStat in statistics.MostUsedBooks.Take(10))
+                            @foreach (var bookStat in statistics.MostUsedBooks.Take(5))
                             {
-                                <MudListItem Icon="@Icons.Material.Filled.MenuBook" 
-                                           IconColor="Color.Secondary"
-                                           OnClick="() => NavigateToBook(bookStat.BookId)"
-                                           Style="cursor: pointer;">
-                                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                        <div>
-                                            <MudText Typo="Typo.body1">@bookStat.BookName</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                @bookStat.RecipeCount recettes
-                                            </MudText>
-                                        </div>
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">
-                                            @bookStat.RecipeCount
-                                        </MudChip>
-                                    </MudStack>
+                                <MudListItem OnClick="@(() => NavigateToBook(bookStat.BookId))">
+                                    <div class="d-flex justify-space-between">
+                                        <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@bookStat.BookName</MudText>
+                                        <MudChip Size="Size.Small" Color="Color.Secondary">@bookStat.RecipeCount</MudChip>
+                                    </div>
                                 </MudListItem>
                             }
                         </MudList>
@@ -223,23 +241,13 @@
                     @if (statistics.MostUsedStores.Any())
                     {
                         <MudList T="string" Dense="true">
-                            @foreach (var storeStat in statistics.MostUsedStores.Take(10))
+                            @foreach (var storeStat in statistics.MostUsedStores.Take(5))
                             {
-                                <MudListItem Icon="@Icons.Material.Filled.Storefront" 
-                                           IconColor="Color.Info"
-                                           OnClick="() => NavigateToStore(storeStat.StoreId)"
-                                           Style="cursor: pointer;">
-                                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                        <div>
-                                            <MudText Typo="Typo.body1">@storeStat.StoreName</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                @storeStat.RecipeCount recettes
-                                            </MudText>
-                                        </div>
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Info">
-                                            @storeStat.RecipeCount
-                                        </MudChip>
-                                    </MudStack>
+                                <MudListItem OnClick="@(() => NavigateToStore(storeStat.StoreId))">
+                                    <div class="d-flex justify-space-between">
+                                        <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@storeStat.StoreName</MudText>
+                                        <MudChip Size="Size.Small" Color="Color.Info">@storeStat.RecipeCount</MudChip>
+                                    </div>
                                 </MudListItem>
                             }
                         </MudList>
@@ -261,23 +269,13 @@
                     @if (statistics.MostUsedAuthors.Any())
                     {
                         <MudList T="string" Dense="true">
-                            @foreach (var authorStat in statistics.MostUsedAuthors.Take(10))
+                            @foreach (var authorStat in statistics.MostUsedAuthors.Take(5))
                             {
-                                <MudListItem Icon="@Icons.Material.Filled.PersonOutline" 
-                                           IconColor="Color.Tertiary"
-                                           OnClick="() => NavigateToAuthor(authorStat.AuthorId)"
-                                           Style="cursor: pointer;">
-                                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                        <div>
-                                            <MudText Typo="Typo.body1">@authorStat.AuthorName</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                @authorStat.RecipeCount recettes
-                                            </MudText>
-                                        </div>
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Tertiary">
-                                            @authorStat.RecipeCount
-                                        </MudChip>
-                                    </MudStack>
+                                <MudListItem OnClick="@(() => NavigateToAuthor(authorStat.AuthorId))">
+                                    <div class="d-flex justify-space-between">
+                                        <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@authorStat.AuthorName</MudText>
+                                        <MudChip Size="Size.Small" Color="Color.Tertiary">@authorStat.RecipeCount</MudChip>
+                                    </div>
                                 </MudListItem>
                             }
                         </MudList>
@@ -289,72 +287,6 @@
                 </MudPaper>
             </MudItem>
         </MudGrid>
-
-        <!-- Recent Activity -->
-        <MudPaper Elevation="2" Class="pa-4 rounded-lg mb-6">
-            <MudText Typo="Typo.h5" Class="mb-4">
-                <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mr-2" />
-                Activité Récente
-            </MudText>
-            
-            <MudGrid>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5;">
-                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">Dernière recette ajoutée</MudText>
-                        @if (statistics.MostRecentRecipe != null)
-                        {
-                            <MudText Typo="Typo.body2" Class="mt-2">
-                                <MudLink Href="@($"/recipes/{statistics.MostRecentRecipe.Id}")">
-                                    @statistics.MostRecentRecipe.Name
-                                </MudLink>
-                            </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                @statistics.MostRecentRecipe.CreationDate.ToString("dd MMM yyyy")
-                            </MudText>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Aucune</MudText>
-                        }
-                    </MudPaper>
-                </MudItem>
-                
-                <MudItem xs="12" sm="6" md="3">
-                    <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5;">
-                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Dernier livre ajouté</MudText>
-                        @if (statistics.MostRecentBook != null)
-                        {
-                            <MudText Typo="Typo.body2" Class="mt-2">
-                                <MudLink Href="@($"/books/{statistics.MostRecentBook.Id}")">
-                                    @statistics.MostRecentBook.Name
-                                </MudLink>
-                            </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                @statistics.MostRecentBook.CreationDate.ToString("dd MMM yyyy")
-                            </MudText>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Aucun</MudText>
-                        }
-                    </MudPaper>
-                </MudItem>
-                
-                <MudItem xs="12" sm="6" md="3">
-                    <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5;">
-                        <MudText Typo="Typo.subtitle2" Color="Color.Info">Recettes ajoutées (7 jours)</MudText>
-                        <MudText Typo="Typo.h4" Class="mt-2">@statistics.RecipesAddedLast7Days</MudText>
-                    </MudPaper>
-                </MudItem>
-                
-                <MudItem xs="12" sm="6" md="3">
-                    <MudPaper Elevation="0" Class="pa-3" Style="background-color: #f5f5f5;">
-                        <MudText Typo="Typo.subtitle2" Color="Color.Warning">Recettes ajoutées (30 jours)</MudText>
-                        <MudText Typo="Typo.h4" Class="mt-2">@statistics.RecipesAddedLast30Days</MudText>
-                    </MudPaper>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
 
         <!-- Quick Actions -->
         <MudPaper Elevation="2" Class="pa-4 rounded-lg">
@@ -398,21 +330,23 @@
 @code {
     private bool loading = true;
     private DashboardStatistics statistics = new();
+    
+    // Chart Data
+    private double[] ratingChartData = Array.Empty<double>();
+    private string[] ratingChartLabels = Array.Empty<string>();
+    private List<ChartSeries> trendSeries = new();
+    private string[] trendXAxisLabels = Array.Empty<string>();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadStatistics();
     }
 
-    /// <summary>
-    /// Loads all dashboard statistics from the database.
-    /// </summary>
     private async Task LoadStatistics()
     {
         loading = true;
         try
         {
-            // Load base data
             var (recipes, books, authors, stores) = await LoadBaseDataAsync();
             
             if (recipes == null)
@@ -421,7 +355,6 @@
                 return;
             }
 
-            // Calculate all statistics
             CalculateBasicStatistics(recipes, books, authors, stores);
             CalculateRatingStatistics(recipes);
             CalculateTopRatedRecipes(recipes);
@@ -429,6 +362,9 @@
             CalculateStoreStatistics(recipes, stores);
             CalculateAuthorStatistics(recipes, books, authors);
             CalculateRecentActivity(recipes, books);
+            
+            // Prepare Chart Data
+            PrepareCharts(recipes);
         }
         catch (Exception ex)
         {
@@ -441,9 +377,35 @@
         }
     }
 
-    /// <summary>
-    /// Loads recipes, books, authors, and stores from the service.
-    /// </summary>
+    private void PrepareCharts(List<Recipe> recipes)
+    {
+        // 1. Rating Donut Chart
+        var ratings = recipes
+            .Where(r => r.Rating > 0)
+            .GroupBy(r => r.Rating)
+            .OrderByDescending(g => g.Key) // 5 stars first
+            .ToList();
+            
+        ratingChartData = ratings.Select(g => (double)g.Count()).ToArray();
+        ratingChartLabels = ratings.Select(g => $"{g.Key}★ ({g.Count()})").ToArray();
+
+        // 2. Trend Line Chart (Last 6 months)
+        var now = DateTime.UtcNow;
+        var last6Months = Enumerable.Range(0, 6)
+            .Select(i => now.AddMonths(-5 + i))
+            .ToList();
+        
+        var monthlyData = last6Months.Select(month => 
+            (double)recipes.Count(r => r.CreationDate.Month == month.Month && r.CreationDate.Year == month.Year)
+        ).ToArray();
+
+        trendSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Recettes Ajoutées", Data = monthlyData }
+        };
+        trendXAxisLabels = last6Months.Select(d => d.ToString("MMM")).ToArray();
+    }
+
     private async Task<(List<Recipe>? recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)> LoadBaseDataAsync()
     {
         var recipesResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
@@ -460,9 +422,6 @@
         return (recipesResult.Value.Items.ToList(), books, authors, stores);
     }
 
-    /// <summary>
-    /// Calculates basic statistics (total counts).
-    /// </summary>
     private void CalculateBasicStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)
     {
         statistics.TotalRecipes = recipes.Count;
@@ -471,9 +430,6 @@
         statistics.TotalStores = stores.Count;
     }
 
-    /// <summary>
-    /// Calculates rating-related statistics (average, distribution, unrated count).
-    /// </summary>
     private void CalculateRatingStatistics(List<Recipe> recipes)
     {
         var ratedRecipes = recipes.Where(r => r.Rating > 0).ToList();
@@ -489,22 +445,16 @@
         statistics.UnratedCount = recipes.Count(r => r.Rating == 0);
     }
 
-    /// <summary>
-    /// Calculates the top-rated recipes.
-    /// </summary>
     private void CalculateTopRatedRecipes(List<Recipe> recipes)
     {
         statistics.TopRatedRecipes = recipes
             .Where(r => r.Rating > 0)
             .OrderByDescending(r => r.Rating)
             .ThenByDescending(r => r.CreationDate)
-            .Take(10)
+            .Take(5)
             .ToList();
     }
 
-    /// <summary>
-    /// Calculates book usage statistics.
-    /// </summary>
     private void CalculateBookStatistics(List<Recipe> recipes, IReadOnlyList<Book> books)
     {
         statistics.MostUsedBooks = recipes
@@ -520,9 +470,6 @@
             .ToList();
     }
 
-    /// <summary>
-    /// Calculates store usage statistics.
-    /// </summary>
     private void CalculateStoreStatistics(List<Recipe> recipes, IReadOnlyList<Store> stores)
     {
         statistics.MostUsedStores = recipes
@@ -538,9 +485,6 @@
             .ToList();
     }
 
-    /// <summary>
-    /// Calculates author usage statistics (through books).
-    /// </summary>
     private void CalculateAuthorStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)
     {
         var authorRecipeCounts = new Dictionary<int, int>();
@@ -570,9 +514,6 @@
             .ToList();
     }
 
-    /// <summary>
-    /// Calculates recent activity metrics.
-    /// </summary>
     private void CalculateRecentActivity(List<Recipe> recipes, IReadOnlyList<Book> books)
     {
         statistics.MostRecentRecipe = recipes
