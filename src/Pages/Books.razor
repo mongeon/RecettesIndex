@@ -9,6 +9,7 @@
 @inject ILogger<Books> Logger
 @inject ISnackbar Snackbar
 @inject Client SupabaseClient
+@implements IDisposable
 
 <PageTitle>Livres</PageTitle>
 
@@ -82,6 +83,11 @@
     {
         searchTerm = e.Value?.ToString() ?? string.Empty;
         StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
     }
 
     protected override async Task OnInitializedAsync()
@@ -222,5 +228,15 @@
             Logger.LogError(ex, "Error deleting book {BookId}", bookToDelete.Id);
             Snackbar.Add("Une erreur s'est produite lors de la suppression du livre. Veuillez réessayer.", Severity.Error);
         }
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }

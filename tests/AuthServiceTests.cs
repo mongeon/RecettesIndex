@@ -111,6 +111,79 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task SignInAsync_WithValidCredentials_RaisesAuthStateChanged()
+    {
+        // Arrange
+        var email = "test@example.com";
+        var password = "password123";
+        var mockSession = new Session { User = new User { Email = email } };
+        var raised = false;
+        _mockAuthWrapper.SignIn(email, password).Returns(Task.FromResult<Session?>(mockSession));
+        _authService.AuthStateChanged += () => raised = true;
+
+        // Act
+        var result = await _authService.SignInAsync(email, password);
+
+        // Assert
+        Assert.True(result);
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public async Task SignOutAsync_RaisesAuthStateChanged()
+    {
+        // Arrange
+        var raised = false;
+        _authService.AuthStateChanged += () => raised = true;
+
+        // Act
+        await _authService.SignOutAsync();
+
+        // Assert
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void RefreshAuthState_RaisesAuthStateChanged()
+    {
+        // Arrange
+        var raised = false;
+        _authService.AuthStateChanged += () => raised = true;
+
+        // Act
+        _authService.RefreshAuthState();
+
+        // Assert
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public async Task InitializeAsync_CallsWrapperInitializeAndRaisesAuthStateChanged()
+    {
+        // Arrange
+        var raised = false;
+        _authService.AuthStateChanged += () => raised = true;
+
+        // Act
+        await _authService.InitializeAsync();
+
+        // Assert
+        await _mockAuthWrapper.Received(1).InitializeAsync();
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public async Task InitializeAsync_CalledTwice_InitializesOnlyOnce()
+    {
+        // Act
+        await _authService.InitializeAsync();
+        await _authService.InitializeAsync();
+
+        // Assert
+        await _mockAuthWrapper.Received(1).InitializeAsync();
+    }
+
+    [Fact]
     public void IsAuthenticated_WithCurrentUser_ReturnsTrue()
     {
         // Arrange

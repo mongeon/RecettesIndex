@@ -13,6 +13,7 @@
 @inject Client SupabaseClient
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
+@implements IDisposable
 
 <PageTitle>Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -236,6 +237,11 @@ else
         new BreadcrumbItem("Recettes", href: "/recipes"),
         new BreadcrumbItem("Détails", href: null, disabled: true)
     ];
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
     
     protected override async Task OnInitializedAsync()
     {
@@ -480,5 +486,15 @@ else
         }
 
         return string.Join(" • ", info);
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }
