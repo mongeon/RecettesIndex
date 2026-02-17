@@ -13,6 +13,7 @@
 @inject Client SupabaseClient
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
+@implements IDisposable
 
 <PageTitle>Magasin - @(store?.Name ?? "Chargement...")</PageTitle>
 <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
@@ -159,6 +160,11 @@ else
     
     private List<Recipe> relatedRecipes = [];
     private List<int> favoriteRecipeIds = [];
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
     
     protected override async Task OnInitializedAsync()
     {
@@ -253,5 +259,15 @@ else
         }
 
         return string.Join(" • ", info);
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }

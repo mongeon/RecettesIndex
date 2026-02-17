@@ -14,6 +14,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject LocalStorageService LocalStorage
+@implements IDisposable
 
 <PageTitle>Recettes</PageTitle>
 
@@ -212,6 +213,11 @@
     private int totalPages = 0;
     private const string ViewModeKey = "recipeViewMode";
     private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -973,6 +979,16 @@
         if (HasActiveFilters())
             return "Essayez de modifier vos filtres ou réinitialisez-les pour voir toutes les recettes.";
         return "Commencez par ajouter votre première recette pour construire votre collection personnelle.";
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
     
     #endregion

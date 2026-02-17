@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using MudBlazor.Services;
 using RecettesIndex;
 using RecettesIndex.Services;
@@ -14,12 +15,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddMudServices();
 
 // Securely load Supabase config from JSInterop (window.supabaseConfig)
-var options = new SupabaseOptions
-{
-    AutoRefreshToken = true,
-    AutoConnectRealtime = true,
-    // SessionHandler = new SupabaseSessionHandler() <-- This must be implemented by the developer
-};
 var supabaseConfig = new SupabaseConfigDto
 {
     Url = builder.Configuration["supabase:Url"] ?? string.Empty,
@@ -27,12 +22,20 @@ var supabaseConfig = new SupabaseConfigDto
 };
 
 builder.Services.AddSingleton(sp =>
-    new Client(
+{
+    var options = new SupabaseOptions
+    {
+        AutoRefreshToken = true,
+        AutoConnectRealtime = false,
+        SessionHandler = new BrowserSupabaseSessionHandler(sp.GetRequiredService<IJSRuntime>())
+    };
+
+    return new Client(
         supabaseConfig.Url,
         supabaseConfig.Key,
         options
-    )
-);
+    );
+});
 
 builder.Services.AddScoped<ISupabaseAuthWrapper, SupabaseAuthWrapper>();
 builder.Services.AddScoped<RecettesIndex.Services.AuthService>();

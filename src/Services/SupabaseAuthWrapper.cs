@@ -6,6 +6,11 @@ public class SupabaseAuthWrapper(Supabase.Client client) : ISupabaseAuthWrapper
 {
     private readonly Supabase.Client _client = client;
 
+    public async Task InitializeAsync()
+    {
+        await _client.InitializeAsync();
+    }
+
     public async Task<Session?> SignIn(string email, string password)
     {
         return await _client.Auth.SignIn(email, password);

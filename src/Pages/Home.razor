@@ -13,6 +13,7 @@
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @inject ILogger<Home> Logger
+@implements IDisposable
 
 <PageTitle>Mes Recettes - Votre Collection de Recettes</PageTitle>
 
@@ -539,6 +540,11 @@
     private int? randomFilterRating = null;
     private bool smartRandomization = true;
 
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         // Load favorites first
@@ -847,5 +853,15 @@
             await LoadRandomRecipes();
             await LoadCounts(); // Also refresh the counts
         }
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }

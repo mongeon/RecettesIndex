@@ -6,6 +6,7 @@
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject Client SupabaseClient
+@implements IDisposable
 
 <PageTitle>Auteurs</PageTitle>
 
@@ -69,6 +70,11 @@
         ? authors
         : authors.Where(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (a.LastName != null && a.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
 
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAuthors();
@@ -119,5 +125,15 @@
     {
         searchTerm = e.Value?.ToString() ?? string.Empty;
         StateHasChanged();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }

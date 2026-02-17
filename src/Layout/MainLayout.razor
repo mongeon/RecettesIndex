@@ -1,5 +1,6 @@
 ﻿@using RecettesIndex.Pages
 @inherits LayoutComponentBase
+@implements IDisposable
 @using RecettesIndex.Services
 @inject AuthService AuthService
 @inject MudBlazor.IDialogService DialogService
@@ -106,11 +107,18 @@
     {
         if (firstRender)
         {
+            await AuthService.InitializeAsync();
+
             // Load user's theme preference from local storage
             var storedTheme = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "recipes-theme-preference");
             _isDarkMode = storedTheme == "dark";
             StateHasChanged();
         }
+    }
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
     }
     
     private void DrawerToggle()
@@ -128,14 +136,18 @@
     private async Task ShowSignInDialog()
     {
         var options = new MudBlazor.DialogOptions { CloseButton = true, MaxWidth = MudBlazor.MaxWidth.Small };
-        await DialogService.ShowAsync<SignInDialog>("Connexion", options);
-        StateHasChanged();        
+        var dialog = await DialogService.ShowAsync<SignInDialog>("Connexion", options);
+        await dialog.Result;
     }
 
     private async Task SignOut()
     {
         await AuthService.SignOutAsync();
-        StateHasChanged();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private string GetUserInitials(string? email)
@@ -145,5 +157,10 @@
         var parts = name.Split('.', '-', '_');
         if (parts.Length == 1) return name.Substring(0, 1).ToUpper();
         return string.Concat(parts.Select(p => p.Length > 0 ? char.ToUpper(p[0]) : '?')).Substring(0, Math.Min(2, parts.Count()));
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }

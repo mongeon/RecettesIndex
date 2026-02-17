@@ -10,6 +10,7 @@
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
 @inject IStoreService StoreService
+@implements IDisposable
 
 <PageTitle>Magasins et Restaurants</PageTitle>
 
@@ -123,6 +124,11 @@
         new BreadcrumbItem("Accueil", href: "/"),
         new BreadcrumbItem("Magasins", href: "/stores", disabled: true)
     ];
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
 
     private void OnSearchChanged(string value)
     {
@@ -259,5 +265,15 @@
             Logger.LogError(ex, "Error deleting store {StoreId}", storeToDelete.Id);
             Snackbar.Add("Une erreur s'est produite lors de la suppression. Veuillez réessayer.", Severity.Error);
         }
+    }
+
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }
