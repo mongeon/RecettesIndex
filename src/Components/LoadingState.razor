@@ -1,0 +1,14 @@
+<MudContainer Class="@("d-flex flex-column align-center " + Class)">
+    <MudProgressCircular Color="@Color" Indeterminate="true" Size="@Size" />
+    @if (!string.IsNullOrWhiteSpace(Text))
+    {
+        <MudText Typo="Typo.h6" Class="mt-4 mud-text-secondary">@Text</MudText>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public Color Color { get; set; } = Color.Primary;
+    [Parameter] public Size Size { get; set; } = Size.Large;
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string Class { get; set; } = "py-8";
+}

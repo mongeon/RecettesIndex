@@ -4,13 +4,14 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
 @using RecettesIndex.Components
-@using Supabase
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ILogger<StoreDetails> Logger
 @inject NavigationManager NavigationManager
-@inject Client SupabaseClient
+@inject IStoreService StoreService
+@inject IRecipeService RecipeService
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @implements IDisposable
@@ -27,7 +28,12 @@
 }
 else if (store == null)
 {
-    <MudAlert Severity="Severity.Error" Class="my-4">Magasin introuvable.</MudAlert>
+    <EmptyState Icon="@Icons.Material.Filled.Storefront"
+                Title="Magasin introuvable"
+                Message="Ce magasin n'existe pas ou a été supprimé."
+                ActionText="Retour aux magasins"
+                ActionIcon="@Icons.Material.Filled.ArrowBack"
+                OnActionClick="@(() => NavigationManager.NavigateTo("/stores"))" />
 }
 else
 {
@@ -175,17 +181,17 @@ else
         
         try 
         {
-            var response = await SupabaseClient.From<Store>().Where(x => x.Id == Id).Get();
-            store = response.Models?.FirstOrDefault();
+            var storeResult = await StoreService.GetByIdAsync(Id);
+            store = storeResult.IsSuccess ? storeResult.Value : null;
             
             if (store != null)
             {
                 // Update the breadcrumbs with store name
                 breadcrumbs[2] = new BreadcrumbItem(store.Name, href: null, disabled: true);
                 
-                // Get related recipes
-                var recipesResponse = await SupabaseClient.From<Recipe>().Where(x => x.StoreId == store.Id).Get();
-                relatedRecipes = recipesResponse.Models ?? new List<Recipe>();
+                // Get related recipes via service layer
+                var recipesResult = await RecipeService.SearchAsync(term: null, rating: null, bookId: null, storeId: store.Id, authorId: null, page: 1, pageSize: 100);
+                relatedRecipes = recipesResult.IsSuccess ? recipesResult.Value.Items.ToList() : [];
             }
         }
         catch (Exception ex)

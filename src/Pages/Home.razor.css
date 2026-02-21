@@ -1,0 +1,71 @@
+/* Hero section — coral gradient */
+.mud-paper.hero-section {
+    background: linear-gradient(135deg, #FF6B6B 0%, #ff8e53 100%) !important;
+    color: white !important;
+    min-height: 160px;
+}
+
+@media (min-width: 768px) {
+    .mud-paper.hero-section {
+        min-height: 200px;
+    }
+}
+
+/* Horizontal recipe scroll area */
+.recipe-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--mud-palette-primary) transparent;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.recipe-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.recipe-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--mud-palette-primary);
+    border-radius: 6px;
+}
+
+.recipe-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Refresh fade-out state */
+.fading-out {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Fade-in for newly loaded content */
+.fade-in {
+    animation: homeFadeIn 0.5s ease-in-out;
+}
+
+@keyframes homeFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Refresh button spin */
+.refresh-rotate {
+    animation: homeRotate 0.5s ease-in-out;
+}
+
+@keyframes homeRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+    ::deep .hero-section {
+        min-height: 250px !important;
+    }
+}

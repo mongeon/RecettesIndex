@@ -9,11 +9,11 @@
 
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Modifier la Recette</MudText>
-        
+        <MudForm @ref="_form">
         <MudTextField @bind-Value="recipe.Name" 
                       Label="Nom" 
-                      Required="true" 
+                      Required="true"
+                      RequiredError="Le nom de la recette est requis."
                       Variant="Variant.Outlined" 
                       Class="mb-3" />
         
@@ -128,6 +128,7 @@
             </MudPaper>
         }
         
+        </MudForm>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
@@ -165,6 +166,7 @@
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
     
+    private MudForm _form = default!;
     private Recipe recipe = new();
     private string? errorMessage;
     private List<Book> books = [];
@@ -228,16 +230,15 @@
         errorMessage = null;
         isSaving = true;
         
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            isSaving = false;
+            return;
+        }
+
         try
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(recipe.Name))
-            {
-                errorMessage = "Le nom de la recette est requis.";
-                isSaving = false;
-                return;
-            }
-
             // Update source references based on selection
             if (sourceType == "book")
             {

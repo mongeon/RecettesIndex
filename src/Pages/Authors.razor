@@ -14,16 +14,17 @@
 
 <PageTitle>Auteurs</PageTitle>
 
-<MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Auteurs</MudText>
+<MudPaper Class="pa-4 rounded-lg">
+    <MudText Typo="Typo.h4" Class="mb-1">Auteurs</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
+    <SearchField Value="@searchTerm" ValueChanged="@OnSearchChanged" Placeholder="Rechercher des auteurs..." />
     @if (loading)
     {
-        <MudProgressCircular Indeterminate="true" />
+        <LoadingState Text="Chargement des auteurs..." />
     }
     else if (!string.IsNullOrWhiteSpace(errorMessage))
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">@errorMessage</MudAlert>
+        <ErrorAlert Message="@errorMessage" OnRetry="@LoadAuthors" />
     }
     else if (authors.Count == 0)
     {
@@ -38,7 +39,6 @@
     }
     else
     {
-        <MudTextField @bind-Value="searchTerm" Label="Rechercher des auteurs" Placeholder="Nom d'auteur..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" @oninput="OnSearchChanged" />
         <MudTable Items="filteredAuthors" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
             <PagerContent>
                 <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
@@ -157,9 +157,9 @@
 
         Snackbar.Add(result.ErrorMessage ?? "Suppression impossible pour le moment.", Severity.Warning);
     }
-    private void OnSearchChanged(ChangeEventArgs e)
+    private void OnSearchChanged(string value)
     {
-        searchTerm = e.Value?.ToString() ?? string.Empty;
+        searchTerm = value ?? string.Empty;
         StateHasChanged();
     }
 

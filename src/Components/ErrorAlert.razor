@@ -1,0 +1,24 @@
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="@($"mb-3 {Class}")">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <span>@Message</span>
+            @if (OnRetry.HasDelegate)
+            {
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Inherit"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="OnRetry">
+                    Réessayer
+                </MudButton>
+            }
+        </MudStack>
+    </MudAlert>
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+    [Parameter] public string Class { get; set; } = "";
+}

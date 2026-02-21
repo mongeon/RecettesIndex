@@ -21,8 +21,7 @@
 
 <!-- Hero Section -->
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-0">
-    <MudPaper Elevation="0" Class="hero-section rounded-lg mb-6 position-relative overflow-hidden">
-        <div class="hero-overlay"></div>
+    <MudPaper Elevation="0" Class="hero-section rounded-lg mb-6 overflow-hidden">
         <MudContainer Class="py-8 py-md-16">
             <MudGrid>
                 <MudItem xs="12" sm="10" md="8" lg="6">
@@ -412,130 +411,6 @@
     }
 </MudContainer>
 
-<style>
-    .hero-section {
-        background-image: url('https://images.unsplash.com/photo-1499028344343-cd173ffc68a9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80');
-        background-size: cover;
-        background-position: center;
-        color: white;
-        min-height: 300px;
-    }
-    
-    @@media (min-width: 768px) {
-        .hero-section {
-            min-height: 400px;
-        }
-    }
-    
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(255,107,107,0.9) 0%, rgba(255,107,107,0.7) 100%);
-    }
-    
-    .recipe-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: var(--mud-palette-primary) transparent;
-        transition: opacity 0.3s ease-in-out;
-    }
-    
-    .recipe-scroll::-webkit-scrollbar {
-        height: 6px;
-    }
-    
-    .recipe-scroll::-webkit-scrollbar-thumb {
-        background-color: var(--mud-palette-primary);
-        border-radius: 6px;
-    }
-    
-    .recipe-scroll::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    
-    /* Fade animation for refresh */
-    .fading-out {
-        opacity: 0.3;
-        pointer-events: none;
-    }
-    
-    /* Smooth transitions for cards */
-    .mud-paper {
-        transition: all 0.3s ease-in-out;
-    }
-    
-    .mud-paper:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
-    }
-    
-    /* Fade in animation for loaded content */
-    .fade-in {
-        animation: fadeIn 0.5s ease-in-out;
-    }
-    
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Button hover effects */
-    .mud-button {
-        transition: all 0.2s ease-in-out;
-    }
-    
-    .mud-button:hover {
-        transform: scale(1.02);
-    }
-    
-    /* Icon animations */
-    .mud-icon {
-        transition: transform 0.2s ease-in-out;
-    }
-    
-    .mud-icon:hover {
-        transform: scale(1.1);
-    }
-    
-    /* Refresh button rotation */
-    .refresh-rotate {
-        animation: rotate 0.5s ease-in-out;
-    }
-    
-    @@keyframes rotate {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
-        }
-    }
-    
-    /* Mobile optimizations */
-    @@media (max-width: 767px) {
-        .mud-button {
-            min-height: 48px !important;
-            font-size: 1rem !important;
-        }
-        
-        .mud-chip {
-            min-height: 40px !important;
-            font-size: 0.9rem !important;
-        }
-        
-        .hero-section {
-            min-height: 250px !important;
-        }
-    }
-</style>
 
 @code {
     private List<Recipe> newestRecipes = new();

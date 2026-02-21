@@ -3,9 +3,11 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
-@using Supabase
+@using RecettesIndex.Services.Abstractions
 @inject IJSRuntime JSRuntime
-@inject Client SupabaseClient
+@inject IRecipeService RecipeService
+@inject IBookService BookService
+@inject IStoreService StoreService
 
 <PageTitle>Imprimer Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
 
@@ -229,19 +231,19 @@
     protected override async Task OnInitializedAsync()
     {
         loading = true;
-        var response = await SupabaseClient.From<Recipe>().Where(x => x.Id == id).Get();
-        recipe = response.Models?.FirstOrDefault();
+        var recipeResult = await RecipeService.GetByIdAsync(id);
+        recipe = recipeResult.IsSuccess ? recipeResult.Value : null;
         
         if (recipe?.BookId != null)
         {
-            var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
-            book = bookResponse.Models?.FirstOrDefault();
+            var bookResult = await BookService.GetByIdAsync(recipe.BookId.Value);
+            book = bookResult.IsSuccess ? bookResult.Value : null;
         }
         
         if (recipe?.StoreId != null)
         {
-            var storeResponse = await SupabaseClient.From<Store>().Where(x => x.Id == recipe.StoreId).Get();
-            store = storeResponse.Models?.FirstOrDefault();
+            var storeResult = await StoreService.GetByIdAsync(recipe.StoreId.Value);
+            store = storeResult.IsSuccess ? storeResult.Value : null;
         }
         
         // Automatically disable options when data is not available

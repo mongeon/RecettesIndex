@@ -14,24 +14,28 @@
 
 <PageTitle>Magasins et Restaurants</PageTitle>
 
-<MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Magasins et Restaurants</MudText>
+<MudPaper Class="pa-4 rounded-lg">
+    <MudText Typo="Typo.h4" Class="mb-1">Magasins et Restaurants</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
-    <MudTextField Value="@searchTerm"
-                  ValueChanged="@((string value) => OnSearchChanged(value))"
-                  Placeholder="Rechercher des magasins ou restaurants..." 
-                  Adornment="Adornment.Start" 
-                  AdornmentIcon="@Icons.Material.Filled.Search" 
-                  Class="mb-2" 
-                  Immediate="true"
-                  DebounceInterval="300" />
+    <SearchField Value="@searchTerm" ValueChanged="@OnSearchChanged" Placeholder="Rechercher des magasins ou restaurants..." />
     @if (loading)
     {
-        <MudProgressCircular Indeterminate="true" />
+        <LoadingState Text="Chargement des magasins..." />
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <ErrorAlert Message="@errorMessage" OnRetry="@LoadStores" />
     }
     else if (stores.Count == 0)
     {
-        <MudText>Aucun magasin ou restaurant trouvé.</MudText>
+        <EmptyState Icon="@Icons.Material.Filled.Storefront"
+                    IconColor="Color.Secondary"
+                    Title="Aucun magasin ou restaurant trouvé"
+                    Message="Ajoutez un magasin ou restaurant pour associer vos recettes à une source."
+                    ShowAction="@AuthService.IsAuthenticated"
+                    ActionText="Ajouter"
+                    ActionIcon="@Icons.Material.Filled.Add"
+                    OnActionClick="ShowAddDialog" />
     }
     else
     {
@@ -117,7 +121,7 @@
     private List<Store> filteredStores = [];
     private string searchTerm = string.Empty;
     private bool loading = true;
-    private string? error;
+    private string? errorMessage;
     private Dictionary<int, int> recipeCountsByStore = new();
     private readonly List<BreadcrumbItem> breadcrumbs =
     [
@@ -146,6 +150,7 @@
     private async Task LoadStores()
     {
         loading = true;
+        errorMessage = null;
         try
         {
             stores = (await StoreService.GetAllAsync()).ToList();
@@ -154,6 +159,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading stores");
+            errorMessage = "Impossible de charger les magasins pour le moment. Veuillez réessayer.";
             stores = [];
             filteredStores = [];
         }

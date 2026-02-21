@@ -14,17 +14,17 @@
 
 <PageTitle>Livres</PageTitle>
 
-<MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5">Livres</MudText>
+<MudPaper Class="pa-4 rounded-lg">
+    <MudText Typo="Typo.h4" Class="mb-1">Livres</MudText>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
-    <MudTextField @bind-Value="searchTerm" Placeholder="Rechercher des livres..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" Immediate="true" @oninput="OnSearchChanged" />
+    <SearchField Value="@searchTerm" ValueChanged="@OnSearchChanged" Placeholder="Rechercher des livres..." />
     @if (loading)
     {
-        <MudProgressCircular Indeterminate="true" />
+        <LoadingState Text="Chargement des livres..." />
     }
     else if (!string.IsNullOrWhiteSpace(errorMessage))
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">@errorMessage</MudAlert>
+        <ErrorAlert Message="@errorMessage" OnRetry="@LoadBooks" />
     }
     else if (books.Count == 0)
     {
@@ -92,9 +92,9 @@
     private IEnumerable<Book> filteredBooks => string.IsNullOrWhiteSpace(searchTerm)
         ? books
         : books.Where(b => b.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (b.Authors != null && b.Authors.Any(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))));
-    private void OnSearchChanged(ChangeEventArgs e)
+    private void OnSearchChanged(string value)
     {
-        searchTerm = e.Value?.ToString() ?? string.Empty;
+        searchTerm = value ?? string.Empty;
         StateHasChanged();
     }
 
