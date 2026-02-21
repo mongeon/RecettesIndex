@@ -4,56 +4,68 @@
 @if (HasActiveFilters)
 {
     <MudPaper Elevation="0" Class="pa-2 mb-2" Style="background-color: var(--mud-palette-background-grey);">
-        <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
-            <MudText Typo="Typo.body2" Style="font-weight: 500;">Filtres actifs:</MudText>
-            
-            @if (!string.IsNullOrWhiteSpace(SearchTerm))
-            {
-                <MudChip T="string" Size="Size.Small" OnClose="OnClearSearch">
-                    Recherche: @SearchTerm
-                </MudChip>
-            }
-            
-            @if (RatingFilter != null && RatingFilter != "all")
-            {
-                <MudChip T="string" Size="Size.Small" OnClose="OnClearRating">
-                    Note: @RatingFilter 🍕
-                </MudChip>
-            }
-            
-            @if (BookFilter != null && BookFilter != "all")
-            {
-                var book = Books.FirstOrDefault(b => b.Id.ToString() == BookFilter);
-                if (book != null)
+        <div class="d-flex align-center justify-space-between flex-wrap gap-1">
+            <div class="filter-chip-scroll flex-grow-1">
+                @if (!string.IsNullOrWhiteSpace(SearchTerm))
                 {
-                    <MudChip T="string" Size="Size.Small" OnClose="OnClearBook">
-                        Livre: @book.Name
+                    <MudChip T="string" Size="Size.Small" OnClose="OnClearSearch" Class="active-filter-chip">
+                        Recherche: @SearchTerm
                     </MudChip>
                 }
-            }
-            
-            @if (StoreFilter != null && StoreFilter != "all")
-            {
-                var store = Stores.FirstOrDefault(s => s.Id.ToString() == StoreFilter);
-                if (store != null)
+
+                @if (RatingFilter != null && RatingFilter != "all")
                 {
-                    <MudChip T="string" Size="Size.Small" OnClose="OnClearStore">
-                        Magasin: @store.Name
+                    <MudChip T="string" Size="Size.Small" OnClose="OnClearRating" Class="active-filter-chip">
+                        Note: @RatingFilter 🍕
                     </MudChip>
                 }
-            }
-            
-            @if (AuthorFilter != null && AuthorFilter != "all")
-            {
-                var author = Authors.FirstOrDefault(a => a.Id.ToString() == AuthorFilter);
-                if (author != null)
+
+                @if (BookFilter != null && BookFilter != "all")
                 {
-                    <MudChip T="string" Size="Size.Small" OnClose="OnClearAuthor">
-                        Auteur: @author.FullName
-                    </MudChip>
+                    var book = Books.FirstOrDefault(b => b.Id.ToString() == BookFilter);
+                    if (book != null)
+                    {
+                        <MudChip T="string" Size="Size.Small" OnClose="OnClearBook" Class="active-filter-chip">
+                            Livre: @book.Name
+                        </MudChip>
+                    }
                 }
+
+                @if (StoreFilter != null && StoreFilter != "all")
+                {
+                    var store = Stores.FirstOrDefault(s => s.Id.ToString() == StoreFilter);
+                    if (store != null)
+                    {
+                        <MudChip T="string" Size="Size.Small" OnClose="OnClearStore" Class="active-filter-chip">
+                            Magasin: @store.Name
+                        </MudChip>
+                    }
+                }
+
+                @if (AuthorFilter != null && AuthorFilter != "all")
+                {
+                    var author = Authors.FirstOrDefault(a => a.Id.ToString() == AuthorFilter);
+                    if (author != null)
+                    {
+                        <MudChip T="string" Size="Size.Small" OnClose="OnClearAuthor" Class="active-filter-chip">
+                            Auteur: @author.FullName
+                        </MudChip>
+                    }
+                }
+            </div>
+
+            @if (OnClearAll.HasDelegate)
+            {
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.FilterAltOff"
+                           OnClick="OnClearAll"
+                           Style="flex-shrink: 0; white-space: nowrap;">
+                    Tout effacer
+                </MudButton>
             }
-        </MudStack>
+        </div>
     </MudPaper>
 }
 
@@ -64,14 +76,15 @@
     [Parameter, EditorRequired] public string? BookFilter { get; set; }
     [Parameter, EditorRequired] public string? StoreFilter { get; set; }
     [Parameter, EditorRequired] public string? AuthorFilter { get; set; }
-    
+
     [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
     [Parameter, EditorRequired] public List<Store> Stores { get; set; } = new();
     [Parameter, EditorRequired] public List<Author> Authors { get; set; } = new();
-    
+
     [Parameter, EditorRequired] public EventCallback OnClearSearch { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearRating { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearBook { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearStore { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearAuthor { get; set; }
+    [Parameter] public EventCallback OnClearAll { get; set; }
 }

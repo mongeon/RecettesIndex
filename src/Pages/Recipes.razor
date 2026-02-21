@@ -89,7 +89,8 @@
                         OnClearRating="ClearRating"
                         OnClearBook="ClearBook"
                         OnClearStore="ClearStore"
-                        OnClearAuthor="ClearAuthor" />
+                        OnClearAuthor="ClearAuthor"
+                        OnClearAll="ClearAllFilters" />
 
     <!-- Loading State -->
     @if (isLoading)
@@ -126,6 +127,7 @@
                            IsAuthenticated="@AuthService.IsAuthenticated"
                            CurrentPage="@currentPage"
                            TotalPages="@totalPages"
+                           TotalCount="@filteredTotal"
                            OnViewRecipe="ViewRecipe"
                            OnEditRecipe="ShowEditDialog"
                            OnDeleteRecipe="DeleteRecipe"
@@ -213,6 +215,7 @@
     private int currentPage = 1;
     private int pageSize = 12;
     private int totalPages = 0;
+    private int filteredTotal = 0;
     private const string ViewModeKey = "recipeViewMode";
     private string? errorMessage;
 
@@ -437,12 +440,14 @@
                 }
                 
                 currentRecipes = items;
+                filteredTotal = total;
                 totalPages = (int)Math.Ceiling(total / (double)pageSize);
             }
             else
             {
                 errorMessage = result.ErrorMessage ?? "Failed to load recipes";
                 currentRecipes = [];
+                filteredTotal = 0;
                 totalPages = 0;
             }
         }

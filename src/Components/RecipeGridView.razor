@@ -29,13 +29,23 @@
 </MudGrid>
 
 <!-- Pagination -->
-<div class="d-flex justify-center mt-4">
-    <MudPagination Count="@TotalPages" 
-                  SelectedChanged="OnPageChanged" 
+<div class="d-flex flex-column align-center mt-4">
+    <MudPagination Count="@TotalPages"
+                  SelectedChanged="OnPageChanged"
                   Selected="@CurrentPage"
                   Color="Color.Primary"
                   ShowFirstButton="true"
                   ShowLastButton="true" />
+    @if (TotalPages > 1 || TotalCount > 0)
+    {
+        <div class="pagination-info">
+            Page @CurrentPage sur @TotalPages
+            @if (TotalCount > 0)
+            {
+                <span> · @TotalCount recette@(TotalCount > 1 ? "s" : "")</span>
+            }
+        </div>
+    }
 </div>
 
 @code {
@@ -46,7 +56,8 @@
     [Parameter, EditorRequired] public bool IsAuthenticated { get; set; }
     [Parameter, EditorRequired] public int CurrentPage { get; set; }
     [Parameter, EditorRequired] public int TotalPages { get; set; }
-    
+    [Parameter] public int TotalCount { get; set; }
+
     [Parameter, EditorRequired] public EventCallback<Recipe> OnViewRecipe { get; set; }
     [Parameter, EditorRequired] public EventCallback<Recipe> OnEditRecipe { get; set; }
     [Parameter, EditorRequired] public EventCallback<Recipe> OnDeleteRecipe { get; set; }

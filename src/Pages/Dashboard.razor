@@ -3,6 +3,7 @@
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
+@using RecettesIndex.Components
 @using Microsoft.Extensions.Logging
 @inject IRecipeService RecipeService
 @inject NavigationManager NavigationManager
@@ -78,14 +79,18 @@
                     </MudText>
                     @if (ratingChartData.Any())
                     {
-                        <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" 
+                        <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px"
                                 InputData="@ratingChartData" InputLabels="@ratingChartLabels"
                                 ChartOptions="@(new ChartOptions { ChartPalette = new[] { "#4CAF50", "#2196F3", "#FFC107", "#FF9800", "#F44336" } })">
                         </MudChart>
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info">Pas assez de données pour le graphique.</MudAlert>
+                        <div class="d-flex flex-column align-center justify-center pa-6" style="min-height: 200px;">
+                            <MudIcon Icon="@Icons.Material.Filled.PieChart" Style="font-size: 48px; opacity: 0.25;" Class="mb-3" />
+                            <MudText Typo="Typo.body1" Align="Align.Center" Style="font-weight: 600;">Aucune note encore</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center" Class="mt-1">Évaluez vos recettes pour voir la distribution.</MudText>
+                        </div>
                     }
                 </MudPaper>
             </MudItem>
@@ -104,7 +109,12 @@
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info">Pas assez de données pour le graphique.</MudAlert>
+                        <div class="d-flex flex-column align-center justify-center pa-6" style="min-height: 200px;">
+                            <MudIcon Icon="@Icons.Material.Filled.ShowChart" Style="font-size: 48px; opacity: 0.25;" Class="mb-3" />
+                            <MudText Typo="Typo.body1" Align="Align.Center" Style="font-weight: 600;">Pas encore d'activité</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center" Class="mt-1">Ajoutez des recettes pour suivre votre activité.</MudText>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="mt-3" Href="/recipes">Voir les recettes</MudButton>
+                        </div>
                     }
                 </MudPaper>
             </MudItem>
@@ -138,7 +148,10 @@
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info">Aucune recette évaluée pour le moment.</MudAlert>
+                        <div class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Star" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucune recette évaluée. Ajoutez une note à vos recettes pour les voir ici.</MudText>
+                        </div>
                     }
                 </MudPaper>
             </MudItem>
@@ -227,7 +240,11 @@
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info">Aucun livre enregistré.</MudAlert>
+                        <div class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucun livre enregistré.</MudText>
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" Class="mt-1" Href="/books">Ajouter un livre</MudButton>
+                        </div>
                     }
                 </MudPaper>
             </MudItem>
@@ -255,7 +272,11 @@
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info">Aucun magasin enregistré.</MudAlert>
+                        <div class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Storefront" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucun magasin enregistré.</MudText>
+                            <MudButton Variant="Variant.Text" Color="Color.Info" Size="Size.Small" Class="mt-1" Href="/stores">Ajouter un magasin</MudButton>
+                        </div>
                     }
                 </MudPaper>
             </MudItem>
@@ -283,7 +304,11 @@
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info">Aucun auteur enregistré.</MudAlert>
+                        <div class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucun auteur enregistré.</MudText>
+                            <MudButton Variant="Variant.Text" Color="Color.Tertiary" Size="Size.Small" Class="mt-1" Href="/authors">Ajouter un auteur</MudButton>
+                        </div>
                     }
                 </MudPaper>
             </MudItem>
