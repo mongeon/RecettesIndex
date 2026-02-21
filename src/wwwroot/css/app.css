@@ -342,3 +342,78 @@
         transform: translateY(0);
     }
 }
+
+/* =============================================
+   DARK MODE SMOOTH TRANSITIONS
+   ============================================= */
+.mud-paper,
+.mud-card,
+.mud-appbar,
+.mud-drawer-content,
+.mud-main-content,
+.mud-nav-menu,
+.mud-list,
+.mud-list-item,
+.mud-input-control,
+.mud-chip,
+.mud-avatar {
+    transition: background-color 0.25s ease, color 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* =============================================
+   RECIPE CARD HOVER EFFECTS
+   ============================================= */
+.recipe-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.recipe-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+}
+
+/* =============================================
+   FILTER CHIP ENTRANCE ANIMATION
+   ============================================= */
+@keyframes chipSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.85) translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.active-filter-chip {
+    animation: chipSlideIn 0.18s ease-out both;
+}
+
+/* =============================================
+   MOBILE FILTER HORIZONTAL SCROLL
+   ============================================= */
+.filter-chip-scroll {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.filter-chip-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* =============================================
+   PAGINATION LABEL
+   ============================================= */
+.pagination-info {
+    font-size: 0.8rem;
+    color: var(--mud-palette-text-secondary);
+    text-align: center;
+    margin-top: 6px;
+}
