@@ -10,11 +10,11 @@
 
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">@(store.Id > 0 ? "Modifier" : "Ajouter") le Magasin ou Restaurant</MudText>
-        
+        <MudForm @ref="_form">
         <MudTextField @bind-Value="store.Name" 
                       Label="Nom *" 
-                      Required="true" 
+                      Required="true"
+                      RequiredError="Le nom du magasin ou restaurant est requis."
                       Variant="Variant.Outlined" 
                       Class="mb-3"
                       HelperText="Nom du magasin ou restaurant" />
@@ -46,6 +46,7 @@
                       Lines="3"
                       HelperText="Notes additionnelles (optionnel)" />
         
+        </MudForm>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
@@ -83,6 +84,7 @@
     [CascadingParameter] 
     public required IMudDialogInstance MudDialog { get; set; }
     
+    private MudForm _form = default!;
     private Store store = new();
     private string? errorMessage;
     private bool isSaving = false;
@@ -115,16 +117,15 @@
         errorMessage = null;
         isSaving = true;
         
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            isSaving = false;
+            return;
+        }
+
         try
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(store.Name))
-            {
-                errorMessage = "Le nom du magasin ou restaurant est requis.";
-                isSaving = false;
-                return;
-            }
-
             // Validate URL if provided
             if (!string.IsNullOrWhiteSpace(store.Website) &&
                 (!Uri.TryCreate(store.Website, UriKind.Absolute, out var uriResult) 

@@ -22,15 +22,15 @@
 
 /* Rating-based row colors with 5% opacity */
 .rating-5-row {
-    background-color: rgba(76, 175, 80, 0.08) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-success) 8%, transparent) !important;
 }
 
 .rating-4-row {
-    background-color: rgba(33, 150, 243, 0.08) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-info) 8%, transparent) !important;
 }
 
 .rating-3-row {
-    background-color: rgba(255, 152, 0, 0.08) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-warning) 8%, transparent) !important;
 }
 
 .rating-2-row {
@@ -38,7 +38,7 @@
 }
 
 .rating-1-row {
-    background-color: rgba(244, 67, 54, 0.08) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-error) 8%, transparent) !important;
 }
 
 .rating-0-row {
@@ -47,15 +47,15 @@
 
 /* Hover states for rating colors with increased opacity */
 .recipe-table tbody tr.rating-5-row:hover {
-    background-color: rgba(76, 175, 80, 0.15) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-success) 15%, transparent) !important;
 }
 
 .recipe-table tbody tr.rating-4-row:hover {
-    background-color: rgba(33, 150, 243, 0.15) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-info) 15%, transparent) !important;
 }
 
 .recipe-table tbody tr.rating-3-row:hover {
-    background-color: rgba(255, 152, 0, 0.15) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-warning) 15%, transparent) !important;
 }
 
 .recipe-table tbody tr.rating-2-row:hover {
@@ -63,7 +63,7 @@
 }
 
 .recipe-table tbody tr.rating-1-row:hover {
-    background-color: rgba(244, 67, 54, 0.15) !important;
+    background-color: color-mix(in srgb, var(--mud-palette-error) 15%, transparent) !important;
 }
 
 .recipe-table tbody tr.rating-0-row:hover {

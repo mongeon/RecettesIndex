@@ -4,13 +4,14 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
 @using RecettesIndex.Components
-@using Supabase
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ILogger<BookDetails> Logger
 @inject NavigationManager NavigationManager
-@inject Client SupabaseClient
+@inject IBookService BookService
+@inject IRecipeService RecipeService
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @implements IDisposable
@@ -27,7 +28,12 @@
 }
 else if (book == null)
 {
-    <MudAlert Severity="Severity.Error" Class="my-4">Livre introuvable.</MudAlert>
+    <EmptyState Icon="@Icons.Material.Filled.MenuBook"
+                Title="Livre introuvable"
+                Message="Ce livre n'existe pas ou a été supprimé."
+                ActionText="Retour aux livres"
+                ActionIcon="@Icons.Material.Filled.ArrowBack"
+                OnActionClick="@(() => NavigationManager.NavigateTo("/books"))" />
 }
 else
 {
@@ -140,20 +146,18 @@ else
         
         try 
         {
-            var response = await SupabaseClient.From<Book>().Where(x => x.Id == Id).Get();
-            book = response.Models?.FirstOrDefault();
+            var bookResult = await BookService.GetByIdAsync(Id);
+            book = bookResult.IsSuccess ? bookResult.Value : null;
             
             if (book != null)
             {
                 // Update the breadcrumbs with book name
                 breadcrumbs[2] = new BreadcrumbItem(book.Name, href: null, disabled: true);
                 
-                // Load authors for this book using the junction table
-                await LoadAuthorsForBook(book);
-                
-                // Get related recipes
-                var recipesResponse = await SupabaseClient.From<Recipe>().Where(x => x.BookId == book.Id).Get();
-                relatedRecipes = recipesResponse.Models ?? new List<Recipe>();
+                // Authors are populated by IBookService via Reference attribute
+                // Get related recipes via service layer
+                var recipesResult = await RecipeService.SearchAsync(term: null, rating: null, bookId: book.Id, storeId: null, authorId: null, page: 1, pageSize: 100);
+                relatedRecipes = recipesResult.IsSuccess ? recipesResult.Value.Items.ToList() : [];
             }
         }
         catch (Exception ex)
@@ -167,38 +171,6 @@ else
         }
     }
 
-    private async Task LoadAuthorsForBook(Book bookToLoad)
-    {
-        try
-        {
-            // Get book-author associations
-            var bookAuthorsResponse = await SupabaseClient.From<BookAuthor>()
-                .Where(x => x.BookId == bookToLoad.Id)
-                .Get();
-            
-            if (bookAuthorsResponse.Models?.Any() == true)
-            {
-                var authorIds = bookAuthorsResponse.Models.Select(ba => ba.AuthorId).ToList();
-                
-                // Get the actual author objects
-                var authorsResponse = await SupabaseClient.From<Author>()
-                    .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
-                    .Get();
-                
-                bookToLoad.Authors = authorsResponse.Models ?? [];
-            }
-            else
-            {
-                bookToLoad.Authors = [];
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading authors for book {BookId}", bookToLoad.Id);
-            bookToLoad.Authors = [];
-        }
-    }
-    
     private void ViewRecipe(Recipe recipe)
     {
         NavigationManager.NavigateTo($"/recipes/{recipe.Id}");

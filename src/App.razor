@@ -4,9 +4,18 @@
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
-        <PageTitle>Not found</PageTitle>
+        <PageTitle>Page introuvable</PageTitle>
         <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
+            <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Color="Color.Primary" Style="font-size: 5rem;" Class="mb-4" />
+                <MudText Typo="Typo.h4" Class="mb-2">Page introuvable</MudText>
+                <MudText Typo="Typo.body1" Class="mb-6 mud-text-secondary">
+                    La page que vous cherchez n'existe pas ou a été déplacée.
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" StartIcon="@Icons.Material.Filled.Home">
+                    Retour à l'accueil
+                </MudButton>
+            </MudContainer>
         </LayoutView>
     </NotFound>
 </Router>

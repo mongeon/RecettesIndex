@@ -4,16 +4,17 @@
 @using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
 @using Microsoft.Extensions.Logging
-@using Supabase
 @inject IRecipeService RecipeService
-@inject Client SupabaseClient
 @inject NavigationManager NavigationManager
 @inject ILogger<Dashboard> Logger
 
 <PageTitle>Tableau de Bord - Mes Recettes</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h3" Class="mb-6">📊 Tableau de Bord</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-6">
+        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Style="font-size: 2rem;" />
+        <MudText Typo="Typo.h4">Tableau de Bord</MudText>
+    </MudStack>
     
     @if (loading)
     {
@@ -187,13 +188,13 @@
                         <MudListItem>
                             <div class="d-flex justify-space-between">
                                 <MudText>Recettes (7 jours)</MudText>
-                                <MudChip Size="Size.Small" Color="Color.Info">@statistics.RecipesAddedLast7Days</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info">@statistics.RecipesAddedLast7Days</MudChip>
                             </div>
                         </MudListItem>
                         <MudListItem>
                             <div class="d-flex justify-space-between">
                                 <MudText>Recettes (30 jours)</MudText>
-                                <MudChip Size="Size.Small" Color="Color.Warning">@statistics.RecipesAddedLast30Days</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning">@statistics.RecipesAddedLast30Days</MudChip>
                             </div>
                         </MudListItem>
                     </MudList>
@@ -218,7 +219,7 @@
                                 <MudListItem OnClick="@(() => NavigateToBook(bookStat.BookId))">
                                     <div class="d-flex justify-space-between">
                                         <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@bookStat.BookName</MudText>
-                                        <MudChip Size="Size.Small" Color="Color.Secondary">@bookStat.RecipeCount</MudChip>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Secondary">@bookStat.RecipeCount</MudChip>
                                     </div>
                                 </MudListItem>
                             }
@@ -246,7 +247,7 @@
                                 <MudListItem OnClick="@(() => NavigateToStore(storeStat.StoreId))">
                                     <div class="d-flex justify-space-between">
                                         <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@storeStat.StoreName</MudText>
-                                        <MudChip Size="Size.Small" Color="Color.Info">@storeStat.RecipeCount</MudChip>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Info">@storeStat.RecipeCount</MudChip>
                                     </div>
                                 </MudListItem>
                             }
@@ -274,7 +275,7 @@
                                 <MudListItem OnClick="@(() => NavigateToAuthor(authorStat.AuthorId))">
                                     <div class="d-flex justify-space-between">
                                         <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@authorStat.AuthorName</MudText>
-                                        <MudChip Size="Size.Small" Color="Color.Tertiary">@authorStat.RecipeCount</MudChip>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Tertiary">@authorStat.RecipeCount</MudChip>
                                     </div>
                                 </MudListItem>
                             }
@@ -537,43 +538,4 @@
     private void NavigateToStore(int id) => NavigationManager.NavigateTo($"/stores/{id}");
     private void NavigateToAuthor(int id) => NavigationManager.NavigateTo($"/authors/{id}");
 
-    private class DashboardStatistics
-    {
-        public int TotalRecipes { get; set; }
-        public int TotalBooks { get; set; }
-        public int TotalAuthors { get; set; }
-        public int TotalStores { get; set; }
-        public double AverageRating { get; set; }
-        public Dictionary<int, int> RatingDistribution { get; set; } = new();
-        public int UnratedCount { get; set; }
-        public List<Recipe> TopRatedRecipes { get; set; } = new();
-        public List<BookStatistic> MostUsedBooks { get; set; } = new();
-        public List<StoreStatistic> MostUsedStores { get; set; } = new();
-        public List<AuthorStatistic> MostUsedAuthors { get; set; } = new();
-        public Recipe? MostRecentRecipe { get; set; }
-        public Book? MostRecentBook { get; set; }
-        public int RecipesAddedLast7Days { get; set; }
-        public int RecipesAddedLast30Days { get; set; }
-    }
-
-    private class BookStatistic
-    {
-        public int BookId { get; set; }
-        public string BookName { get; set; } = string.Empty;
-        public int RecipeCount { get; set; }
-    }
-
-    private class StoreStatistic
-    {
-        public int StoreId { get; set; }
-        public string StoreName { get; set; } = string.Empty;
-        public int RecipeCount { get; set; }
-    }
-
-    private class AuthorStatistic
-    {
-        public int AuthorId { get; set; }
-        public string AuthorName { get; set; } = string.Empty;
-        public int RecipeCount { get; set; }
-    }
 }

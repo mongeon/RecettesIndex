@@ -1,0 +1,21 @@
+.skeleton-card {
+    background: var(--mud-palette-surface);
+    border-radius: var(--mud-default-borderradius);
+    overflow: hidden;
+    box-shadow: var(--mud-elevation-2);
+}
+
+.skeleton-card-image {
+    border-radius: 0;
+}
+
+.skeleton-card-content {
+    padding: 16px;
+}
+
+.skeleton-card-actions {
+    padding: 8px 16px;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--mud-palette-divider);
+}

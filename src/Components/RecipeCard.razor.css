@@ -1,0 +1,66 @@
+/* Card hover elevation effect */
+.recipe-card {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recipe-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+.recipe-card:hover .recipe-visual {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Card image area — gradient per rating is set inline via GetCardImageStyle() */
+.recipe-card-image {
+    height: 180px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Animated food icon */
+.recipe-visual {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Rating badge overlay */
+.recipe-rating-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+
+/* Favorite heart button */
+.favorite-icon {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+}
+
+::deep .favorite-icon .mud-icon-button {
+    transition: transform 0.2s ease;
+}
+
+::deep .favorite-icon .mud-icon-button:hover {
+    transform: scale(1.15);
+}
+
+::deep .favorite-icon .mud-icon-button:active {
+    transform: scale(0.95);
+}
+
+/* Two-line clamped title */
+.recipe-card-title {
+    font-weight: 600;
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}

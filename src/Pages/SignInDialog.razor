@@ -8,16 +8,17 @@
 
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Connexion</MudText>
-        <MudTextField @bind-Value="email" Label="Courriel" Variant="Variant.Outlined" Required="true" Class="mb-2" />
-        <MudTextField @bind-Value="password" Label="Mot de passe" Variant="Variant.Outlined" InputType="InputType.Password" Required="true" Class="mb-2" @onkeypress="OnPasswordKeyPress" />
+        <MudForm @ref="_form">
+        <MudTextField @bind-Value="email" Label="Courriel" Variant="Variant.Outlined" Required="true" RequiredError="Le courriel est requis." Class="mb-2" />
+        <MudTextField @bind-Value="password" Label="Mot de passe" Variant="Variant.Outlined" InputType="InputType.Password" Required="true" RequiredError="Le mot de passe est requis." Class="mb-2" @onkeypress="OnPasswordKeyPress" />
+        </MudForm>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="SignIn" Color="Color.Primary" Variant="Variant.Filled" Disabled="isSigningIn">
+        <MudButton OnClick="SignIn" Color="Color.Primary" Variant="Variant.Filled" Disabled="isSigningIn" StartIcon="@Icons.Material.Filled.Login">
             @if (isSigningIn)
             {
                 <MudProgressCircular Color="Color.Secondary" Size="Size.Small" Indeterminate="true" />
@@ -35,6 +36,7 @@
 @code {
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
+    private MudForm _form = default!;
     private string email = string.Empty;
     private string password = string.Empty;
     private string? errorMessage;
@@ -43,6 +45,10 @@
     private async Task SignIn()
     {
         if (isSigningIn)
+            return;
+
+        await _form.Validate();
+        if (!_form.IsValid)
             return;
 
         isSigningIn = true;

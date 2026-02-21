@@ -9,8 +9,8 @@
 
 <MudDialog>
     <DialogContent>
-        <MudText Typo="Typo.h6">Ajouter un Livre</MudText>
-        <MudTextField @bind-Value="book.Name" Label="Nom" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+        <MudForm @ref="_form">
+        <MudTextField @bind-Value="book.Name" Label="Nom" Required="true" RequiredError="Le nom du livre est requis." Variant="Variant.Outlined" Class="mb-2" />
         <MudSelect T="Author" 
                    Label="Auteurs (optionnel)" 
                    @bind-SelectedValues="selectedAuthors" 
@@ -24,13 +24,14 @@
                 <MudSelectItem T="Author" Value="author">@author.Name @author.LastName</MudSelectItem>
             }
         </MudSelect>
+        </MudForm>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="AddBookAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@isSaving">
+        <MudButton OnClick="AddBookAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@isSaving" StartIcon="@Icons.Material.Filled.Add">
             @if (isSaving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" />
@@ -48,6 +49,7 @@
     [CascadingParameter] 
     public required IMudDialogInstance MudDialog { get; set; }
     
+    private MudForm _form = default!;
     private Book book = new();
     private string? errorMessage;
     private List<Author> authors = new();
@@ -65,16 +67,15 @@
         errorMessage = null;
         isSaving = true;
         
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            isSaving = false;
+            return;
+        }
+
         try
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(book.Name))
-            {
-                errorMessage = "Le nom du livre est requis.";
-                isSaving = false;
-                return;
-            }
-
             // Get author IDs
             var authorIds = selectedAuthors.Select(a => a.Id).ToList();
             

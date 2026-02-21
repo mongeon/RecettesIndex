@@ -4,14 +4,14 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
 @using RecettesIndex.Components
-@using Supabase.Postgrest
-@using SupabaseClient = Supabase.Client
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ILogger<AuthorDetails> Logger
 @inject NavigationManager NavigationManager
-@inject SupabaseClient SupabaseClient
+@inject IAuthorService AuthorService
+@inject IRecipeService RecipeService
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @implements IDisposable
@@ -28,7 +28,12 @@
 }
 else if (author == null)
 {
-    <MudAlert Severity="Severity.Error" Class="my-4">Auteur introuvable.</MudAlert>
+    <EmptyState Icon="@Icons.Material.Filled.PersonSearch"
+                Title="Auteur introuvable"
+                Message="Cet auteur n'existe pas ou a été supprimé."
+                ActionText="Retour aux auteurs"
+                ActionIcon="@Icons.Material.Filled.ArrowBack"
+                OnActionClick="@(() => NavigationManager.NavigateTo("/authors"))" />
 }
 else
 {
@@ -187,23 +192,17 @@ else
         
         try 
         {
-            var response = await SupabaseClient.From<Author>().Where(x => x.Id == Id).Get();
-            author = response.Models?.FirstOrDefault();
+            var authorResult = await AuthorService.GetByIdAsync(Id);
+            author = authorResult.IsSuccess ? authorResult.Value : null;
             
             if (author != null)
             {
                 // Update the breadcrumbs with author name
                 breadcrumbs[2] = new BreadcrumbItem($"{author.Name} {author.LastName}", href: null, disabled: true);
                 
-                // Get related books
-                var result = await SupabaseClient.From<Recipe>()
-                      .Select("*, book_id_info:books(authors!inner(id))")
-                      .Filter("book_id_info.authors.id", Constants.Operator.Equals, Id)
-                      .Get();
-                
-                relatedRecipes = result
-                     .Models
-                     .Where(x => x.Book != null && x.Book.Authors.Any(a => a.Id == Id)).ToList();
+                // Get related recipes via service layer
+                var recipesResult = await RecipeService.SearchAsync(term: null, rating: null, bookId: null, storeId: null, authorId: Id, page: 1, pageSize: 100);
+                relatedRecipes = recipesResult.IsSuccess ? recipesResult.Value.Items.ToList() : [];
                 
                 filteredRecipes = relatedRecipes;
                 
