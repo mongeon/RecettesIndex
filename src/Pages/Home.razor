@@ -12,6 +12,7 @@
 @inject IRecipeService RecipeService
 @inject IBookService BookService
 @inject IAuthorService AuthorService
+@inject IStoreService StoreService
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @inject ILogger<Home> Logger
@@ -67,33 +68,25 @@
         <MudGrid Class="mb-6">
             @if (loadingCounts)
             {
-                <MudItem xs="12" sm="6" md="6">
-                    <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                        <div class="d-flex justify-center mb-4">
-                            <MudSkeleton SkeletonType="SkeletonType.Circle" Width="48px" Height="48px" />
-                        </div>
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Height="32px" Class="mb-2" />
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Width="120px" Height="20px" />
-                        <MudSpacer />
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="36px" />
-                    </MudPaper>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="6">
-                    <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                        <div class="d-flex justify-center mb-4">
-                            <MudSkeleton SkeletonType="SkeletonType.Circle" Width="48px" Height="48px" />
-                        </div>
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Height="32px" Class="mb-2" />
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Width="120px" Height="20px" />
-                        <MudSpacer />
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="36px" />
-                    </MudPaper>
-                </MudItem>
+                @for (int i = 0; i < 4; i++)
+                {
+                    <MudItem xs="12" sm="6" md="6" lg="3">
+                        <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                            <div class="d-flex justify-center mb-4">
+                                <MudSkeleton SkeletonType="SkeletonType.Circle" Width="48px" Height="48px" />
+                            </div>
+                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="32px" Class="mb-2" />
+                            <MudSkeleton SkeletonType="SkeletonType.Text" Width="120px" Height="20px" />
+                            <MudSpacer />
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="36px" />
+                        </MudPaper>
+                    </MudItem>
+                }
             }
             else
             {
-                <MudItem xs="12" sm="6" md="6">
-                    <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                <MudItem xs="12" sm="6" md="6" lg="3">
+                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
                         <div class="d-flex justify-center mb-4">
                             <MudIcon Icon="@Icons.Material.Filled.Restaurant" Color="Color.Primary" Size="Size.Large" />
                         </div>
@@ -104,8 +97,8 @@
                     </MudPaper>
                 </MudItem>
                 
-                <MudItem xs="12" sm="6" md="6">
-                    <MudPaper Elevation="2" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                <MudItem xs="12" sm="6" md="6" lg="3">
+                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
                         <div class="d-flex justify-center mb-4">
                             <MudIcon Icon="@Icons.Material.Filled.AutoStories" Color="Color.Secondary" Size="Size.Large" />
                         </div>
@@ -115,6 +108,30 @@
                         <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">Livres de Recettes</MudText>
                         <MudSpacer />
                         <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Href="/books">Voir Tout</MudButton>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="6" lg="3">
+                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                        <div class="d-flex justify-center mb-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Tertiary" Size="Size.Large" />
+                        </div>
+                        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalAuthorsCount</MudText>
+                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Tertiary">Auteurs</MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Text" Color="Color.Tertiary" FullWidth="true" Href="/authors">Voir Tout</MudButton>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="6" lg="3">
+                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
+                        <div class="d-flex justify-center mb-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Storefront" Color="Color.Success" Size="Size.Large" />
+                        </div>
+                        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalStoresCount</MudText>
+                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Success">Magasins &amp; Restaurants</MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Text" Color="Color.Success" FullWidth="true" Href="/stores">Voir Tout</MudButton>
                     </MudPaper>
                 </MudItem>
             }
@@ -427,6 +444,7 @@
     private int totalRecipesCount = 0;
     private int totalBooksCount = 0;
     private int totalAuthorsCount = 0;
+    private int totalStoresCount = 0;
     
     // Random recipe filter settings
     private int? randomFilterRating = null;
@@ -442,10 +460,12 @@
         // Load favorites first
         favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
         
-        await LoadNewestRecipes();
-        await LoadRandomRecipes();
-        await LoadBooks();
-        await LoadCounts();
+        // Load all data sections in parallel
+        await Task.WhenAll(
+            LoadNewestRecipes(),
+            LoadRandomRecipes(),
+            LoadBooks(),
+            LoadCounts());
     }
 
     private async Task LoadNewestRecipes()
@@ -698,11 +718,14 @@
             var recipeCountResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 1);
             totalRecipesCount = recipeCountResult.IsSuccess ? recipeCountResult.Value.Total : 0;
 
-            var books = await BookService.GetAllAsync();
-            totalBooksCount = books.Count;
+            var booksTask = BookService.GetAllAsync();
+            var authorsTask = AuthorService.GetAllAsync();
+            var storesTask = StoreService.GetAllAsync();
+            await Task.WhenAll(booksTask, authorsTask, storesTask);
 
-            var authors = await AuthorService.GetAllAsync();
-            totalAuthorsCount = authors.Count;
+            totalBooksCount = (await booksTask).Count;
+            totalAuthorsCount = (await authorsTask).Count;
+            totalStoresCount = (await storesTask).Count;
 
             if (!recipeCountResult.IsSuccess)
             {

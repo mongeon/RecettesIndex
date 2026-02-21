@@ -3,55 +3,55 @@
 <MudStack Row Wrap="Wrap.Wrap" Spacing="2" Class="mb-3">
     <MudChip T="string" 
              Color="@(ShowAllRecipes ? Color.Primary : Color.Default)" 
-             OnClick="OnShowAll" 
-             Label="true">
+             Variant="@(ShowAllRecipes ? Variant.Filled : Variant.Outlined)"
+             OnClick="OnShowAll">
         Toutes (@TotalCount)
     </MudChip>
     
     <MudChip T="string" 
              Color="@(QuickFilterRating == 5 ? Color.Success : Color.Default)" 
-             OnClick="() => OnApplyQuickFilter.InvokeAsync(5)" 
-             Label="true" 
+             Variant="@(QuickFilterRating == 5 ? Variant.Filled : Variant.Outlined)"
+             OnClick="() => OnApplyQuickFilter.InvokeAsync(5)"
              Icon="@Icons.Material.Filled.LocalPizza">
-        5 Étoiles (@FiveStarCount)
+        5 Pizzas (@FiveStarCount)
     </MudChip>
     
     <MudChip T="string" 
              Color="@(QuickFilterRating == 4 ? Color.Info : Color.Default)" 
-             OnClick="() => OnApplyQuickFilter.InvokeAsync(4)" 
-             Label="true"
+             Variant="@(QuickFilterRating == 4 ? Variant.Filled : Variant.Outlined)"
+             OnClick="() => OnApplyQuickFilter.InvokeAsync(4)"
              Icon="@Icons.Material.Filled.LocalPizza">
-        4+ Étoiles (@FourPlusStarCount)
+        4+ Pizzas (@FourPlusStarCount)
     </MudChip>
     
     <MudChip T="string" 
              Color="@(QuickFilterUnrated ? Color.Dark : Color.Default)" 
-             OnClick="OnShowUnrated" 
-             Label="true"
+             Variant="@(QuickFilterUnrated ? Variant.Filled : Variant.Outlined)"
+             OnClick="OnShowUnrated"
              Icon="@Icons.Material.Filled.HelpOutline">
         Non évaluées (@UnratedCount)
     </MudChip>
     
     <MudChip T="string" 
              Color="@(ShowFavorites ? Color.Error : Color.Default)" 
-             OnClick="OnShowFavorites" 
-             Label="true"
+             Variant="@(ShowFavorites ? Variant.Filled : Variant.Outlined)"
+             OnClick="OnShowFavorites"
              Icon="@Icons.Material.Filled.Favorite">
         Mes Favoris (@FavoritesCount)
     </MudChip>
     
     <MudChip T="string" 
              Color="@(ShowRecentRecipes ? Color.Info : Color.Default)" 
-             OnClick="OnShowRecent" 
-             Label="true"
+             Variant="@(ShowRecentRecipes ? Variant.Filled : Variant.Outlined)"
+             OnClick="OnShowRecent"
              Icon="@Icons.Material.Filled.Schedule">
         Ajoutées récemment (30j)
     </MudChip>
     
     <MudChip T="string" 
              Color="Color.Secondary" 
-             OnClick="OnShowRandom" 
-             Label="true"
+             Variant="Variant.Outlined"
+             OnClick="OnShowRandom"
              Icon="@Icons.Material.Filled.Shuffle">
         Surprise !
     </MudChip>
@@ -60,8 +60,8 @@
     {
         <MudChip T="string" 
                  Color="Color.Error" 
-                 OnClick="OnClearAllFilters" 
-                 Label="true"
+                 Variant="Variant.Filled"
+                 OnClick="OnClearAllFilters"
                  Icon="@Icons.Material.Filled.Clear">
             Réinitialiser les filtres
         </MudChip>

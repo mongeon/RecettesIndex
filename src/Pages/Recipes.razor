@@ -148,7 +148,9 @@
     
     @if (AuthService.IsAuthenticated)
     {
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter une recette</MudButton>
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                OnClick="ShowAddDialog" Label="Ajouter"
+                Style="position: fixed; bottom: 24px; right: 24px; z-index: 100;" />
     }
 </MudPaper>
 

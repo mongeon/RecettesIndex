@@ -16,6 +16,7 @@
                       Variant="Variant.Outlined" 
                       Class="mb-3" />
         
+        <MudText Typo="Typo.body2" Style="font-weight: 600;" Class="mt-2 mb-1">Évaluation (1-5 pizzas)</MudText>
         <PizzaRating @bind-Value="recipe.Rating" ReadOnly="false" />
         
         <MudTextField @bind-Value="recipe.Notes" 
@@ -134,6 +135,12 @@
         }
     </DialogContent>
     <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Color="Color.Secondary" 
+                   Variant="Variant.Text" 
+                   Disabled="@isSaving">
+            Annuler
+        </MudButton>
         <MudButton OnClick="AddRecipeAsync" 
                    Color="Color.Primary" 
                    Variant="Variant.Filled" 
@@ -148,12 +155,6 @@
             {
                 <span>Ajouter</span>
             }
-        </MudButton>
-        <MudButton OnClick="Cancel" 
-                   Color="Color.Secondary" 
-                   Variant="Variant.Text" 
-                   Disabled="@isSaving">
-            Annuler
         </MudButton>
     </DialogActions>
 </MudDialog>

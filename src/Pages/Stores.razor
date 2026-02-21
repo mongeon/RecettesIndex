@@ -15,7 +15,16 @@
 <PageTitle>Magasins et Restaurants</PageTitle>
 
 <MudPaper Class="pa-4 rounded-lg">
-    <MudText Typo="Typo.h4" Class="mb-1">Magasins et Restaurants</MudText>
+    <MudStack Row AlignItems="AlignItems.Center" Class="mb-1">
+        <MudIcon Icon="@Icons.Material.Filled.Storefront" Color="Color.Success" Size="Size.Large" />
+        <div>
+            <MudText Typo="Typo.h4">Magasins et Restaurants</MudText>
+            @if (!loading && stores.Count > 0)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@stores.Count adresse(s) enregistrée(s)</MudText>
+            }
+        </div>
+    </MudStack>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
     <SearchField Value="@searchTerm" ValueChanged="@OnSearchChanged" Placeholder="Rechercher des magasins ou restaurants..." />
     @if (loading)
@@ -106,13 +115,9 @@
     }
     @if (AuthService.IsAuthenticated)
     {
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   Class="mt-2" 
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="ShowAddDialog">
-            Ajouter un magasin ou restaurant
-        </MudButton>
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                OnClick="ShowAddDialog" Label="Ajouter"
+                Style="position: fixed; bottom: 24px; right: 24px; z-index: 100;" />
     }
 </MudPaper>
 

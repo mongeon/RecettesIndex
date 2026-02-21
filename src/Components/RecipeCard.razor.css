@@ -15,7 +15,7 @@
 
 /* Card image area — gradient per rating is set inline via GetCardImageStyle() */
 .recipe-card-image {
-    height: 180px;
+    height: 140px;
     position: relative;
     display: flex;
     align-items: center;
