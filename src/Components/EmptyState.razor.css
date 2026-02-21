@@ -5,6 +5,12 @@
     justify-content: center;
 }
 
+@media (max-width: 599px) {
+    .empty-state-container {
+        min-height: 250px;
+    }
+}
+
 ::deep .empty-state {
     background: transparent !important;
     animation: fadeIn 0.5s ease-out;

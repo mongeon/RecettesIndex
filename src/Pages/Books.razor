@@ -15,7 +15,16 @@
 <PageTitle>Livres</PageTitle>
 
 <MudPaper Class="pa-4 rounded-lg">
-    <MudText Typo="Typo.h4" Class="mb-1">Livres</MudText>
+    <MudStack Row AlignItems="AlignItems.Center" Class="mb-1">
+        <MudIcon Icon="@Icons.Material.Filled.LibraryBooks" Color="Color.Secondary" Size="Size.Large" />
+        <div>
+            <MudText Typo="Typo.h4">Livres</MudText>
+            @if (!loading && books.Count > 0)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@books.Count livre(s) dans votre bibliothèque</MudText>
+            }
+        </div>
+    </MudStack>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
     <SearchField Value="@searchTerm" ValueChanged="@OnSearchChanged" Placeholder="Rechercher des livres..." />
     @if (loading)
@@ -75,7 +84,9 @@
     }
     @if (AuthService.IsAuthenticated)
     {
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter un livre</MudButton>
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                OnClick="ShowAddDialog" Label="Ajouter"
+                Style="position: fixed; bottom: 24px; right: 24px; z-index: 100;" />
     }
 </MudPaper>
 

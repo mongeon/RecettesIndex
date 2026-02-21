@@ -4,11 +4,16 @@
 @using RecettesIndex.Components
 
 <MudGrid Spacing="3" Class="mt-4">
+    @{
+        int cardIndex = 0;
+    }
     @foreach (var recipe in Recipes)
     {
         var book = Books.FirstOrDefault(b => b.Id == recipe.BookId);
         var store = Stores.FirstOrDefault(s => s.Id == recipe.StoreId);
-        <MudItem xs="12" sm="6" md="4" lg="3" Style="animation: fadeIn 0.3s ease-out;">
+        var delay = cardIndex * 45;
+        cardIndex++;
+        <MudItem xs="12" sm="6" md="4" lg="3" Style="@($"animation: fadeInUp 0.35s ease-out both; animation-delay: {delay}ms;")">
             <RecipeCard Recipe="@recipe"
                        Book="@book"
                        Store="@store"

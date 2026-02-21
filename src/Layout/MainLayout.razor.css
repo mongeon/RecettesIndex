@@ -1,1 +1,17 @@
 /* MainLayout scoped styles */
+
+/* Page transition — fades in new content on each route change */
+.page-enter {
+    animation: pageEnter 0.22s ease-out both;
+}
+
+@keyframes pageEnter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

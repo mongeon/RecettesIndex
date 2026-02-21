@@ -1,6 +1,10 @@
 @using RecettesIndex.Services
+@using RecettesIndex.Pages
 @inject LocalStorageService LocalStorage
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject AuthService AuthService
+@inject ISnackbar Snackbar
 @implements IDisposable
 
 <MudNavMenu>
@@ -74,29 +78,43 @@
     <MudSpacer />
     <MudDivider Class="mb-2" />
     
-    <div class="d-flex flex-column align-center px-4 mb-4">
-        <MudText Typo="Typo.caption" Class="mb-2" Align="Align.Center">Mes Recettes</MudText>
-        <MudText Typo="Typo.caption" Align="Align.Center" Style="opacity: 0.7;">Votre collection personnelle de recettes</MudText>
-    </div>
+    @if (AuthService.IsAuthenticated)
+    {
+        <div class="px-3 mb-3">
+            <MudButton FullWidth="true"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="ShowAddRecipeDialog"
+                       Style="justify-content: flex-start;">
+                Ajouter une recette
+            </MudButton>
+        </div>
+    }
 </MudNavMenu>
 
 @code {
+    private async Task ShowAddRecipeDialog()
+    {
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette", options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            Snackbar.Add("Recette ajoutée avec succès!", Severity.Success);
+        }
+    }
+
     private List<RecentRecipe> recentRecipes = new();
-    private System.Threading.Timer? _refreshTimer;
+
 
     protected override async Task OnInitializedAsync()
     {
         await LoadRecentRecipes();
         
-        // Set up timer to refresh recent recipes every 30 seconds
-        _refreshTimer = new System.Threading.Timer(async _ =>
-        {
-            await LoadRecentRecipes();
-            await InvokeAsync(StateHasChanged);
-        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
-        
-        // Subscribe to navigation changes
+        // Subscribe to navigation and auth changes
         NavigationManager.LocationChanged += OnLocationChanged;
+        AuthService.AuthStateChanged += OnAuthStateChanged;
     }
 
     private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -148,9 +166,14 @@
         return viewedAt.ToString("dd MMM");
     }
 
+    private void OnAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
-        _refreshTimer?.Dispose();
         NavigationManager.LocationChanged -= OnLocationChanged;
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }

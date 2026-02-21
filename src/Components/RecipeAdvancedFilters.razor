@@ -32,14 +32,15 @@
                               Variant="Variant.Outlined" />
                 
                 <!-- Filter Row -->
-                <MudStack Row Spacing="2" Wrap="Wrap.Wrap">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3">
                     <MudSelect T="string" 
                                Value="@RatingFilter" 
                                ValueChanged="OnRatingChanged" 
                                Clearable="true" 
                                Label="Évaluation" 
-                               Variant="Variant.Outlined"
-                               Style="min-width: 200px;">
+                               FullWidth="true"
+                               Variant="Variant.Outlined">
                         <MudSelectItem T="string" Value='@("all")'>Toutes</MudSelectItem>
                         <MudSelectItem T="string" Value='@("1")'>🍕 1</MudSelectItem>
                         <MudSelectItem T="string" Value='@("2")'>🍕 2</MudSelectItem>
@@ -47,14 +48,16 @@
                         <MudSelectItem T="string" Value='@("4")'>🍕 4</MudSelectItem>
                         <MudSelectItem T="string" Value='@("5")'>🍕 5</MudSelectItem>
                     </MudSelect>
+                    </MudItem>
                     
+                    <MudItem xs="12" sm="6" md="3">
                     <MudSelect T="string" 
                                Value="@BookFilter" 
                                ValueChanged="OnBookChanged" 
                                Clearable="true" 
                                Label="Livre" 
-                               Variant="Variant.Outlined"
-                               Style="min-width: 250px;">
+                               FullWidth="true"
+                               Variant="Variant.Outlined">
                         <MudSelectItem T="string" Value='@("all")'>Tous (@Books.Count)</MudSelectItem>
                         @foreach (var b in Books)
                         {
@@ -62,14 +65,16 @@
                             <MudSelectItem T="string" Value="@b.Id.ToString()">@b.Name (@recipeCount)</MudSelectItem>
                         }
                     </MudSelect>
+                    </MudItem>
                     
+                    <MudItem xs="12" sm="6" md="3">
                     <MudSelect T="string" 
                                Value="@StoreFilter" 
                                ValueChanged="OnStoreChanged" 
                                Clearable="true" 
                                Label="Magasin/Restaurant" 
-                               Variant="Variant.Outlined"
-                               Style="min-width: 250px;">
+                               FullWidth="true"
+                               Variant="Variant.Outlined">
                         <MudSelectItem T="string" Value='@("all")'>Tous (@Stores.Count)</MudSelectItem>
                         @foreach (var s in Stores)
                         {
@@ -77,14 +82,16 @@
                             <MudSelectItem T="string" Value="@s.Id.ToString()">@s.Name (@recipeCount)</MudSelectItem>
                         }
                     </MudSelect>
+                    </MudItem>
                     
+                    <MudItem xs="12" sm="6" md="3">
                     <MudSelect T="string" 
                                Value="@AuthorFilter" 
                                ValueChanged="OnAuthorChanged" 
                                Clearable="true" 
                                Label="Auteur" 
-                               Variant="Variant.Outlined"
-                               Style="min-width: 250px;">
+                               FullWidth="true"
+                               Variant="Variant.Outlined">
                         <MudSelectItem T="string" Value='@("all")'>Tous (@Authors.Count)</MudSelectItem>
                         @foreach (var a in Authors)
                         {
@@ -92,7 +99,8 @@
                             <MudSelectItem T="string" Value="@a.Id.ToString()">@a.FullName (@recipeCount)</MudSelectItem>
                         }
                     </MudSelect>
-                </MudStack>
+                    </MudItem>
+                </MudGrid>
                 
                 <!-- Filter Actions -->
                 @if (ActiveFilterCount > 0)

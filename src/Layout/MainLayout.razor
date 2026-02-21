@@ -5,6 +5,7 @@
 @inject AuthService AuthService
 @inject MudBlazor.IDialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="@_currentTheme" />
 <MudDialogProvider />
@@ -12,9 +13,9 @@
 <MudPopoverProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1" Color="Color.Primary">
+    <MudAppBar Elevation="0" Color="Color.Primary" Dense="false">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h6" Class="ml-3">Mes Recettes</MudText>
+        <MudText Typo="Typo.h6" Class="ml-2 d-none d-sm-flex" Style="font-weight: 700; letter-spacing: -0.5px;">Mes Recettes</MudText>
         <MudSpacer />
         
         <MudTooltip Text="Basculer en mode sombre">
@@ -25,29 +26,45 @@
         
         @if (!AuthService.IsAuthenticated)
         {
-            <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="ShowSignInDialog">Se connecter</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Small" 
+                       Class="d-none d-sm-flex ml-1" OnClick="ShowSignInDialog">Se connecter</MudButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Login" Color="Color.Inherit" 
+                           Class="d-flex d-sm-none" OnClick="ShowSignInDialog" />
         }
         else
         {
-            <MudTooltip Text="@AuthService.UserEmail">
-                <MudChip Color="Color.Secondary" Size="Size.Small" Label="true" Class="mr-2" T="string">
-                    <MudAvatar Size="Size.Small" Color="Color.Secondary" Class="mr-2">
-                        @GetUserInitials(AuthService.UserEmail)
-                    </MudAvatar>
-                    @AuthService.UserEmail?.Split('@')[0]
-                </MudChip>
-            </MudTooltip>
-            <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="SignOut">Se déconnecter</MudButton>
+            <MudMenu Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Class="ml-1">
+                <ActivatorContent>
+                    <MudTooltip Text="@AuthService.UserEmail">
+                        <MudAvatar Color="Color.Secondary" Size="Size.Small" Style="cursor: pointer; font-size: 0.85rem; font-weight: 700;">
+                            @GetUserInitials(AuthService.UserEmail)
+                        </MudAvatar>
+                    </MudTooltip>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudMenuItem Disabled="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@AuthService.UserEmail</MudText>
+                    </MudMenuItem>
+                    <MudDivider />
+                    <MudMenuItem OnClick="SignOut" Icon="@Icons.Material.Filled.Logout">
+                        Se déconnecter
+                    </MudMenuItem>
+                </ChildContent>
+            </MudMenu>
         }
     </MudAppBar>
     
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" ClipMode="DrawerClipMode.Always">
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" ClipMode="DrawerClipMode.Always"
+               Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md"
+               Style="border-right: 1px solid var(--mud-palette-divider);">
         <NavMenu />
     </MudDrawer>
     
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 px-4">
-            @Body
+            <div class="page-enter" @key="NavigationKey">
+                @Body
+            </div>
         </MudContainer>
     </MudMainContent>
 </MudLayout>
@@ -55,6 +72,7 @@
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode;
+    private string _currentPath = string.Empty;
     
     // Define light and dark themes
     private MudTheme _currentTheme = new MudTheme
@@ -78,18 +96,22 @@
         {
             Primary = "#FF6B6B",
             Secondary = "#4ECDC4",
+            Tertiary = "#FFD166",
             Background = "#1A1A1A",
             Surface = "#242424",
             AppbarBackground = "#272727",
             DrawerBackground = "#1E1E1E",
             DrawerText = "#DDDDDD",
             Success = "#6BCB77",
+            Warning = "#F4A261",
+            Info = "#5BC4BF",
+            Error = "#FF6B6B",
             TextPrimary = "#EEEEEE",
             TextSecondary = "#AAAAAA"
         },
         LayoutProperties = new LayoutProperties
         {
-            DefaultBorderRadius = "6px"
+            DefaultBorderRadius = "12px"
         },
         Typography = new Typography
         {
@@ -98,7 +120,63 @@
                 FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
                 FontSize = "1rem",
                 FontWeight = "400",
-                LineHeight = "1.5"
+                LineHeight = "1.6"
+            },
+            H1 = new H1Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "2.5rem",
+                FontWeight = "700",
+                LineHeight = "1.2"
+            },
+            H2 = new H2Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "2rem",
+                FontWeight = "700",
+                LineHeight = "1.25"
+            },
+            H3 = new H3Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1.75rem",
+                FontWeight = "700",
+                LineHeight = "1.3"
+            },
+            H4 = new H4Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1.5rem",
+                FontWeight = "600",
+                LineHeight = "1.35"
+            },
+            H5 = new H5Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1.25rem",
+                FontWeight = "600",
+                LineHeight = "1.4"
+            },
+            H6 = new H6Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1.125rem",
+                FontWeight = "600",
+                LineHeight = "1.4"
+            },
+            Body1 = new Body1Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1rem",
+                FontWeight = "400",
+                LineHeight = "1.6"
+            },
+            Body2 = new Body2Typography
+            {
+                FontFamily = new[] { "Nunito", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "0.875rem",
+                FontWeight = "400",
+                LineHeight = "1.57"
             }
         }
     };
@@ -115,6 +193,8 @@
             StateHasChanged();
         }
     }
+
+    private string NavigationKey => NavigationManager.Uri;
 
     protected override void OnInitialized()
     {

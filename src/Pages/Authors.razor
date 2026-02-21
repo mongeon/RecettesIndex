@@ -15,7 +15,16 @@
 <PageTitle>Auteurs</PageTitle>
 
 <MudPaper Class="pa-4 rounded-lg">
-    <MudText Typo="Typo.h4" Class="mb-1">Auteurs</MudText>
+    <MudStack Row AlignItems="AlignItems.Center" Class="mb-1">
+        <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Tertiary" Size="Size.Large" />
+        <div>
+            <MudText Typo="Typo.h4">Auteurs</MudText>
+            @if (!loading && authors.Count > 0)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@authors.Count auteur(s) dans votre collection</MudText>
+            }
+        </div>
+    </MudStack>
     <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
     <SearchField Value="@searchTerm" ValueChanged="@OnSearchChanged" Placeholder="Rechercher des auteurs..." />
     @if (loading)
@@ -68,7 +77,9 @@
     }
     @if (AuthService.IsAuthenticated)
     {
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="ShowAddDialog">Ajouter un auteur</MudButton>
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                OnClick="ShowAddDialog" Label="Ajouter"
+                Style="position: fixed; bottom: 24px; right: 24px; z-index: 100;" />
     }
 </MudPaper>
 
