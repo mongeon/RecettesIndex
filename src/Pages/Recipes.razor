@@ -309,11 +309,10 @@
     private async Task LoadFilterCounts()
     {
         favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
-        
-        var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
-        if (result.IsSuccess)
+
+        var allRecipes = await LoadAllRecipesForCounts();
+        if (allRecipes.Count > 0)
         {
-            var allRecipes = result.Value.Items;
             totalCount = allRecipes.Count;
             fiveStarCount = allRecipes.Count(r => r.Rating == 5);
             fourPlusStarCount = allRecipes.Count(r => r.Rating >= 4);
@@ -338,6 +337,50 @@
                 authorRecipeCounts[author.Id] = count;
             }
         }
+        else
+        {
+            totalCount = 0;
+            fiveStarCount = 0;
+            fourPlusStarCount = 0;
+            unratedCount = 0;
+            bookRecipeCounts = new Dictionary<int, int>();
+            storeRecipeCounts = new Dictionary<int, int>();
+            authorRecipeCounts = new Dictionary<int, int>();
+        }
+    }
+
+    private async Task<List<Recipe>> LoadAllRecipesForCounts()
+    {
+        const int pageSizeForCounts = 500;
+        var page = 1;
+        var allRecipes = new List<Recipe>();
+
+        while (true)
+        {
+            var result = await RecipeService.SearchAsync(null, null, null, null, null, page, pageSizeForCounts, "created_at", true);
+            if (!result.IsSuccess)
+            {
+                Logger.LogWarning("Failed to load recipe counts page {Page}: {Error}", page, result.ErrorMessage);
+                break;
+            }
+
+            var items = result.Value.Items.ToList();
+            if (items.Count == 0)
+            {
+                break;
+            }
+
+            allRecipes.AddRange(items);
+
+            if (allRecipes.Count >= result.Value.Total)
+            {
+                break;
+            }
+
+            page++;
+        }
+
+        return allRecipes;
     }
     
     #endregion
@@ -448,7 +491,7 @@
         var sortLabel = state.SortLabel;
         var sortDescending = state.SortDirection == SortDirection.Descending;
         
-        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending);
+        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending, token);
         if (!result.IsSuccess)
             return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
         

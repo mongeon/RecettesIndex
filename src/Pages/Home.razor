@@ -4,12 +4,14 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
 @using RecettesIndex.Components
-@using Supabase
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
-@inject Client SupabaseClient
+@inject IRecipeService RecipeService
+@inject IBookService BookService
+@inject IAuthorService AuthorService
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @inject ILogger<Home> Logger
@@ -59,6 +61,10 @@
 
     <!-- Stats Cards -->
     <div class="@(!loadingCounts ? "fade-in" : "")">
+        @if (!string.IsNullOrWhiteSpace(countsErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">@countsErrorMessage</MudAlert>
+        }
         <MudGrid Class="mb-6">
             @if (loadingCounts)
             {
@@ -159,6 +165,10 @@
                 }
             </MudGrid>
         </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(newestErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-4">@newestErrorMessage</MudAlert>
     }
     else if (newestRecipes.Count == 0)
     {
@@ -314,6 +324,10 @@
                 }
             </MudGrid>
         </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(randomErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-4">@randomErrorMessage</MudAlert>
     }
     else if (randomRecipes.Count == 0)
     {
@@ -532,6 +546,9 @@
     private bool loadingRandom = true;
     private bool refreshingRandom = false;
     private bool loadingCounts = true;
+    private string? newestErrorMessage;
+    private string? randomErrorMessage;
+    private string? countsErrorMessage;
     private int totalRecipesCount = 0;
     private int totalBooksCount = 0;
     private int totalAuthorsCount = 0;
@@ -559,14 +576,24 @@
     private async Task LoadNewestRecipes()
     {
         loadingNewest = true;
+        newestErrorMessage = null;
         try
         {
-            var response = await SupabaseClient.From<Recipe>().Order(x => x.CreationDate, Supabase.Postgrest.Constants.Ordering.Descending).Limit(5).Get();
-            newestRecipes = response.Models ?? new List<Recipe>();
+            var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 5, "created_at", true);
+            if (!result.IsSuccess)
+            {
+                newestRecipes = new List<Recipe>();
+                newestErrorMessage = result.ErrorMessage ?? "Impossible de charger les nouvelles recettes.";
+                return;
+            }
+
+            newestRecipes = result.Value.Items.ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading newest recipes");
             newestRecipes = new List<Recipe>();
+            newestErrorMessage = "Impossible de charger les nouvelles recettes.";
         }
         loadingNewest = false;
     }
@@ -574,10 +601,18 @@
     private async Task LoadRandomRecipes()
     {
         loadingRandom = true;
+        randomErrorMessage = null;
         try
         {
-            var response = await SupabaseClient.From<Recipe>().Get();
-            var allRecipes = response.Models ?? new List<Recipe>();
+            var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000, "created_at", true);
+            if (!result.IsSuccess)
+            {
+                randomRecipes = new List<Recipe>();
+                randomErrorMessage = result.ErrorMessage ?? "Impossible de charger les suggestions aléatoires.";
+                return;
+            }
+
+            var allRecipes = result.Value.Items.ToList();
             
             // Apply rating filter
             if (randomFilterRating.HasValue)
@@ -610,6 +645,7 @@
         {
             Logger.LogError(ex, "Error loading random recipes with rating filter {Rating} and smart mode {SmartMode}", randomFilterRating, smartRandomization);
             randomRecipes = new List<Recipe>();
+            randomErrorMessage = "Impossible de charger les suggestions aléatoires.";
         }
         finally
         {
@@ -770,42 +806,41 @@
     {
         try
         {
-            var response = await SupabaseClient.From<Book>().Get();
-            allBooks = response.Models ?? new List<Book>();
+            allBooks = (await BookService.GetAllAsync()).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading books for home page");
             allBooks = new List<Book>();
         }
     }
 
     private async Task LoadCounts()
     {
+        countsErrorMessage = null;
         try
         {
-            // Get total recipes count - use a simple select with just id to minimize data transfer
-            var recipesCountResponse = await SupabaseClient.From<Recipe>()
-                .Select("id")
-                .Get();
-            totalRecipesCount = recipesCountResponse.Models?.Count ?? 0;
+            var recipeCountResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 1);
+            totalRecipesCount = recipeCountResult.IsSuccess ? recipeCountResult.Value.Total : 0;
 
-            // Get total books count - use a simple select with just id to minimize data transfer
-            var booksCountResponse = await SupabaseClient.From<Book>()
-                .Select("id")
-                .Get();
-            totalBooksCount = booksCountResponse.Models?.Count ?? 0;
+            var books = await BookService.GetAllAsync();
+            totalBooksCount = books.Count;
 
-            // Get total authors count - use a simple select with just id to minimize data transfer
-            var authorsCountResponse = await SupabaseClient.From<Author>()
-                .Select("id")
-                .Get();
-            totalAuthorsCount = authorsCountResponse.Models?.Count ?? 0;
+            var authors = await AuthorService.GetAllAsync();
+            totalAuthorsCount = authors.Count;
+
+            if (!recipeCountResult.IsSuccess)
+            {
+                countsErrorMessage = recipeCountResult.ErrorMessage ?? "Impossible de charger les statistiques du tableau de bord.";
+            }
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading home page counts");
             totalRecipesCount = 0;
             totalBooksCount = 0;
             totalAuthorsCount = 0;
+            countsErrorMessage = "Impossible de charger les statistiques du tableau de bord.";
         }
         finally
         {

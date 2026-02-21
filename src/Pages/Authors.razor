@@ -1,11 +1,15 @@
 @page "/authors"
+@using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
-@using Supabase
+@using RecettesIndex.Services.Abstractions
+@using RecettesIndex.Components
 @inject AuthService AuthService
 @inject IDialogService DialogService
-@inject Client SupabaseClient
+@inject ILogger<Authors> Logger
+@inject ISnackbar Snackbar
+@inject IAuthorService AuthorService
 @implements IDisposable
 
 <PageTitle>Auteurs</PageTitle>
@@ -17,9 +21,20 @@
     {
         <MudProgressCircular Indeterminate="true" />
     }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">@errorMessage</MudAlert>
+    }
     else if (authors.Count == 0)
     {
-        <MudText>Aucun auteur trouvé.</MudText>
+        <EmptyState Icon="@Icons.Material.Filled.PersonSearch"
+                    IconColor="Color.Secondary"
+                    Title="Aucun auteur trouvé"
+                    Message="Ajoutez des auteurs pour mieux organiser vos livres et vos recettes."
+                    ShowAction="@AuthService.IsAuthenticated"
+                    ActionText="Ajouter un auteur"
+                    ActionIcon="@Icons.Material.Filled.Add"
+                    OnActionClick="ShowAddDialog" />
     }
     else
     {
@@ -66,6 +81,7 @@
         new BreadcrumbItem("Auteurs", href: "/authors", disabled: true)
     ];
     private string searchTerm = string.Empty;
+    private string? errorMessage;
     private IEnumerable<Author> filteredAuthors => string.IsNullOrWhiteSpace(searchTerm)
         ? authors
         : authors.Where(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (a.LastName != null && a.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
@@ -83,14 +99,16 @@
     private async Task LoadAuthors()
     {
         loading = true;
+        errorMessage = null;
         try
         {
-            var response = await SupabaseClient.From<Author>().Get();
-            authors = response.Models ?? new List<Author>();
+            authors = (await AuthorService.GetAllAsync()).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading authors");
             authors = new List<Author>();
+            errorMessage = "Impossible de charger les auteurs pour le moment. Veuillez réessayer.";
         }
         loading = false;
     }
@@ -118,8 +136,26 @@
 
     private async Task DeleteAuthor(Author authorToDelete)
     {
-        await SupabaseClient.From<Author>().Where(x => x.Id == authorToDelete.Id).Delete();
-        await LoadAuthors();
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Confirmer la suppression",
+            $"Êtes-vous sûr de vouloir supprimer l'auteur '{authorToDelete.FullName}' ?",
+            yesText: "Supprimer",
+            cancelText: "Annuler");
+
+        if (confirm != true)
+        {
+            return;
+        }
+
+        var result = await AuthorService.DeleteAsync(authorToDelete.Id);
+        if (result.IsSuccess)
+        {
+            Snackbar.Add($"L'auteur '{authorToDelete.FullName}' a été supprimé avec succès.", Severity.Success);
+            await LoadAuthors();
+            return;
+        }
+
+        Snackbar.Add(result.ErrorMessage ?? "Suppression impossible pour le moment.", Severity.Warning);
     }
     private void OnSearchChanged(ChangeEventArgs e)
     {

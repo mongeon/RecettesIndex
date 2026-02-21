@@ -3,12 +3,13 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
-@using Supabase
+@using RecettesIndex.Services.Abstractions
+@using RecettesIndex.Components
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ILogger<Books> Logger
 @inject ISnackbar Snackbar
-@inject Client SupabaseClient
+@inject IBookService BookService
 @implements IDisposable
 
 <PageTitle>Livres</PageTitle>
@@ -21,9 +22,20 @@
     {
         <MudProgressCircular Indeterminate="true" />
     }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">@errorMessage</MudAlert>
+    }
     else if (books.Count == 0)
     {
-        <MudText>Aucun livre trouvé.</MudText>
+        <EmptyState Icon="@Icons.Material.Filled.MenuBook"
+                    IconColor="Color.Secondary"
+                    Title="Aucun livre trouvé"
+                    Message="Ajoutez votre premier livre pour organiser vos recettes par source."
+                    ShowAction="@AuthService.IsAuthenticated"
+                    ActionText="Ajouter un livre"
+                    ActionIcon="@Icons.Material.Filled.Add"
+                    OnActionClick="ShowAddDialog" />
     }
     else
     {
@@ -76,6 +88,7 @@
         new BreadcrumbItem("Livres", href: "/books", disabled: true)
     ];
     private string searchTerm = string.Empty;
+    private string? errorMessage;
     private IEnumerable<Book> filteredBooks => string.IsNullOrWhiteSpace(searchTerm)
         ? books
         : books.Where(b => b.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (b.Authors != null && b.Authors.Any(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))));
@@ -98,55 +111,18 @@
     private async Task LoadBooks()
     {
         loading = true;
+        errorMessage = null;
         try
         {
-            // Load books
-            var booksResponse = await SupabaseClient.From<Book>().Get();
-            books = booksResponse.Models ?? new List<Book>();
-            
-            // Load authors for each book using the junction table
-            foreach (var book in books)
-            {
-                await LoadAuthorsForBook(book);
-            }
-        }
-        catch
-        {
-            books = new List<Book>();
-        }
-        loading = false;
-    }
-
-    private async Task LoadAuthorsForBook(Book book)
-    {
-        try
-        {
-            // Get book-author associations
-            var bookAuthorsResponse = await SupabaseClient.From<BookAuthor>()
-                .Where(x => x.BookId == book.Id)
-                .Get();
-            
-            if (bookAuthorsResponse.Models?.Any() == true)
-            {
-                var authorIds = bookAuthorsResponse.Models.Select(ba => ba.AuthorId).ToList();
-                
-                // Get the actual author objects
-                var authorsResponse = await SupabaseClient.From<Author>()
-                    .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
-                    .Get();
-                
-                book.Authors = authorsResponse.Models ?? new List<Author>();
-            }
-            else
-            {
-                book.Authors = new List<Author>();
-            }
+            books = (await BookService.GetAllAsync()).ToList();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading authors for book {BookId}", book.Id);
-            book.Authors = new List<Author>();
+            Logger.LogError(ex, "Error loading books");
+            books = new List<Book>();
+            errorMessage = "Impossible de charger les livres pour le moment. Veuillez réessayer.";
         }
+        loading = false;
     }
 
     private async Task ShowAddDialog()
@@ -186,42 +162,15 @@
                 return;
             }
 
-            // Check if there are recipes associated with this book
-            var recipesResponse = await SupabaseClient.From<Recipe>()
-                .Where(x => x.BookId == bookToDelete.Id)
-                .Get();
-
-            if (recipesResponse.Models?.Any() == true)
+            var result = await BookService.DeleteAsync(bookToDelete.Id);
+            if (result.IsSuccess)
             {
-                await DialogService.ShowMessageBox(
-                    "Suppression impossible",
-                    $"Ce livre ne peut pas être supprimé car {recipesResponse.Models.Count} recette(s) y sont associées. Veuillez d'abord supprimer ou modifier ces recettes.",
-                    cancelText: "OK");
+                Snackbar.Add($"Le livre '{bookToDelete.Name}' a été supprimé avec succès.", Severity.Success);
+                await LoadBooks();
                 return;
             }
 
-            // Delete book-author associations first
-            var bookAuthorsResponse = await SupabaseClient.From<BookAuthor>()
-                .Where(x => x.BookId == bookToDelete.Id)
-                .Get();
-
-            if (bookAuthorsResponse.Models?.Any() == true)
-            {
-                foreach (var bookAuthor in bookAuthorsResponse.Models)
-                {
-                    await SupabaseClient.From<BookAuthor>()
-                        .Where(x => x.BookId == bookAuthor.BookId && x.AuthorId == bookAuthor.AuthorId)
-                        .Delete();
-                }
-            }
-
-            // Delete the book
-            await SupabaseClient.From<Book>()
-                .Where(x => x.Id == bookToDelete.Id)
-                .Delete();
-
-            Snackbar.Add($"Le livre '{bookToDelete.Name}' a été supprimé avec succès.", Severity.Success);
-            await LoadBooks();
+            Snackbar.Add(result.ErrorMessage ?? "Suppression impossible pour le moment.", Severity.Warning);
         }
         catch (Exception ex)
         {

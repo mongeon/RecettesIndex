@@ -4,13 +4,13 @@
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
 @using RecettesIndex.Components
-@using Supabase
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ILogger<RecipeDetails> Logger
 @inject NavigationManager NavigationManager
-@inject Client SupabaseClient
+@inject IRecipeService RecipeService
 @inject LocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @implements IDisposable
@@ -27,7 +27,32 @@
 }
 else if (recipe == null)
 {
-    <MudAlert Severity="Severity.Error" Class="my-4">Recette introuvable.</MudAlert>
+    @if (isNotFound)
+    {
+        <EmptyState Icon="@Icons.Material.Filled.RestaurantMenu"
+                    IconColor="Color.Secondary"
+                    Title="Recette introuvable"
+                    Message="Cette recette n'existe pas ou n'est plus disponible."
+                    ShowAction="true"
+                    ActionText="Retour aux recettes"
+                    ActionIcon="@Icons.Material.Filled.ArrowBack"
+                    OnActionClick="GoBackToRecipes" />
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-4">@errorMessage</MudAlert>
+    }
+    else
+    {
+        <EmptyState Icon="@Icons.Material.Filled.RestaurantMenu"
+                    IconColor="Color.Secondary"
+                    Title="Recette introuvable"
+                    Message="Cette recette n'existe pas ou n'est plus disponible."
+                    ShowAction="true"
+                    ActionText="Retour aux recettes"
+                    ActionIcon="@Icons.Material.Filled.ArrowBack"
+                    OnActionClick="GoBackToRecipes" />
+    }
 }
 else
 {
@@ -166,7 +191,7 @@ else
                                             <MudAlert Severity="Severity.Info">
                                                 <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
                                                     <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" />
-                                                    <span>Recette maison (aucune source associée)</span>
+                                                    <MudText Typo="Typo.body2">Recette maison (aucune source associée)</MudText>
                                                 </MudStack>
                                             </MudAlert>
                                         }
@@ -229,8 +254,11 @@ else
     private Book? book;
     private Store? store;
     private bool loading = true;
+    private bool isNotFound;
+    private string? errorMessage;
     private List<Recipe> relatedRecipes = new();
     private List<int> favoriteRecipeIds = new();
+    private CancellationTokenSource? _loadCts;
     private List<BreadcrumbItem> breadcrumbs =
     [
         new BreadcrumbItem("Accueil", href: "/" ),
@@ -260,43 +288,62 @@ else
     
     private async Task LoadRecipeData()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var ct = _loadCts.Token;
+
         loading = true;
+        isNotFound = false;
+        errorMessage = null;
+        recipe = null;
+        book = null;
+        store = null;
+        relatedRecipes = new List<Recipe>();
         
         try 
         {
-            var response = await SupabaseClient.From<Recipe>().Where(x => x.Id == Id).Get();
-            recipe = response.Models?.FirstOrDefault();
+            var recipeResult = await RecipeService.GetByIdAsync(Id, ct);
+            if (!recipeResult.IsSuccess || recipeResult.Value == null)
+            {
+                var message = recipeResult.ErrorMessage ?? string.Empty;
+                isNotFound = message.Contains("not found", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("introuvable", StringComparison.OrdinalIgnoreCase);
+
+                if (!isNotFound)
+                {
+                    errorMessage = string.IsNullOrWhiteSpace(message)
+                        ? "Impossible de charger cette recette pour le moment. Veuillez réessayer."
+                        : message;
+                }
+
+                return;
+            }
+
+            recipe = recipeResult.Value;
+            book = recipe.Book;
+            store = recipe.Store;
             
             if (recipe != null)
             {
                 // Update the breadcrumbs with recipe name
                 breadcrumbs[2] = new BreadcrumbItem(recipe.Name, href: null, disabled: true);
                 
-                // Load book if recipe is from a book
-                if (recipe.BookId != null)
-                {
-                    var bookResponse = await SupabaseClient.From<Book>().Where(x => x.Id == recipe.BookId).Get();
-                    book = bookResponse.Models?.FirstOrDefault();
-                }
-                
-                // Load store if recipe is from a store
-                if (recipe.StoreId != null)
-                {
-                    var storeResponse = await SupabaseClient.From<Store>().Where(x => x.Id == recipe.StoreId).Get();
-                    store = storeResponse.Models?.FirstOrDefault();
-                }
-                
                 // Load related recipes
-                await LoadRelatedRecipes();
+                await LoadRelatedRecipes(ct);
                 
                 // Track this recipe in recent recipes
                 await LocalStorage.AddRecentRecipeAsync(recipe.Id, recipe.Name);
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancellation triggered by route changes
+        }
         catch (Exception ex)
         {
-            // Add error handling if needed
             Logger.LogError(ex, "Error loading recipe {RecipeId}", Id);
+            errorMessage = "Impossible de charger cette recette pour le moment. Veuillez réessayer.";
         }
         finally
         {
@@ -304,15 +351,20 @@ else
         }
     }
     
-    private async Task LoadRelatedRecipes()
+    private async Task LoadRelatedRecipes(CancellationToken ct)
     {
         if (recipe == null) return;
         
         try
         {
-            // Load all recipes to calculate similarity
-            var allRecipesResponse = await SupabaseClient.From<Recipe>().Get();
-            var allRecipes = allRecipesResponse.Models ?? new List<Recipe>();
+            var allRecipesResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000, ct: ct);
+            if (!allRecipesResult.IsSuccess)
+            {
+                relatedRecipes = new List<Recipe>();
+                return;
+            }
+
+            var allRecipes = allRecipesResult.Value.Items;
             
             // Calculate similarity scores
             var scoredRecipes = allRecipes
@@ -412,6 +464,12 @@ else
     {
         NavigationManager.NavigateTo($"/recipes/{recipeId}");
     }
+
+    private Task GoBackToRecipes()
+    {
+        NavigationManager.NavigateTo("/recipes");
+        return Task.CompletedTask;
+    }
     
     private async Task HandleViewRelatedRecipe(Recipe relatedRecipe)
     {
@@ -495,6 +553,8 @@ else
 
     public void Dispose()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
         AuthService.AuthStateChanged -= OnAuthStateChanged;
     }
 }
