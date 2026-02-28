@@ -103,7 +103,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
 
             // Let the database handle sorting and pagination.
             var skip = (page - 1) * pageSize;
-            var pagedModels = await _q.GetRecipesByIdsAsync(ids.ToList(), dbSortColumn, sortDescending, skip, pageSize, ct);
+            var pagedModels = await _q.GetRecipesByIdsAsync(ids.ToList(), ct, dbSortColumn, sortDescending, skip, pageSize);
 
             (IReadOnlyList<Recipe> Items, int Total) payload = (pagedModels, total);
             return Result<(IReadOnlyList<Recipe> Items, int Total)>.Success(payload);
