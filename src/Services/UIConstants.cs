@@ -15,6 +15,11 @@ public static class UIConstants
     public const int RandomRecipeCount = 5;
 
     /// <summary>
+    /// Number of days that qualify a recipe as "recently added".
+    /// </summary>
+    public const int RecentRecipeDaysThreshold = 30;
+
+    /// <summary>
     /// Predefined gradient colors for recipe cards.
     /// </summary>
     public static readonly IReadOnlyList<string> GradientColors = new[]

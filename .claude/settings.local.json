@@ -4,5 +4,18 @@
       "Bash(git fetch:*)",
       "Bash(git rebase:*)"
     ]
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    }
+  },
+  "context":{
+    "backend": "Supabase"
   }
 }

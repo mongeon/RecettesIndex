@@ -92,25 +92,18 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
 
             var total = ids.Count;
 
-            // Get all recipes for sorting
-            var allModels = await _q.GetRecipesByIdsAsync(ids.ToList(), ct);
-
-            // Apply sorting
-            IEnumerable<Recipe> sortedModels = allModels;
-            if (!string.IsNullOrWhiteSpace(sortLabel))
+            // Map sort label to a known DB column name; null means no ORDER BY.
+            var dbSortColumn = sortLabel?.ToLower() switch
             {
-                sortedModels = sortLabel.ToLower() switch
-                {
-                    RecipeSortConstants.Name => sortDescending ? allModels.OrderByDescending(r => r.Name) : allModels.OrderBy(r => r.Name),
-                    RecipeSortConstants.Rating => sortDescending ? allModels.OrderByDescending(r => r.Rating) : allModels.OrderBy(r => r.Rating),
-                    RecipeSortConstants.CreatedAt => sortDescending ? allModels.OrderByDescending(r => r.CreationDate) : allModels.OrderBy(r => r.CreationDate),
-                    _ => allModels
-                };
-            }
+                RecipeSortConstants.Name or
+                RecipeSortConstants.Rating or
+                RecipeSortConstants.CreatedAt => sortLabel.ToLower(),
+                _ => null
+            };
 
-            // Apply pagination after sorting
+            // Let the database handle sorting and pagination.
             var skip = (page - 1) * pageSize;
-            var pagedModels = sortedModels.Skip(skip).Take(pageSize).ToList();
+            var pagedModels = await _q.GetRecipesByIdsAsync(ids.ToList(), dbSortColumn, sortDescending, skip, pageSize, ct);
 
             (IReadOnlyList<Recipe> Items, int Total) payload = (pagedModels, total);
             return Result<(IReadOnlyList<Recipe> Items, int Total)>.Success(payload);
@@ -142,7 +135,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
-            var list = await _q.GetRecipesByIdsAsync(new[] { id }, ct);
+            var list = await _q.GetRecipesByIdsAsync(new[] { id }, ct: ct);
             var model = list.FirstOrDefault();
             if (model is null)
             {
@@ -173,6 +166,41 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     }
 
     /// <summary>
+    /// Validates common recipe fields. Returns a failure Result if invalid, otherwise null.
+    /// </summary>
+    /// <param name="recipe">The recipe to validate.</param>
+    /// <param name="requireId">When true, also validates that the recipe ID is positive.</param>
+    private static Result<Recipe>? ValidateRecipe(Recipe? recipe, bool requireId = false)
+    {
+        if (recipe is null)
+        {
+            return Result<Recipe>.Failure("Recipe cannot be null");
+        }
+
+        if (requireId && recipe.Id <= 0)
+        {
+            return Result<Recipe>.Failure("Invalid recipe ID");
+        }
+
+        if (string.IsNullOrWhiteSpace(recipe.Name))
+        {
+            return Result<Recipe>.Failure("Recipe name is required");
+        }
+
+        if (recipe.Rating is < 0 or > 5)
+        {
+            return Result<Recipe>.Failure("Rating must be between 0 and 5");
+        }
+
+        if (recipe.BookPage.HasValue && recipe.BookPage.Value <= 0)
+        {
+            return Result<Recipe>.Failure("Book page number must be positive");
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Creates a new recipe in the database.
     /// </summary>
     /// <param name="recipe">The recipe to create.</param>
@@ -182,26 +210,8 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
-            // Input validation
-            if (recipe == null)
-            {
-                return Result<Recipe>.Failure("Recipe cannot be null");
-            }
-            
-            if (string.IsNullOrWhiteSpace(recipe.Name))
-            {
-                return Result<Recipe>.Failure("Recipe name is required");
-            }
-            
-            if (recipe.Rating < 0 || recipe.Rating > 5)
-            {
-                return Result<Recipe>.Failure("Rating must be between 0 and 5");
-            }
-            
-            if (recipe.BookPage.HasValue && recipe.BookPage.Value <= 0)
-            {
-                return Result<Recipe>.Failure("Book page number must be positive");
-            }
+            var validationError = ValidateRecipe(recipe);
+            if (validationError is not null) return validationError;
 
             // Set creation date if not already set
             if (recipe.CreationDate == default)
@@ -240,30 +250,10 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     {
         try
         {
-            // Input validation
-            if (recipe == null)
+            var validationError = ValidateRecipe(recipe, requireId: true);
+            if (validationError is not null)
             {
-                return Result<Recipe>.Failure("Recipe cannot be null");
-            }
-            
-            if (recipe.Id <= 0)
-            {
-                return Result<Recipe>.Failure("Invalid recipe ID");
-            }
-            
-            if (string.IsNullOrWhiteSpace(recipe.Name))
-            {
-                return Result<Recipe>.Failure("Recipe name is required");
-            }
-            
-            if (recipe.Rating < 0 || recipe.Rating > 5)
-            {
-                return Result<Recipe>.Failure("Rating must be between 0 and 5");
-            }
-            
-            if (recipe.BookPage.HasValue && recipe.BookPage.Value <= 0)
-            {
-                return Result<Recipe>.Failure("Book page number must be positive");
+                return validationError;
             }
 
             var res = await _supabaseClient.From<Recipe>().Update(recipe);

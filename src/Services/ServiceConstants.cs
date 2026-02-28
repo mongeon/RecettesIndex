@@ -50,6 +50,16 @@ public static class PaginationConstants
     /// Default page size for data grids and lists.
     /// </summary>
     public const int DefaultPageSize = 20;
+
+    /// <summary>
+    /// Default page size for the main recipe list view.
+    /// </summary>
+    public const int RecipesDefaultPageSize = 12;
+
+    /// <summary>
+    /// Page size used when loading all recipes to compute filter counts.
+    /// </summary>
+    public const int CountFetchPageSize = 500;
 }
 
 /// <summary>
