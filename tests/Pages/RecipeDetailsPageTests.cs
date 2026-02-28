@@ -28,8 +28,7 @@ public class RecipeDetailsPageTests : BunitContext
         var authWrapper = Substitute.For<ISupabaseAuthWrapper>();
         Services.AddSingleton(new AuthService(authWrapper));
 
-        var localStorage = new LocalStorageService(jsRuntime);
-        Services.AddSingleton(localStorage);
+        Services.AddSingleton(Substitute.For<ILocalStorageService>());
     }
 
     [Fact]
