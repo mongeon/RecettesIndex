@@ -13,6 +13,19 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
     private readonly Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
     private readonly ILogger<SupabaseRecipesQuery> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+    /// <summary>
+    /// Applies an optional rating filter to a recipe query. Only applies for valid ratings (1–5).
+    /// </summary>
+    private static IPostgrestTable<Recipe> ApplyRatingFilter(IPostgrestTable<Recipe> q, int? rating)
+    {
+        if (rating is >= 1 and <= 5)
+        {
+            q = q.Filter("rating", Operator.Equals, rating.Value);
+        }
+
+        return q;
+    }
+
     public async Task<List<int>> GetRecipeIdsByNameAsync(string term, int? rating, CancellationToken ct = default)
     {
         try
@@ -20,10 +33,7 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
             var like = $"%{term}%";
             IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             q = q.Filter("name", Operator.ILike, like);
-            if (rating is >= 1 and <= 5)
-            {
-                q = q.Filter("rating", Operator.Equals, rating.Value);
-            }
+            q = ApplyRatingFilter(q, rating);
 
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? [];
@@ -51,10 +61,7 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         {
             IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             q = q.Filter("book_id", Operator.In, bookIds.ToList());
-            if (rating is >= 1 and <= 5)
-            {
-                q = q.Filter("rating", Operator.Equals, rating.Value);
-            }
+            q = ApplyRatingFilter(q, rating);
 
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? [];
@@ -76,10 +83,7 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         try
         {
             IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
-            if (rating is >= 1 and <= 5)
-            {
-                q = q.Filter("rating", Operator.Equals, rating.Value);
-            }
+            q = ApplyRatingFilter(q, rating);
 
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? [];
@@ -96,7 +100,7 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         }
     }
 
-    public async Task<IReadOnlyList<Recipe>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Recipe>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, string? sortColumn = null, bool sortDescending = false, int skip = 0, int take = 0, CancellationToken ct = default)
     {
         if (ids.Count == 0)
         {
@@ -105,7 +109,19 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
 
         try
         {
-            var res = await _supabaseClient.From<Recipe>().Filter("id", Operator.In, ids.ToList()).Get(cancellationToken: ct);
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>().Filter("id", Operator.In, ids.ToList());
+
+            if (!string.IsNullOrWhiteSpace(sortColumn))
+            {
+                q = q.Order(sortColumn, sortDescending ? Ordering.Descending : Ordering.Ascending);
+            }
+
+            if (take > 0)
+            {
+                q = q.Range(skip, skip + take - 1);
+            }
+
+            var res = await q.Get(cancellationToken: ct);
             return (IReadOnlyList<Recipe>)(res.Models ?? []);
         }
         catch (HttpRequestException ex)
@@ -255,10 +271,7 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         {
             IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
             q = q.Filter("store_id", Operator.In, storeIds.ToList());
-            if (rating is >= 1 and <= 5)
-            {
-                q = q.Filter("rating", Operator.Equals, rating.Value);
-            }
+            q = ApplyRatingFilter(q, rating);
 
             var res = await q.Get(cancellationToken: ct);
             return res.Models?.Select(r => r.Id).ToList() ?? [];

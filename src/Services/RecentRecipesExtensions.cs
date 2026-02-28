@@ -1,7 +1,9 @@
+using RecettesIndex.Services.Abstractions;
+
 namespace RecettesIndex.Services;
 
 /// <summary>
-/// Extension methods for LocalStorageService to manage recent recipes.
+/// Extension methods for ILocalStorageService to manage recent recipes.
 /// </summary>
 public static class RecentRecipesExtensions
 {
@@ -11,7 +13,7 @@ public static class RecentRecipesExtensions
     /// <summary>
     /// Adds a recipe to the recent recipes list.
     /// </summary>
-    public static async Task AddRecentRecipeAsync(this LocalStorageService localStorage, int recipeId, string recipeName)
+    public static async Task AddRecentRecipeAsync(this ILocalStorageService localStorage, int recipeId, string recipeName)
     {
         var recentRecipes = await localStorage.GetRecentRecipesAsync();
 
@@ -38,7 +40,7 @@ public static class RecentRecipesExtensions
     /// <summary>
     /// Gets the list of recent recipes.
     /// </summary>
-    public static async Task<List<RecentRecipe>> GetRecentRecipesAsync(this LocalStorageService localStorage)
+    public static async Task<List<RecentRecipe>> GetRecentRecipesAsync(this ILocalStorageService localStorage)
     {
         var recentRecipes = await localStorage.GetItemAsync<List<RecentRecipe>>(RecentRecipesKey);
         return recentRecipes ?? new List<RecentRecipe>();
@@ -47,7 +49,7 @@ public static class RecentRecipesExtensions
     /// <summary>
     /// Clears all recent recipes.
     /// </summary>
-    public static async Task ClearRecentRecipesAsync(this LocalStorageService localStorage)
+    public static async Task ClearRecentRecipesAsync(this ILocalStorageService localStorage)
     {
         await localStorage.RemoveItemAsync(RecentRecipesKey);
     }
