@@ -100,7 +100,7 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         }
     }
 
-    public async Task<IReadOnlyList<Recipe>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, string? sortColumn = null, bool sortDescending = false, int skip = 0, int take = 0, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Recipe>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default, string? sortColumn = null, bool sortDescending = false, int skip = 0, int take = 0)
     {
         if (ids.Count == 0)
         {
