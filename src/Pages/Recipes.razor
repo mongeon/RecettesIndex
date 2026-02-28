@@ -36,12 +36,12 @@
     </MudStack>
     
     <!-- Quick Filter Buttons -->
-    <RecipeQuickFilters ShowAllRecipes="@showAllRecipes"
-                       QuickFilterRating="@quickFilterRating"
-                       QuickFilterUnrated="@quickFilterUnrated"
-                       ShowRecentRecipes="@showRecentRecipes"
-                       ShowFavorites="@showFavorites"
-                       HasActiveFilters="@HasActiveFilters()"
+    <RecipeQuickFilters ShowAllRecipes="@Filters.ShowAllRecipes"
+                       QuickFilterRating="@Filters.QuickFilterRating"
+                       QuickFilterUnrated="@Filters.QuickFilterUnrated"
+                       ShowRecentRecipes="@Filters.ShowRecentRecipes"
+                       ShowFavorites="@Filters.ShowFavorites"
+                       HasActiveFilters="@Filters.HasActiveFilters()"
                        TotalCount="@totalCount"
                        FiveStarCount="@fiveStarCount"
                        FourPlusStarCount="@fourPlusStarCount"
@@ -56,12 +56,12 @@
                        OnClearAllFilters="ClearAllFilters" />
     
     <!-- Collapsible Advanced Filters -->
-    <RecipeAdvancedFilters SearchTerm="@searchTerm"
-                          RatingFilter="@ratingFilter"
-                          BookFilter="@bookFilter"
-                          StoreFilter="@storeFilter"
-                          AuthorFilter="@authorFilter"
-                          ActiveFilterCount="@GetActiveFilterCount()"
+    <RecipeAdvancedFilters SearchTerm="@Filters.SearchTerm"
+                          RatingFilter="@Filters.RatingFilter"
+                          BookFilter="@Filters.BookFilter"
+                          StoreFilter="@Filters.StoreFilter"
+                          AuthorFilter="@Filters.AuthorFilter"
+                          ActiveFilterCount="@Filters.GetActiveFilterCount()"
                           Books="@books"
                           Stores="@stores"
                           Authors="@authors"
@@ -76,12 +76,12 @@
                           OnClearAllFilters="ClearAllFilters" />
 
     <!-- Active Filters Display -->
-    <RecipeActiveFilters HasActiveFilters="@HasActiveFilters()"
-                        SearchTerm="@searchTerm"
-                        RatingFilter="@ratingFilter"
-                        BookFilter="@bookFilter"
-                        StoreFilter="@storeFilter"
-                        AuthorFilter="@authorFilter"
+    <RecipeActiveFilters HasActiveFilters="@Filters.HasActiveFilters()"
+                        SearchTerm="@Filters.SearchTerm"
+                        RatingFilter="@Filters.RatingFilter"
+                        BookFilter="@Filters.BookFilter"
+                        StoreFilter="@Filters.StoreFilter"
+                        AuthorFilter="@Filters.AuthorFilter"
                         Books="@books"
                         Stores="@stores"
                         Authors="@authors"
@@ -108,11 +108,11 @@
                     IconColor="Color.Secondary"
                     Title="@GetEmptyStateTitle()"
                     Message="@GetEmptyStateMessage()"
-                    ShowAction="@(!HasActiveFilters())"
+                    ShowAction="@(!Filters.HasActiveFilters())"
                     ActionText="Ajouter une recette"
                     ActionIcon="@Icons.Material.Filled.Add"
                     OnActionClick="ShowAddDialog"
-                    SecondaryActionText="@(HasActiveFilters() ? "Réinitialiser les filtres" : null)"
+                    SecondaryActionText="@(Filters.HasActiveFilters() ? "Réinitialiser les filtres" : null)"
                     OnSecondaryActionClick="ClearAllFilters" />
     }
     else
@@ -167,21 +167,11 @@
         new BreadcrumbItem("Recettes", href: "/recipes", disabled: true)
     ];
     
-    // Filter state
-    private string searchTerm = string.Empty;
-    private string? ratingFilter;
-    private string? bookFilter;
-    private string? storeFilter;
-    private string? authorFilter;
-    
-    // Quick filter state
-    private bool showAllRecipes = true;
-    private int? quickFilterRating = null;
-    private bool quickFilterUnrated = false;
-    private bool showRecentRecipes = false;
-    private bool showFavorites = false;
+    // All filter-related state is encapsulated in RecipeFilterState
+    private RecipeFilterState Filters { get; } = new();
+
     private List<int> favoriteRecipeIds = new();
-    
+
     // Filter counts
     private int totalCount = 0;
     private int fiveStarCount = 0;
@@ -191,9 +181,6 @@
     private Dictionary<int, int> bookRecipeCounts = new();
     private Dictionary<int, int> storeRecipeCounts = new();
     private Dictionary<int, int> authorRecipeCounts = new();
-    
-    // Memoized active filter count
-    private int? _cachedActiveFilterCount = null;
     
     // View state
     private bool _isCardView = false;
@@ -291,8 +278,8 @@
         var bookIdParam = query["bookId"];
         if (!string.IsNullOrEmpty(bookIdParam) && int.TryParse(bookIdParam, out var bookId))
         {
-            bookFilter = bookId.ToString();
-            showAllRecipes = false;
+            Filters.BookFilter = bookId.ToString();
+            Filters.ShowAllRecipes = false;
             
             if (books.Any())
             {
@@ -413,27 +400,27 @@
         errorMessage = null;
         try
         {
-            int? rating = GetRatingFilter();
-            int? bookId = GetBookIdFilter();
-            int? storeId = GetStoreIdFilter();
-            int? authorId = GetAuthorIdFilter();
-            
+            int? rating = Filters.GetRatingFilter();
+            int? bookId = Filters.GetBookIdFilter();
+            int? storeId = Filters.GetStoreIdFilter();
+            int? authorId = Filters.GetAuthorIdFilter();
+
             var result = await RecipeService.SearchAsync(
-                searchTerm, rating, bookId, storeId, authorId, currentPage, pageSize, "created_at", true);
-            
+                Filters.SearchTerm, rating, bookId, storeId, authorId, currentPage, pageSize, "created_at", true);
+
             if (result.IsSuccess)
             {
                 var items = result.Value.Items.ToList();
                 var total = result.Value.Total;
-                
-                if (showRecentRecipes)
+
+                if (Filters.ShowRecentRecipes)
                 {
                     var thirtyDaysAgo = DateTime.UtcNow.AddDays(-UIConstants.RecentRecipeDaysThreshold);
                     items = items.Where(r => r.CreationDate >= thirtyDaysAgo).ToList();
                     total = items.Count;
                 }
-                
-                if (showFavorites)
+
+                if (Filters.ShowFavorites)
                 {
                     items = items.Where(r => favoriteRecipeIds.Contains(r.Id)).ToList();
                     total = items.Count;
@@ -471,59 +458,61 @@
         var pageSize = state.PageSize;
         
         int? rating = null;
-        if (quickFilterUnrated)
+        if (Filters.QuickFilterUnrated)
         {
             // Handle unrated in post-processing
         }
-        else if (quickFilterRating.HasValue)
+        else if (Filters.QuickFilterRating.HasValue)
         {
-            if (quickFilterRating.Value == 4)
+            if (Filters.QuickFilterRating.Value == 4)
             {
                 // Handle 4+ in post-processing
             }
             else
             {
-                rating = quickFilterRating.Value;
+                rating = Filters.QuickFilterRating.Value;
             }
         }
-        else if (ratingFilter != "all" && !string.IsNullOrWhiteSpace(ratingFilter))
+        else if (Filters.RatingFilter != "all" && !string.IsNullOrWhiteSpace(Filters.RatingFilter))
         {
-            rating = int.TryParse(ratingFilter, out var r) ? r : null;
+            rating = int.TryParse(Filters.RatingFilter, out var r) ? r : null;
         }
-        
-        int? bookId = GetBookIdFilter();
-        int? storeId = GetStoreIdFilter();
-        int? authorId = GetAuthorIdFilter();
-        
+
+        int? bookId = Filters.GetBookIdFilter();
+        int? storeId = Filters.GetStoreIdFilter();
+        int? authorId = Filters.GetAuthorIdFilter();
+
         var sortLabel = state.SortLabel;
         var sortDescending = state.SortDirection == SortDirection.Descending;
-        
-        var result = await RecipeService.SearchAsync(searchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending, token);
+
+        var result = await RecipeService.SearchAsync(Filters.SearchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending, token);
         if (!result.IsSuccess)
+        {
             return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
-        
+        }
+
         var items = result.Value.Items;
         var total = result.Value.Total;
-        
-        if (quickFilterUnrated)
+
+        if (Filters.QuickFilterUnrated)
         {
             items = items.Where(r => r.Rating == 0 || r.Rating < 1).ToList();
             total = items.Count;
         }
-        else if (quickFilterRating == 4)
+        else if (Filters.QuickFilterRating == 4)
         {
             items = items.Where(r => r.Rating >= 4).ToList();
             total = items.Count;
         }
-        
-        if (showRecentRecipes)
+
+        if (Filters.ShowRecentRecipes)
         {
-            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-UIConstants.RecentRecipeDaysThreshold);
             items = items.Where(r => r.CreationDate >= thirtyDaysAgo).ToList();
             total = items.Count;
         }
-        
-        if (showFavorites)
+
+        if (Filters.ShowFavorites)
         {
             items = items.Where(r => favoriteRecipeIds.Contains(r.Id)).ToList();
             total = items.Count;
@@ -542,80 +531,19 @@
     
     #endregion
     
-    #region Filter Methods
-    
-    private int GetActiveFilterCount()
-    {
-        if (_cachedActiveFilterCount.HasValue)
-            return _cachedActiveFilterCount.Value;
-        
-        int count = 0;
-        if (!string.IsNullOrWhiteSpace(searchTerm)) count++;
-        if (ratingFilter != null && ratingFilter != "all") count++;
-        if (bookFilter != null && bookFilter != "all") count++;
-        if (storeFilter != null && storeFilter != "all") count++;
-        if (authorFilter != null && authorFilter != "all") count++;
-        
-        _cachedActiveFilterCount = count;
-        return count;
-    }
-    
-    private void InvalidateFilterCountCache() => _cachedActiveFilterCount = null;
-    
-    private bool HasActiveFilters()
-    {
-        return !string.IsNullOrWhiteSpace(searchTerm) 
-            || (ratingFilter != null && ratingFilter != "all") 
-            || (bookFilter != null && bookFilter != "all") 
-            || (storeFilter != null && storeFilter != "all")
-            || (authorFilter != null && authorFilter != "all");
-    }
-    
-    private int? GetRatingFilter()
-    {
-        if (quickFilterUnrated)
-            return null;
-        if (quickFilterRating.HasValue && quickFilterRating.Value != 4)
-            return quickFilterRating.Value;
-        if (ratingFilter != "all" && !string.IsNullOrWhiteSpace(ratingFilter))
-            return int.TryParse(ratingFilter, out var r) ? r : null;
-        return null;
-    }
-    
-    private int? GetBookIdFilter()
-    {
-        return (bookFilter == "all" || string.IsNullOrWhiteSpace(bookFilter)) 
-            ? null 
-            : (int.TryParse(bookFilter, out var b) ? b : null);
-    }
-    
-    private int? GetStoreIdFilter()
-    {
-        return (storeFilter == "all" || string.IsNullOrWhiteSpace(storeFilter)) 
-            ? null 
-            : (int.TryParse(storeFilter, out var s) ? s : null);
-    }
-    
-    private int? GetAuthorIdFilter()
-    {
-        return (authorFilter == "all" || string.IsNullOrWhiteSpace(authorFilter)) 
-            ? null 
-            : (int.TryParse(authorFilter, out var a) ? a : null);
-    }
-    
-    #endregion
+    // Filter helpers are now in RecipeFilterState (Filters property)
     
     #region Quick Filter Event Handlers
     
     private async Task ShowAll()
     {
-        showAllRecipes = true;
-        showRecentRecipes = false;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
-        ratingFilter = null;
+        Filters.ShowAllRecipes = true;
+        Filters.ShowRecentRecipes = false;
+        Filters.QuickFilterRating = null;
+        Filters.QuickFilterUnrated = false;
+        Filters.RatingFilter = null;
         currentPage = 1;
-        
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -624,13 +552,13 @@
 
     private async Task ApplyQuickFilter(int rating)
     {
-        showAllRecipes = false;
-        showRecentRecipes = false;
-        quickFilterRating = rating;
-        quickFilterUnrated = false;
-        ratingFilter = rating >= 4 ? null : rating.ToString();
+        Filters.ShowAllRecipes = false;
+        Filters.ShowRecentRecipes = false;
+        Filters.QuickFilterRating = rating;
+        Filters.QuickFilterUnrated = false;
+        Filters.RatingFilter = rating >= 4 ? null : rating.ToString();
         currentPage = 1;
-        
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -639,13 +567,13 @@
 
     private async Task ShowUnrated()
     {
-        showAllRecipes = false;
-        showRecentRecipes = false;
-        quickFilterRating = null;
-        quickFilterUnrated = true;
-        ratingFilter = null;
+        Filters.ShowAllRecipes = false;
+        Filters.ShowRecentRecipes = false;
+        Filters.QuickFilterRating = null;
+        Filters.QuickFilterUnrated = true;
+        Filters.RatingFilter = null;
         currentPage = 1;
-        
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -654,44 +582,44 @@
 
     private async Task ShowFavorites()
     {
-        if (showFavorites)
+        if (Filters.ShowFavorites)
         {
-            showFavorites = false;
-            showAllRecipes = true;
+            Filters.ShowFavorites = false;
+            Filters.ShowAllRecipes = true;
         }
         else
         {
-            showAllRecipes = false;
-            showRecentRecipes = false;
-            quickFilterRating = null;
-            quickFilterUnrated = false;
-            showFavorites = true;
-            ratingFilter = null;
-            bookFilter = null;
-            authorFilter = null;
-            searchTerm = string.Empty;
+            Filters.ShowAllRecipes = false;
+            Filters.ShowRecentRecipes = false;
+            Filters.QuickFilterRating = null;
+            Filters.QuickFilterUnrated = false;
+            Filters.ShowFavorites = true;
+            Filters.RatingFilter = null;
+            Filters.BookFilter = null;
+            Filters.AuthorFilter = null;
+            Filters.SearchTerm = string.Empty;
         }
-        
+
         currentPage = 1;
-        
+
         if (isCardView)
             await LoadCardViewData();
         else
             await Reload();
     }
-    
+
     private async Task ShowRecent()
     {
-        showAllRecipes = false;
-        showRecentRecipes = true;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
-        ratingFilter = null;
-        bookFilter = null;
-        authorFilter = null;
-        searchTerm = string.Empty;
+        Filters.ShowAllRecipes = false;
+        Filters.ShowRecentRecipes = true;
+        Filters.QuickFilterRating = null;
+        Filters.QuickFilterUnrated = false;
+        Filters.RatingFilter = null;
+        Filters.BookFilter = null;
+        Filters.AuthorFilter = null;
+        Filters.SearchTerm = string.Empty;
         currentPage = 1;
-        
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -734,19 +662,9 @@
 
     private async Task ClearAllFilters()
     {
-        searchTerm = string.Empty;
-        ratingFilter = null;
-        bookFilter = null;
-        storeFilter = null;
-        authorFilter = null;
-        showAllRecipes = true;
-        showRecentRecipes = false;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
+        Filters.Reset();
         currentPage = 1;
-        showFavorites = false;
-        InvalidateFilterCountCache();
-        
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -759,10 +677,10 @@
     
     private async Task ClearSearch()
     {
-        searchTerm = string.Empty;
+        Filters.SearchTerm = string.Empty;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -771,14 +689,14 @@
 
     private async Task ClearRating()
     {
-        ratingFilter = null;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
-        showAllRecipes = true;
-        showRecentRecipes = false;
+        Filters.RatingFilter = null;
+        Filters.QuickFilterRating = null;
+        Filters.QuickFilterUnrated = false;
+        Filters.ShowAllRecipes = true;
+        Filters.ShowRecentRecipes = false;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -787,10 +705,10 @@
 
     private async Task ClearBook()
     {
-        bookFilter = null;
+        Filters.BookFilter = null;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -799,10 +717,10 @@
 
     private async Task ClearStore()
     {
-        storeFilter = null;
+        Filters.StoreFilter = null;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -811,10 +729,10 @@
 
     private async Task ClearAuthor()
     {
-        authorFilter = null;
+        Filters.AuthorFilter = null;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -827,13 +745,13 @@
     
     private async Task OnRatingChanged(string? value)
     {
-        ratingFilter = value;
-        showAllRecipes = false;
-        quickFilterRating = null;
-        quickFilterUnrated = false;
+        Filters.RatingFilter = value;
+        Filters.ShowAllRecipes = false;
+        Filters.QuickFilterRating = null;
+        Filters.QuickFilterUnrated = false;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -842,10 +760,10 @@
 
     private async Task OnBookChanged(string? value)
     {
-        bookFilter = value;
+        Filters.BookFilter = value;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -854,10 +772,10 @@
 
     private async Task OnStoreChanged(string? value)
     {
-        storeFilter = value;
+        Filters.StoreFilter = value;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -866,10 +784,10 @@
 
     private async Task OnAuthorChanged(string? value)
     {
-        authorFilter = value;
+        Filters.AuthorFilter = value;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -878,10 +796,10 @@
 
     private async Task OnSearchChanged(string value)
     {
-        searchTerm = value;
+        Filters.SearchTerm = value;
         currentPage = 1;
-        InvalidateFilterCountCache();
-        
+        Filters.InvalidateFilterCountCache();
+
         if (isCardView)
             await LoadCardViewData();
         else
@@ -916,7 +834,7 @@
         favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
         favoritesCount = favoriteRecipeIds.Count;
         
-        if (showFavorites)
+        if (Filters.ShowFavorites)
         {
             if (isCardView)
                 await LoadCardViewData();
@@ -1017,19 +935,13 @@
     
     #region Helper Methods
     
-    private string GetEmptyStateTitle()
-    {
-        if (HasActiveFilters())
-            return "Aucune recette trouvée";
-        return "Aucune recette pour le moment";
-    }
-    
-    private string GetEmptyStateMessage()
-    {
-        if (HasActiveFilters())
-            return "Essayez de modifier vos filtres ou réinitialisez-les pour voir toutes les recettes.";
-        return "Commencez par ajouter votre première recette pour construire votre collection personnelle.";
-    }
+    private string GetEmptyStateTitle() =>
+        Filters.HasActiveFilters() ? "Aucune recette trouvée" : "Aucune recette pour le moment";
+
+    private string GetEmptyStateMessage() =>
+        Filters.HasActiveFilters()
+            ? "Essayez de modifier vos filtres ou réinitialisez-les pour voir toutes les recettes."
+            : "Commencez par ajouter votre première recette pour construire votre collection personnelle.";
 
     private void OnAuthStateChanged()
     {
