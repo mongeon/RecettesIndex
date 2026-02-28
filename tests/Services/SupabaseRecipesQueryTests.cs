@@ -257,7 +257,7 @@ public class SupabaseRecipesQueryTests
         var ids = new List<int>();
 
         // Act
-        var result = await _query.GetRecipesByIdsAsync(ids, CancellationToken.None);
+        var result = await _query.GetRecipesByIdsAsync(ids, ct: CancellationToken.None);
 
         // Assert
         Assert.Empty(result);
@@ -272,7 +272,7 @@ public class SupabaseRecipesQueryTests
         // Act & Assert
         try
         {
-            var result = await _query.GetRecipesByIdsAsync(ids, CancellationToken.None);
+            var result = await _query.GetRecipesByIdsAsync(ids, ct: CancellationToken.None);
             Assert.NotNull(result);
         }
         catch (ServiceException ex)

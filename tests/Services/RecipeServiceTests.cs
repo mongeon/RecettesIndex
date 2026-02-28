@@ -328,7 +328,7 @@ public class RecipeServiceTests
     {
         // Arrange
         var expected = new Recipe { Id = 1, Name = "Test Recipe" };
-        _query.GetRecipesByIdsAsync(Arg.Is<IReadOnlyCollection<int>>(ids => ids.Contains(1)), Arg.Any<CancellationToken>())
+        _query.GetRecipesByIdsAsync(Arg.Is<IReadOnlyCollection<int>>(ids => ids.Contains(1)), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(new List<Recipe> { expected });
 
         // Act
@@ -345,7 +345,7 @@ public class RecipeServiceTests
     public async Task GetByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
-        _query.GetRecipesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>())
+        _query.GetRecipesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(new List<Recipe>());
 
         // Act
