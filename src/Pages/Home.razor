@@ -499,42 +499,60 @@
         randomErrorMessage = null;
         try
         {
-            var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000, "created_at", true);
-            if (!result.IsSuccess)
+            // Fetch lightweight summaries (id, book_id, store_id, rating, created_at) for all recipes.
+            // The rating filter is applied server-side when possible (exact match), or post-filtered
+            // for the "4+" case handled client-side below.
+            var fetchRating = (randomFilterRating.HasValue && randomFilterRating.Value != 4)
+                ? randomFilterRating
+                : null;
+            var summariesResult = await RecipeService.GetRecipeSummariesAsync(fetchRating);
+            if (!summariesResult.IsSuccess)
             {
                 randomRecipes = new List<Recipe>();
-                randomErrorMessage = result.ErrorMessage ?? "Impossible de charger les suggestions aléatoires.";
+                randomErrorMessage = summariesResult.ErrorMessage ?? "Impossible de charger les suggestions aléatoires.";
+                return;
+            }
+            var summaries = summariesResult.Value!.ToList();
+
+            // Apply the "4+ stars" rating filter client-side (not directly expressible as an exact rating).
+            if (randomFilterRating.HasValue && randomFilterRating.Value == 4)
+            {
+                summaries = summaries.Where(r => r.Rating >= 4).ToList();
+            }
+
+            if (summaries.Count == 0)
+            {
+                randomRecipes = new List<Recipe>();
                 return;
             }
 
-            var allRecipes = result.Value.Items.ToList();
-            
-            // Apply rating filter
-            if (randomFilterRating.HasValue)
-            {
-                // Use ternary operator to filter by rating
-                allRecipes = (randomFilterRating.Value == 4)
-                    ? allRecipes.Where(r => r.Rating >= 4).ToList()
-                    : allRecipes.Where(r => r.Rating == randomFilterRating.Value).ToList();
-            }
-            
-            if (allRecipes.Count == 0)
-            {
-                randomRecipes = new List<Recipe>();
-                loadingRandom = false;
-                return;
-            }
-            
-            // Apply smart randomization (weighted by rating and recency)
+            // Select random summaries using weights (rating, recency, favorites).
+            List<Recipe> selectedSummaries;
             if (smartRandomization)
             {
-                randomRecipes = SelectSmartRandomRecipes(allRecipes, UIConstants.RandomRecipeCount);
+                selectedSummaries = SelectSmartRandomRecipes(summaries, UIConstants.RandomRecipeCount);
             }
             else
             {
-                // Use Fisher-Yates shuffle for pure random selection
-                randomRecipes = SelectPureRandomRecipes(allRecipes, UIConstants.RandomRecipeCount);
+                selectedSummaries = SelectPureRandomRecipes(summaries, UIConstants.RandomRecipeCount);
             }
+
+            // Fetch only the full recipe objects for the selected IDs.
+            var selectedIds = selectedSummaries.Select(r => r.Id).ToList();
+            var fullRecipesResult = await RecipeService.GetRecipesByIdsAsync(selectedIds);
+            if (!fullRecipesResult.IsSuccess)
+            {
+                randomRecipes = new List<Recipe>();
+                randomErrorMessage = fullRecipesResult.ErrorMessage ?? "Impossible de charger les suggestions aléatoires.";
+                return;
+            }
+            var fullRecipes = fullRecipesResult.Value!;
+            // Preserve the randomized order from the selection step.
+            randomRecipes = selectedIds
+                .Select(id => fullRecipes.FirstOrDefault(r => r.Id == id))
+                .Where(r => r is not null)
+                .Cast<Recipe>()
+                .ToList();
         }
         catch (Exception ex)
         {

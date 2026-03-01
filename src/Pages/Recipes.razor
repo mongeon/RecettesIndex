@@ -343,36 +343,13 @@
 
     private async Task<List<Recipe>> LoadAllRecipesForCounts()
     {
-        const int pageSizeForCounts = PaginationConstants.CountFetchPageSize;
-        var page = 1;
-        var allRecipes = new List<Recipe>();
-
-        while (true)
+        var result = await RecipeService.GetRecipeSummariesAsync();
+        if (!result.IsSuccess)
         {
-            var result = await RecipeService.SearchAsync(null, null, null, null, null, page, pageSizeForCounts, "created_at", true);
-            if (!result.IsSuccess)
-            {
-                Logger.LogWarning("Failed to load recipe counts page {Page}: {Error}", page, result.ErrorMessage);
-                break;
-            }
-
-            var items = result.Value.Items.ToList();
-            if (items.Count == 0)
-            {
-                break;
-            }
-
-            allRecipes.AddRange(items);
-
-            if (allRecipes.Count >= result.Value.Total)
-            {
-                break;
-            }
-
-            page++;
+            Logger.LogWarning("Failed to load recipe summaries for counts: {Error}", result.ErrorMessage);
+            return [];
         }
-
-        return allRecipes;
+        return result.Value!.ToList();
     }
     
     #endregion

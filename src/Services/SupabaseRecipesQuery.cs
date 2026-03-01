@@ -82,7 +82,7 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
     {
         try
         {
-            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>();
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>().Select("id");
             q = ApplyRatingFilter(q, rating);
 
             var res = await q.Get(cancellationToken: ct);
@@ -97,6 +97,28 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         {
             _logger?.LogError(ex, "Unexpected error while fetching all recipe IDs");
             throw new ServiceException("An unexpected error occurred while fetching recipes", ex);
+        }
+    }
+
+    public async Task<IReadOnlyList<Recipe>> GetRecipeSummariesAsync(int? rating, CancellationToken ct = default)
+    {
+        try
+        {
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>().Select("id,book_id,store_id,rating,created_at");
+            q = ApplyRatingFilter(q, rating);
+
+            var res = await q.Get(cancellationToken: ct);
+            return (IReadOnlyList<Recipe>)(res.Models ?? []);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while fetching recipe summaries");
+            throw new ServiceException("Network error. Please check your connection", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Unexpected error while fetching recipe summaries");
+            throw new ServiceException("An unexpected error occurred while fetching recipe summaries", ex);
         }
     }
 
@@ -204,11 +226,16 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         try
         {
             var like = $"%{term}%";
-            var first = await _supabaseClient.From<Author>().Filter("first_name", Operator.ILike, like).Get(cancellationToken: ct);
-            var last = await _supabaseClient.From<Author>().Filter("last_name", Operator.ILike, like).Get(cancellationToken: ct);
-            var firstList = first.Models ?? [];
-            var lastList = last.Models ?? [];
+            var firstTask = _supabaseClient.From<Author>().Filter("first_name", Operator.ILike, like).Get(cancellationToken: ct);
+            var lastTask = _supabaseClient.From<Author>().Filter("last_name", Operator.ILike, like).Get(cancellationToken: ct);
+            await Task.WhenAll(firstTask, lastTask);
+            var firstList = firstTask.Result.Models ?? [];
+            var lastList = lastTask.Result.Models ?? [];
             return firstList.Concat(lastList).Select(a => a.Id).Distinct().ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (HttpRequestException ex)
         {

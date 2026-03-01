@@ -357,4 +357,84 @@ public class RecipeServiceTests
     }
 
     #endregion
+
+    #region GetRecipeSummariesAsync Tests
+
+    [Fact]
+    public async Task GetRecipeSummariesAsync_WhenQuerySucceeds_ReturnsSuccess()
+    {
+        // Arrange
+        var summaries = new List<Recipe>
+        {
+            new() { Id = 1, Rating = 5 },
+            new() { Id = 2, Rating = 3 }
+        };
+        _query.GetRecipeSummariesAsync(null, Arg.Any<CancellationToken>())
+            .Returns(summaries);
+
+        // Act
+        var result = await _service.GetRecipeSummariesAsync();
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
+    }
+
+    [Fact]
+    public async Task GetRecipeSummariesAsync_WhenQueryThrows_ReturnsFailure()
+    {
+        // Arrange
+        _query.GetRecipeSummariesAsync(null, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<IReadOnlyList<Recipe>>(new Exception("DB error")));
+
+        // Act
+        var result = await _service.GetRecipeSummariesAsync();
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.ErrorMessage);
+    }
+
+    #endregion
+
+    #region GetRecipesByIdsAsync Tests
+
+    [Fact]
+    public async Task GetRecipesByIdsAsync_WhenQuerySucceeds_ReturnsSuccess()
+    {
+        // Arrange
+        var ids = new List<int> { 1, 2 };
+        var recipes = new List<Recipe>
+        {
+            new() { Id = 1, Name = "Pasta" },
+            new() { Id = 2, Name = "Salad" }
+        };
+        _query.GetRecipesByIdsAsync(Arg.Is<IReadOnlyCollection<int>>(c => c.Count == 2), Arg.Any<CancellationToken>(), null, false, 0, 0)
+            .Returns(recipes);
+
+        // Act
+        var result = await _service.GetRecipesByIdsAsync(ids);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
+    }
+
+    [Fact]
+    public async Task GetRecipesByIdsAsync_WhenQueryThrows_ReturnsFailure()
+    {
+        // Arrange
+        var ids = new List<int> { 1 };
+        _query.GetRecipesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>(), null, false, 0, 0)
+            .Returns(Task.FromException<IReadOnlyList<Recipe>>(new Exception("DB error")));
+
+        // Act
+        var result = await _service.GetRecipesByIdsAsync(ids);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.ErrorMessage);
+    }
+
+    #endregion
 }

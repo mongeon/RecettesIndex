@@ -331,6 +331,61 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     }
 
     /// <summary>
+    /// Retrieves lightweight recipe summaries (id, book_id, store_id, rating, created_at) for all recipes.
+    /// Intended for count computations and random selection — Book and Store navigation properties will be null.
+    /// </summary>
+    public async Task<Result<IReadOnlyList<Recipe>>> GetRecipeSummariesAsync(int? rating = null, CancellationToken ct = default)
+    {
+        try
+        {
+            var summaries = await _q.GetRecipeSummariesAsync(rating, ct);
+            return Result<IReadOnlyList<Recipe>>.Success(summaries);
+        }
+        catch (ServiceException ex)
+        {
+            _logger?.LogError(ex, "Service error while retrieving recipe summaries");
+            return Result<IReadOnlyList<Recipe>>.Failure(ex.Message);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while retrieving recipe summaries");
+            return Result<IReadOnlyList<Recipe>>.Failure("Network error. Please check your connection.");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Unexpected error while retrieving recipe summaries");
+            return Result<IReadOnlyList<Recipe>>.Failure("An unexpected error occurred while retrieving recipe summaries.");
+        }
+    }
+
+    /// <summary>
+    /// Retrieves full recipe objects for a specific set of IDs.
+    /// </summary>
+    public async Task<Result<IReadOnlyList<Recipe>>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default)
+    {
+        try
+        {
+            var recipes = await _q.GetRecipesByIdsAsync(ids, ct);
+            return Result<IReadOnlyList<Recipe>>.Success(recipes);
+        }
+        catch (ServiceException ex)
+        {
+            _logger?.LogError(ex, "Service error while retrieving recipes by IDs");
+            return Result<IReadOnlyList<Recipe>>.Failure(ex.Message);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while retrieving recipes by IDs");
+            return Result<IReadOnlyList<Recipe>>.Failure("Network error. Please check your connection.");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Unexpected error while retrieving recipes by IDs");
+            return Result<IReadOnlyList<Recipe>>.Failure("An unexpected error occurred while retrieving recipes.");
+        }
+    }
+
+    /// <summary>
     /// Retrieves all books, cached for improved performance.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
