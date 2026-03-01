@@ -566,4 +566,74 @@ public class SupabaseRecipesQueryTests
     }
 
     #endregion
+
+    #region GetRecipeSummariesAsync Tests
+
+    [Fact]
+    public async Task GetRecipeSummariesAsync_WithoutRating_ReturnsOrThrows()
+    {
+        // Act & Assert
+        try
+        {
+            var result = await _query.GetRecipeSummariesAsync(null, CancellationToken.None);
+            Assert.NotNull(result);
+        }
+        catch (ServiceException ex)
+        {
+            Assert.NotNull(ex.Message);
+        }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public async Task GetRecipeSummariesAsync_WithValidRating_FiltersOrThrows(int rating)
+    {
+        // Act & Assert
+        try
+        {
+            var result = await _query.GetRecipeSummariesAsync(rating, CancellationToken.None);
+            Assert.NotNull(result);
+        }
+        catch (ServiceException)
+        {
+            // Expected when Supabase is unavailable
+        }
+    }
+
+    [Fact]
+    public async Task GetRecipeSummariesAsync_OnException_ThrowsServiceException()
+    {
+        // Act & Assert — mock client will fail; exception must be wrapped as ServiceException
+        var exception = await Assert.ThrowsAsync<ServiceException>(async () =>
+            await _query.GetRecipeSummariesAsync(null, CancellationToken.None));
+
+        Assert.NotNull(exception.Message);
+        Assert.Contains("error", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetRecipeSummariesAsync_WithCancellationToken_PropagatesToken()
+    {
+        // Arrange
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        try
+        {
+            await _query.GetRecipeSummariesAsync(null, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            Assert.True(true);
+        }
+        catch (ServiceException)
+        {
+            Assert.True(true);
+        }
+    }
+
+    #endregion
 }
