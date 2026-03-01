@@ -47,6 +47,7 @@ builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+builder.Services.AddScoped<IErrorLoggingService, ErrorLoggingService>();
 
 var host = builder.Build();
 

@@ -6,6 +6,7 @@
 @inject MudBlazor.IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject RecettesIndex.Services.Abstractions.IErrorLoggingService ErrorLoggingService
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="@_currentTheme" />
 <MudDialogProvider />
@@ -62,9 +63,24 @@
     
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 px-4">
-            <div class="page-enter" @key="NavigationKey">
-                @Body
-            </div>
+            <ErrorBoundary @ref="_errorBoundary">
+                <ChildContent>
+                    <div class="page-enter" @key="NavigationKey">
+                        @Body
+                    </div>
+                </ChildContent>
+                <ErrorContent Context="ex">
+                    @{ _ = ErrorLoggingService.LogErrorAsync(ex, NavigationManager.Uri); }
+                    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16 text-center">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" Style="font-size: 4rem;" />
+                        <MudText Typo="Typo.h5" Class="mt-4">Oups, quelque chose s'est mal passé</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">@ex.Message</MudText>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ResetError">
+                            Réessayer
+                        </MudButton>
+                    </MudContainer>
+                </ErrorContent>
+            </ErrorBoundary>
         </MudContainer>
     </MudMainContent>
 </MudLayout>
@@ -73,6 +89,7 @@
     private bool _drawerOpen = true;
     private bool _isDarkMode;
     private string _currentPath = string.Empty;
+    private ErrorBoundary? _errorBoundary;
     
     // Define light and dark themes
     private MudTheme _currentTheme = new MudTheme
@@ -199,6 +216,17 @@
     protected override void OnInitialized()
     {
         AuthService.AuthStateChanged += OnAuthStateChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _errorBoundary?.Recover();
+    }
+
+    private void ResetError()
+    {
+        _errorBoundary?.Recover();
     }
     
     private void DrawerToggle()
@@ -242,5 +270,6 @@
     public void Dispose()
     {
         AuthService.AuthStateChanged -= OnAuthStateChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
