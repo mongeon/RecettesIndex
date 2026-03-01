@@ -1,12 +1,13 @@
 @using MudBlazor
 
-<MudRating SelectedValue="Value" 
-           SelectedValueChanged="OnValueChanged" 
-           MaxValue="5" 
-           FullIcon="@Icons.Material.Filled.LocalPizza" 
-           EmptyIcon="@Icons.Material.Outlined.LocalPizza" 
+<MudRating SelectedValue="Value"
+           SelectedValueChanged="OnValueChanged"
+           MaxValue="5"
+           FullIcon="@Icons.Material.Filled.LocalPizza"
+           EmptyIcon="@Icons.Material.Outlined.LocalPizza"
            ReadOnly="@ReadOnly"
-           Size="@Size" />
+           Size="@Size"
+           aria-label="@(ReadOnly ? $"Note : {Value} sur 5" : "Choisir une note sur 5")" />
 
 @code {
     [Parameter] public int Value { get; set; }
