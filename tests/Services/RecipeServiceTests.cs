@@ -409,7 +409,7 @@ public class RecipeServiceTests
             new() { Id = 1, Name = "Pasta" },
             new() { Id = 2, Name = "Salad" }
         };
-        _query.GetRecipesByIdsAsync(Arg.Is<IReadOnlyCollection<int>>(c => c.Count == 2), Arg.Any<CancellationToken>(), null, false, 0, 0)
+        _query.GetRecipesByIdsAsync(Arg.Is<IReadOnlyCollection<int>>(c => c.Count == 2), Arg.Any<CancellationToken>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns(recipes);
 
         // Act
@@ -425,7 +425,7 @@ public class RecipeServiceTests
     {
         // Arrange
         var ids = new List<int> { 1 };
-        _query.GetRecipesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>(), null, false, 0, 0)
+        _query.GetRecipesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns(Task.FromException<IReadOnlyList<Recipe>>(new Exception("DB error")));
 
         // Act
