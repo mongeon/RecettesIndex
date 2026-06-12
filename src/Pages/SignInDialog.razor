@@ -1,3 +1,4 @@
+@using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.Extensions.Logging
 @using MudBlazor
@@ -8,28 +9,80 @@
 
 <MudDialog>
     <DialogContent>
-        <MudForm @ref="_form">
-        <MudTextField @bind-Value="email" Label="Courriel" Variant="Variant.Outlined" Required="true" RequiredError="Le courriel est requis." Class="mb-2" />
-        <MudTextField @bind-Value="password" Label="Mot de passe" Variant="Variant.Outlined" InputType="InputType.Password" Required="true" RequiredError="Le mot de passe est requis." Class="mb-2" @onkeypress="OnPasswordKeyPress" />
-        </MudForm>
+        @if (!isResetMode)
+        {
+            <MudForm @ref="_form">
+            <MudTextField @bind-Value="email" Label="Courriel" Variant="Variant.Outlined" Required="true"
+                          RequiredError="Le courriel est requis."
+                          InputType="InputType.Email"
+                          Validation="@(new EmailAddressAttribute() { ErrorMessage = "Le format du courriel est invalide." })"
+                          Disabled="isBusy" Class="mb-2" />
+            <MudTextField @bind-Value="password" Label="Mot de passe" Variant="Variant.Outlined"
+                          InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                          AdornmentAriaLabel="Afficher le mot de passe"
+                          OnAdornmentClick="@(() => showPassword = !showPassword)"
+                          Required="true" RequiredError="Le mot de passe est requis."
+                          Disabled="isBusy" Class="mb-2" @onkeypress="OnPasswordKeyPress" />
+            </MudForm>
+            <MudLink OnClick="@(() => SwitchToResetMode())" Typo="Typo.body2" Disabled="isBusy">Mot de passe oublié ?</MudLink>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-3">
+                Entrez votre courriel et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+            </MudText>
+            <MudForm @ref="_resetForm">
+            <MudTextField @bind-Value="email" Label="Courriel" Variant="Variant.Outlined" Required="true"
+                          RequiredError="Le courriel est requis."
+                          InputType="InputType.Email"
+                          Validation="@(new EmailAddressAttribute() { ErrorMessage = "Le format du courriel est invalide." })"
+                          Disabled="isBusy" Class="mb-2" />
+            </MudForm>
+            @if (resetEmailSent)
+            {
+                <MudAlert Severity="Severity.Success" Class="mt-2">
+                    Si un compte existe pour ce courriel, un lien de réinitialisation a été envoyé.
+                </MudAlert>
+            }
+        }
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+            <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="SignIn" Color="Color.Primary" Variant="Variant.Filled" Disabled="isSigningIn" StartIcon="@Icons.Material.Filled.Login">
-            @if (isSigningIn)
-            {
-                <MudProgressCircular Color="Color.Secondary" Size="Size.Small" Indeterminate="true" />
-                <MudText Class="ml-2">Connexion en cours...</MudText>
-            }
-            else
-            {
-                <MudText>Se connecter</MudText>
-            }
-        </MudButton>
-        <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text" Disabled="isSigningIn">Annuler</MudButton>
+        @if (!isResetMode)
+        {
+            <MudButton OnClick="SignIn" Color="Color.Primary" Variant="Variant.Filled" Disabled="isBusy" StartIcon="@Icons.Material.Filled.Login">
+                @if (isBusy)
+                {
+                    <MudProgressCircular Color="Color.Secondary" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ml-2">Connexion en cours...</MudText>
+                }
+                else
+                {
+                    <MudText>Se connecter</MudText>
+                }
+            </MudButton>
+            <MudButton OnClick="Cancel" Color="Color.Secondary" Variant="Variant.Text" Disabled="isBusy">Annuler</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="SendResetEmail" Color="Color.Primary" Variant="Variant.Filled" Disabled="@(isBusy || resetEmailSent)" StartIcon="@Icons.Material.Filled.MailOutline">
+                @if (isBusy)
+                {
+                    <MudProgressCircular Color="Color.Secondary" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ml-2">Envoi en cours...</MudText>
+                }
+                else
+                {
+                    <MudText>Envoyer le lien</MudText>
+                }
+            </MudButton>
+            <MudButton OnClick="@(() => SwitchToSignInMode())" Color="Color.Secondary" Variant="Variant.Text" Disabled="isBusy">Retour</MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -37,51 +90,107 @@
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
     private MudForm _form = default!;
+    private MudForm _resetForm = default!;
     private string email = string.Empty;
     private string password = string.Empty;
     private string? errorMessage;
-    private bool isSigningIn = false;
+    private bool isBusy = false;
+    private bool showPassword = false;
+    private bool isResetMode = false;
+    private bool resetEmailSent = false;
 
     private async Task SignIn()
     {
-        if (isSigningIn)
+        if (isBusy)
             return;
 
         await _form.Validate();
         if (!_form.IsValid)
             return;
 
-        isSigningIn = true;
+        isBusy = true;
         errorMessage = null;
-        
+
         try
         {
-            var success = await AuthService.SignInAsync(email, password);
-            if (success)
+            var outcome = await AuthService.SignInAsync(email, password);
+            if (outcome == SignInOutcome.Success)
             {
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else
             {
-                errorMessage = "Courriel ou mot de passe invalide.";
+                errorMessage = outcome switch
+                {
+                    SignInOutcome.InvalidCredentials => "Courriel ou mot de passe invalide.",
+                    SignInOutcome.EmailNotConfirmed => "Votre courriel n'a pas encore été confirmé. Vérifiez votre boîte de réception.",
+                    SignInOutcome.NetworkError => "Impossible de joindre le serveur. Vérifiez votre connexion Internet et réessayez.",
+                    SignInOutcome.TooManyRequests => "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
+                    _ => "Une erreur inattendue est survenue. Veuillez réessayer."
+                };
             }
         }
         catch (Exception ex)
         {
-            // Log the actual exception for debugging but show user-friendly message
+            // AuthService maps known failures; this only catches truly unexpected ones
             Logger.LogError(ex, "Login error during sign-in attempt.");
-            errorMessage = "Erreur de connexion. Veuillez vérifier vos identifiants et réessayer.";
+            errorMessage = "Une erreur inattendue est survenue. Veuillez réessayer.";
         }
         finally
         {
-            isSigningIn = false;
+            isBusy = false;
             StateHasChanged();
         }
     }
 
+    private async Task SendResetEmail()
+    {
+        if (isBusy)
+            return;
+
+        await _resetForm.Validate();
+        if (!_resetForm.IsValid)
+            return;
+
+        isBusy = true;
+        errorMessage = null;
+
+        try
+        {
+            var sent = await AuthService.SendPasswordResetAsync(email);
+            if (sent)
+            {
+                resetEmailSent = true;
+            }
+            else
+            {
+                errorMessage = "Impossible d'envoyer le courriel de réinitialisation. Réessayez plus tard.";
+            }
+        }
+        finally
+        {
+            isBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SwitchToResetMode()
+    {
+        isResetMode = true;
+        resetEmailSent = false;
+        errorMessage = null;
+    }
+
+    private void SwitchToSignInMode()
+    {
+        isResetMode = false;
+        resetEmailSent = false;
+        errorMessage = null;
+    }
+
     private async Task OnPasswordKeyPress(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !isSigningIn && !string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(password))
+        if (e.Key == "Enter" && !isBusy && !string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(password))
         {
             await SignIn();
         }

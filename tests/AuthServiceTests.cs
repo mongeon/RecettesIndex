@@ -20,7 +20,7 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_WithValidCredentials_ReturnsTrue()
+    public async Task SignInAsync_WithValidCredentials_ReturnsSuccess()
     {
         // Arrange
         var email = "test@example.com";
@@ -34,12 +34,12 @@ public class AuthServiceTests
         var result = await _authService.SignInAsync(email, password);
 
         // Assert
-        Assert.True(result);
+        Assert.Equal(SignInOutcome.Success, result);
         await _mockAuthWrapper.Received(1).SignIn(email, password);
     }
 
     [Fact]
-    public async Task SignInAsync_WithInvalidCredentials_ReturnsFalse()
+    public async Task SignInAsync_WithInvalidCredentials_ReturnsInvalidCredentials()
     {
         // Arrange
         var email = "test@example.com";
@@ -50,12 +50,12 @@ public class AuthServiceTests
         var result = await _authService.SignInAsync(email, password);
 
         // Assert
-        Assert.False(result);
+        Assert.Equal(SignInOutcome.InvalidCredentials, result);
         await _mockAuthWrapper.Received(1).SignIn(email, password);
     }
 
     [Fact]
-    public async Task SignInAsync_WithNullSession_ReturnsFalse()
+    public async Task SignInAsync_WithNullSession_ReturnsInvalidCredentials()
     {
         // Arrange
         var email = "test@example.com";
@@ -66,11 +66,11 @@ public class AuthServiceTests
         var result = await _authService.SignInAsync(email, password);
 
         // Assert
-        Assert.False(result);
+        Assert.Equal(SignInOutcome.InvalidCredentials, result);
     }
 
     [Fact]
-    public async Task SignInAsync_WithSessionButNullUser_ReturnsFalse()
+    public async Task SignInAsync_WithSessionButNullUser_ReturnsInvalidCredentials()
     {
         // Arrange
         var email = "test@example.com";
@@ -82,22 +82,106 @@ public class AuthServiceTests
         var result = await _authService.SignInAsync(email, password);
 
         // Assert
-        Assert.False(result);
+        Assert.Equal(SignInOutcome.InvalidCredentials, result);
     }
 
     [Fact]
-    public async Task SignInAsync_ThrowsException_ShouldPropagate()
+    public async Task SignInAsync_ThrowsUnexpectedException_ReturnsUnknownError()
     {
         // Arrange
         var email = "test@example.com";
         var password = "password123";
-        _mockAuthWrapper.SignIn(email, password).Throws(new Exception("Network error"));
+        _mockAuthWrapper.SignIn(email, password).Throws(new Exception("Boom"));
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<Exception>(
-            async () => await _authService.SignInAsync(email, password));
+        // Act
+        var result = await _authService.SignInAsync(email, password);
 
-        Assert.Equal("Network error", ex.Message);
+        // Assert
+        Assert.Equal(SignInOutcome.UnknownError, result);
+    }
+
+    [Fact]
+    public async Task SignInAsync_ThrowsHttpRequestException_ReturnsNetworkError()
+    {
+        // Arrange
+        var email = "test@example.com";
+        var password = "password123";
+        _mockAuthWrapper.SignIn(email, password).Throws(new HttpRequestException("offline"));
+
+        // Act
+        var result = await _authService.SignInAsync(email, password);
+
+        // Assert
+        Assert.Equal(SignInOutcome.NetworkError, result);
+    }
+
+    [Fact]
+    public async Task SendPasswordResetAsync_Success_ReturnsTrue()
+    {
+        // Arrange
+        _mockAuthWrapper.SendResetPasswordEmail("test@example.com").Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _authService.SendPasswordResetAsync("test@example.com");
+
+        // Assert
+        Assert.True(result);
+        await _mockAuthWrapper.Received(1).SendResetPasswordEmail("test@example.com");
+    }
+
+    [Fact]
+    public async Task SendPasswordResetAsync_Failure_ReturnsFalse()
+    {
+        // Arrange
+        _mockAuthWrapper.SendResetPasswordEmail("test@example.com").Throws(new Exception("boom"));
+
+        // Act
+        var result = await _authService.SendPasswordResetAsync("test@example.com");
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task WrapperSignedOut_AfterAuthentication_RaisesSessionExpired()
+    {
+        // Arrange - simulate a signed-in session, then a sign-out NOT requested by the user
+        var email = "test@example.com";
+        var mockSession = new Session { User = new User { Email = email } };
+        _mockAuthWrapper.SignIn(email, "pw").Returns(Task.FromResult<Session?>(mockSession));
+        await _authService.SignInAsync(email, "pw");
+
+        var expired = false;
+        _authService.SessionExpired += () => expired = true;
+
+        // Act
+        _mockAuthWrapper.AuthStateChanged += Raise.Event<Action<Supabase.Gotrue.Constants.AuthState>>(
+            Supabase.Gotrue.Constants.AuthState.SignedOut);
+
+        // Assert
+        Assert.True(expired);
+    }
+
+    [Fact]
+    public async Task WrapperSignedOut_DuringUserSignOut_DoesNotRaiseSessionExpired()
+    {
+        // Arrange
+        var email = "test@example.com";
+        var mockSession = new Session { User = new User { Email = email } };
+        _mockAuthWrapper.SignIn(email, "pw").Returns(Task.FromResult<Session?>(mockSession));
+        await _authService.SignInAsync(email, "pw");
+
+        var expired = false;
+        _authService.SessionExpired += () => expired = true;
+        _mockAuthWrapper.When(w => w.SignOut()).Do(_ =>
+            _mockAuthWrapper.AuthStateChanged += Raise.Event<Action<Supabase.Gotrue.Constants.AuthState>>(
+                Supabase.Gotrue.Constants.AuthState.SignedOut));
+
+        // Act
+        await _authService.SignOutAsync();
+
+        // Assert
+        Assert.False(expired);
     }
 
     [Fact]
@@ -125,7 +209,7 @@ public class AuthServiceTests
         var result = await _authService.SignInAsync(email, password);
 
         // Assert
-        Assert.True(result);
+        Assert.Equal(SignInOutcome.Success, result);
         Assert.True(raised);
     }
 
@@ -251,7 +335,7 @@ public class AuthServiceTests
         var result = await _authService.SignInAsync(email, password);
 
         // Assert
-        Assert.False(result);
+        Assert.Equal(SignInOutcome.InvalidCredentials, result);
         await _mockAuthWrapper.Received(1).SignIn(email, password);
     }
 

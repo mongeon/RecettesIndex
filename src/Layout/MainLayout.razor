@@ -6,6 +6,7 @@
 @inject MudBlazor.IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject MudBlazor.ISnackbar Snackbar
 @inject RecettesIndex.Services.Abstractions.IErrorLoggingService ErrorLoggingService
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="@_currentTheme" />
@@ -216,6 +217,7 @@
     protected override void OnInitialized()
     {
         AuthService.AuthStateChanged += OnAuthStateChanged;
+        AuthService.SessionExpired += OnSessionExpired;
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
@@ -251,6 +253,17 @@
     private async Task SignOut()
     {
         await AuthService.SignOutAsync();
+        Snackbar.Add("Vous avez été déconnecté.", Severity.Info);
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void OnSessionExpired()
+    {
+        _ = InvokeAsync(() =>
+        {
+            Snackbar.Add("Votre session a expiré. Veuillez vous reconnecter.", Severity.Warning);
+            StateHasChanged();
+        });
     }
 
     private void OnAuthStateChanged()
@@ -270,6 +283,7 @@
     public void Dispose()
     {
         AuthService.AuthStateChanged -= OnAuthStateChanged;
+        AuthService.SessionExpired -= OnSessionExpired;
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
