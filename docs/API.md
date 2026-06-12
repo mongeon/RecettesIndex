@@ -310,6 +310,19 @@ These services implement their respective interfaces and derive from the CRUD ba
 authors of many books in two queries (associations + authors) instead of one pair of queries per
 book; `BookService.GetAllAsync` uses it to avoid N+1 query patterns.
 
+### Authentication
+
+`AuthService` wraps Supabase GoTrue via `ISupabaseAuthWrapper`:
+
+- `SignInAsync` returns a `SignInOutcome` enum (`Success`, `InvalidCredentials`, `EmailNotConfirmed`,
+  `NetworkError`, `TooManyRequests`, `UnknownError`) so the sign-in dialog can show targeted messages
+- `SendPasswordResetAsync(email)` triggers Supabase's password reset email ("Mot de passe oublié")
+- `AuthStateChanged` fires on any auth state change; `SessionExpired` fires when the session ends
+  without a user-initiated sign-out (expired/rejected refresh token) and is surfaced as a warning
+  snackbar in `MainLayout`
+- Write operations rejected by RLS (Postgrest 401/403) return a distinct re-login message instead of
+  the generic unexpected-error text
+
 ## 🔌 Supabase Integration
 
 ### Configuration
