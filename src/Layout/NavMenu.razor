@@ -1,3 +1,4 @@
+@using Microsoft.Extensions.Logging
 @using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
 @using RecettesIndex.Pages
@@ -6,6 +7,7 @@
 @inject IDialogService DialogService
 @inject AuthService AuthService
 @inject ISnackbar Snackbar
+@inject ILogger<NavMenu> Logger
 @implements IDisposable
 
 <MudNavMenu aria-label="Navigation principale">
@@ -118,11 +120,23 @@
         AuthService.AuthStateChanged += OnAuthStateChanged;
     }
 
-    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        // Refresh recent recipes when navigation occurs
-        await LoadRecentRecipes();
-        await InvokeAsync(StateHasChanged);
+        // Refresh recent recipes when navigation occurs.
+        // Event handlers can't be awaited, so dispatch the async work and
+        // observe its exceptions instead of using async void.
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await LoadRecentRecipes();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to refresh recent recipes after navigation");
+            }
+        });
     }
 
     private async Task LoadRecentRecipes()
