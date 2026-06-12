@@ -65,6 +65,10 @@ public class CacheService(ILogger<CacheService> logger) : ICacheService
                 }
             }
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             // Cache lookup failed - fall through to the factory below

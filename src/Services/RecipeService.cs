@@ -15,10 +15,6 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     private readonly Supabase.Client _supabaseClient = supabaseClient ?? throw new ArgumentNullException(nameof(supabaseClient));
     private readonly ILogger<RecipeService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    // Shown directly in the (French) UI when RLS rejects a write
-    internal const string AuthorizationErrorMessage =
-        "Votre session a expiré ou vous n'avez pas les droits nécessaires. Veuillez vous reconnecter.";
-
     /// <summary>
     /// Searches for recipes based on various criteria with pagination and sorting support.
     /// </summary>
@@ -235,7 +231,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         catch (Supabase.Postgrest.Exceptions.PostgrestException ex) when (ex.StatusCode is 401 or 403)
         {
             _logger?.LogWarning(ex, "Authorization failure while {Action} recipe", "creating");
-            return Result<Recipe>.Failure(AuthorizationErrorMessage);
+            return Result<Recipe>.Failure(AuthConstants.AuthorizationErrorMessage);
         }
         catch (HttpRequestException ex)
         {
@@ -277,7 +273,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         catch (Supabase.Postgrest.Exceptions.PostgrestException ex) when (ex.StatusCode is 401 or 403)
         {
             _logger?.LogWarning(ex, "Authorization failure while {Action} recipe", "updating");
-            return Result<Recipe>.Failure(AuthorizationErrorMessage);
+            return Result<Recipe>.Failure(AuthConstants.AuthorizationErrorMessage);
         }
         catch (HttpRequestException ex)
         {
@@ -335,7 +331,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
         catch (Supabase.Postgrest.Exceptions.PostgrestException ex) when (ex.StatusCode is 401 or 403)
         {
             _logger?.LogWarning(ex, "Authorization failure while deleting recipe: {RecipeId}", id);
-            return Result<bool>.Failure(AuthorizationErrorMessage);
+            return Result<bool>.Failure(AuthConstants.AuthorizationErrorMessage);
         }
         catch (HttpRequestException ex)
         {

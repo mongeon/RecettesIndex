@@ -24,7 +24,7 @@ public class BookService(
                 var response = await _supabaseClient.From<Book>().Get(cancellationToken: token);
                 var books = response.Models ?? [];
 
-                await _bookAuthorService.LoadAuthorsForBooksAsync(books);
+                await _bookAuthorService.LoadAuthorsForBooksAsync(books, token);
 
                 return (IReadOnlyList<Book>)books;
             },

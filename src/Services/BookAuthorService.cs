@@ -141,7 +141,7 @@ public class BookAuthorService(Client supabaseClient, ILogger<BookAuthorService>
     /// <summary>
     /// Loads authors for multiple books in two queries instead of one pair per book
     /// </summary>
-    public async Task LoadAuthorsForBooksAsync(IReadOnlyCollection<Book> books)
+    public async Task LoadAuthorsForBooksAsync(IReadOnlyCollection<Book> books, CancellationToken ct = default)
     {
         if (books.Count == 0)
         {
@@ -154,7 +154,7 @@ public class BookAuthorService(Client supabaseClient, ILogger<BookAuthorService>
 
             var bookAuthorsResponse = await _supabaseClient.From<BookAuthor>()
                 .Filter("book_id", Supabase.Postgrest.Constants.Operator.In, bookIds)
-                .Get();
+                .Get(cancellationToken: ct);
             var associations = bookAuthorsResponse.Models ?? [];
 
             var authorIds = associations.Select(ba => ba.AuthorId).Distinct().ToList();
@@ -163,7 +163,7 @@ public class BookAuthorService(Client supabaseClient, ILogger<BookAuthorService>
             {
                 var authorsResponse = await _supabaseClient.From<Author>()
                     .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
-                    .Get();
+                    .Get(cancellationToken: ct);
                 authorsById = (authorsResponse.Models ?? []).ToDictionary(a => a.Id);
             }
 
@@ -177,6 +177,10 @@ public class BookAuthorService(Client supabaseClient, ILogger<BookAuthorService>
                     ? ids.Where(authorsById.ContainsKey).Select(id => authorsById[id]).ToList()
                     : [];
             }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (HttpRequestException ex)
         {

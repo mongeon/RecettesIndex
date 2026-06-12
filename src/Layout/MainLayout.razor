@@ -29,7 +29,7 @@
                       aria-label="Rechercher une recette" />
         <MudTooltip Text="Rechercher une recette">
             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Inherit"
-                           Class="d-flex d-md-none" OnClick="@(() => NavigationManager.NavigateTo("recipes"))" />
+                           Class="d-flex d-md-none" OnClick="@(() => NavigationManager.NavigateTo("/recipes"))" />
         </MudTooltip>
 
         <MudTooltip Text="Basculer en mode sombre">
@@ -265,7 +265,7 @@
         {
             var term = _globalSearchTerm.Trim();
             _globalSearchTerm = string.Empty;
-            NavigationManager.NavigateTo($"recipes?search={Uri.EscapeDataString(term)}");
+            NavigationManager.NavigateTo($"/recipes?search={Uri.EscapeDataString(term)}");
         }
     }
 
