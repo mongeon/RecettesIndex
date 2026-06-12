@@ -2,13 +2,14 @@
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 
-<MudTable T="Recipe" 
-          ServerData="LoadServerData" 
-          Hover="true" 
-          Elevation="1" 
-          Dense="true" 
-          RowsPerPage="20" 
-          @ref="table" 
+<MudTable T="Recipe"
+          ServerData="LoadServerData"
+          Hover="true"
+          Elevation="1"
+          Dense="true"
+          RowsPerPage="20"
+          Breakpoint="Breakpoint.Md"
+          @ref="table"
           Class="recipe-table">
     <PagerContent>
         <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}"
@@ -83,9 +84,13 @@
         </MudTd>
         @if (IsAuthenticated)
         {
-            <MudTd Style="@GetRowStyle(context)">
-                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => OnEditRecipe.InvokeAsync(context)">Modifier</MudButton>
-                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => OnDeleteRecipe.InvokeAsync(context)">Supprimer</MudButton>
+            <MudTd DataLabel="Actions" Style="@GetRowStyle(context)">
+                <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                           aria-label="@($"Modifier {context.Name}")"
+                           OnClick="() => OnEditRecipe.InvokeAsync(context)">Modifier</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete"
+                           aria-label="@($"Supprimer {context.Name}")"
+                           OnClick="() => OnDeleteRecipe.InvokeAsync(context)">Supprimer</MudButton>
             </MudTd>
         }
     </RowTemplate>
