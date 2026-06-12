@@ -99,7 +99,7 @@
 @code {
     private async Task ShowAddRecipeDialog()
     {
-        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true, BackdropClick = false };
         var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette", options);
         var result = await dialog.Result;
         if (result is not null && !result.Canceled)
