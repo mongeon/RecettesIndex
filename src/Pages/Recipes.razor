@@ -108,8 +108,8 @@
                     IconColor="Color.Secondary"
                     Title="@GetEmptyStateTitle()"
                     Message="@GetEmptyStateMessage()"
-                    ShowAction="@(!Filters.HasActiveFilters())"
-                    ActionText="Ajouter une recette"
+                    ShowAction="@(!Filters.HasActiveFilters() && AuthService.IsAuthenticated)"
+                    ActionText="Ajouter votre première recette"
                     ActionIcon="@Icons.Material.Filled.Add"
                     OnActionClick="ShowAddDialog"
                     SecondaryActionText="@(Filters.HasActiveFilters() ? "Réinitialiser les filtres" : null)"
@@ -940,7 +940,9 @@
     private string GetEmptyStateMessage() =>
         Filters.HasActiveFilters()
             ? "Essayez de modifier vos filtres ou réinitialisez-les pour voir toutes les recettes."
-            : "Commencez par ajouter votre première recette pour construire votre collection personnelle.";
+            : AuthService.IsAuthenticated
+                ? "Commencez par ajouter votre première recette pour construire votre collection personnelle."
+                : "Connectez-vous (bouton en haut à droite) pour commencer à construire votre collection de recettes.";
 
     private void OnAuthStateChanged()
     {
