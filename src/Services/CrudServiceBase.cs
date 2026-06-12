@@ -90,7 +90,7 @@ public abstract class CrudServiceBase<TModel, TService>
         catch (Supabase.Postgrest.Exceptions.PostgrestException ex) when (ex.StatusCode is 401 or 403)
         {
             _logger.LogWarning(ex, "Authorization failure while creating entity");
-            return Result<TModel>.Failure(RecipeService.AuthorizationErrorMessage);
+            return Result<TModel>.Failure(AuthConstants.AuthorizationErrorMessage);
         }
         catch (HttpRequestException ex)
         {
@@ -134,7 +134,7 @@ public abstract class CrudServiceBase<TModel, TService>
         catch (Supabase.Postgrest.Exceptions.PostgrestException ex) when (ex.StatusCode is 401 or 403)
         {
             _logger.LogWarning(ex, "Authorization failure while updating {Entity}", entityNameForLogging ?? "entity");
-            return Result<TModel>.Failure(RecipeService.AuthorizationErrorMessage);
+            return Result<TModel>.Failure(AuthConstants.AuthorizationErrorMessage);
         }
         catch (HttpRequestException ex)
         {
@@ -187,7 +187,7 @@ public abstract class CrudServiceBase<TModel, TService>
         catch (Supabase.Postgrest.Exceptions.PostgrestException ex) when (ex.StatusCode is 401 or 403)
         {
             _logger.LogWarning(ex, "Authorization failure while deleting {Entity}: {Id}", entityNameForLogging, id);
-            return Result<bool>.Failure(RecipeService.AuthorizationErrorMessage);
+            return Result<bool>.Failure(AuthConstants.AuthorizationErrorMessage);
         }
         catch (HttpRequestException ex)
         {

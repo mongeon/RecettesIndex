@@ -36,6 +36,7 @@ public interface IBookAuthorService
     /// and populates each book's Authors property.
     /// </summary>
     /// <param name="books">The books to load authors for. Their Authors properties will be populated.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task LoadAuthorsForBooksAsync(IReadOnlyCollection<Book> books);
+    public Task LoadAuthorsForBooksAsync(IReadOnlyCollection<Book> books, CancellationToken ct = default);
 }

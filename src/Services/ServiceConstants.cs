@@ -1,6 +1,18 @@
 namespace RecettesIndex.Services;
 
 /// <summary>
+/// Constants for authentication and authorization messaging.
+/// </summary>
+public static class AuthConstants
+{
+    /// <summary>
+    /// Shown directly in the (French) UI when a write is rejected with 401/403 (RLS or expired token).
+    /// </summary>
+    public const string AuthorizationErrorMessage =
+        "Votre session a expiré ou vous n'avez pas les droits nécessaires. Veuillez vous reconnecter.";
+}
+
+/// <summary>
 /// Constants for caching configuration.
 /// </summary>
 public static class CacheConstants
