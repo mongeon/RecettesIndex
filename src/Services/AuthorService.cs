@@ -25,10 +25,11 @@ public class AuthorService(
     public Task<Result<Author>> GetByIdAsync(int id, CancellationToken ct = default)
         => GetByIdCoreAsync(
             id,
-            async () => await _supabaseClient.From<Author>().Where(x => x.Id == id).Single(),
+            async token => await _supabaseClient.From<Author>().Where(x => x.Id == id).Single(cancellationToken: token),
             $"Author with ID {id} not found",
             "getting author by id",
-            "An unexpected error occurred while loading the author");
+            "An unexpected error occurred while loading the author",
+            ct);
 
     public Task<Result<Author>> CreateAsync(Author author, CancellationToken ct = default)
         => CreateCoreAsync(
@@ -41,10 +42,10 @@ public class AuthorService(
                 if (err != null) return err;
                 return null;
             },
-            async () =>
+            async token =>
             {
                 author.CreationDate = DateTime.UtcNow;
-                var response = await _supabaseClient.From<Author>().Insert(author);
+                var response = await _supabaseClient.From<Author>().Insert(author, cancellationToken: token);
                 return response.Models?.FirstOrDefault();
             },
             onSuccess: created =>
@@ -52,7 +53,8 @@ public class AuthorService(
                 _cache.Remove(CacheConstants.AuthorsListKey);
                 _logger.LogInformation("Author created successfully: {AuthorId}", created.Id);
             },
-            unexpectedUserMessage: "An unexpected error occurred while creating the author");
+            unexpectedUserMessage: "An unexpected error occurred while creating the author",
+            ct: ct);
 
     public Task<Result<Author>> UpdateAsync(Author author, CancellationToken ct = default)
         => UpdateCoreAsync(
@@ -67,9 +69,9 @@ public class AuthorService(
                 if (err != null) return err;
                 return null;
             },
-            async () =>
+            async token =>
             {
-                var response = await _supabaseClient.From<Author>().Where(x => x.Id == author.Id).Update(author);
+                var response = await _supabaseClient.From<Author>().Where(x => x.Id == author.Id).Update(author, cancellationToken: token);
                 return response.Models?.FirstOrDefault();
             },
             onSuccess: updated =>
@@ -79,13 +81,14 @@ public class AuthorService(
             },
             unexpectedUserMessage: "An unexpected error occurred while updating the author",
             idForLogging: author?.Id,
-            entityNameForLogging: "author");
+            entityNameForLogging: "author",
+            ct: ct);
 
     public Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default)
         => DeleteCoreAsync(
             id,
-            async () => await _supabaseClient.From<Author>().Where(x => x.Id == id).Single(),
-            async () => await _supabaseClient.From<Author>().Where(x => x.Id == id).Delete(),
+            async token => await _supabaseClient.From<Author>().Where(x => x.Id == id).Single(cancellationToken: token),
+            async token => await _supabaseClient.From<Author>().Where(x => x.Id == id).Delete(cancellationToken: token),
             onSuccess: () =>
             {
                 _cache.Remove(CacheConstants.AuthorsListKey);
@@ -93,5 +96,6 @@ public class AuthorService(
             },
             notFoundMessage: $"Author with ID {id} not found",
             unexpectedUserMessage: "An unexpected error occurred while deleting the author",
-            entityNameForLogging: "author");
+            entityNameForLogging: "author",
+            ct: ct);
 }

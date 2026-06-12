@@ -34,10 +34,11 @@ public class BookService(
     public Task<Result<Book>> GetByIdAsync(int id, CancellationToken ct = default)
         => GetByIdCoreAsync(
             id,
-            async () => await _supabaseClient.From<Book>().Where(x => x.Id == id).Single(),
+            async token => await _supabaseClient.From<Book>().Where(x => x.Id == id).Single(cancellationToken: token),
             $"Book with ID {id} not found",
             "getting book by id",
-            "An unexpected error occurred while loading the book");
+            "An unexpected error occurred while loading the book",
+            ct);
 
     public Task<Result<Book>> CreateAsync(Book book, IEnumerable<int> authorIds, CancellationToken ct = default)
         => CreateCoreAsync(
@@ -50,10 +51,10 @@ public class BookService(
                 if (err != null) return err;
                 return null;
             },
-            async () =>
+            async token =>
             {
                 book.CreationDate = DateTime.UtcNow;
-                var response = await _supabaseClient.From<Book>().Insert(book);
+                var response = await _supabaseClient.From<Book>().Insert(book, cancellationToken: token);
                 var createdBook = response.Models?.FirstOrDefault();
                 if (createdBook == null) return null;
 
@@ -62,7 +63,7 @@ public class BookService(
                 {
                     var authorsResponse = await _supabaseClient.From<Author>()
                         .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIdsList)
-                        .Get(cancellationToken: ct);
+                        .Get(cancellationToken: token);
                     var authors = authorsResponse.Models ?? [];
                     await _bookAuthorService.CreateBookAuthorAssociationsAsync(createdBook.Id, authors);
                     createdBook.Authors = authors;
@@ -74,7 +75,8 @@ public class BookService(
                 _cache.Remove(CacheConstants.BooksListKey);
                 _logger.LogInformation("Book created successfully: {BookId}", created.Id);
             },
-            unexpectedUserMessage: "An unexpected error occurred while creating the book");
+            unexpectedUserMessage: "An unexpected error occurred while creating the book",
+            ct: ct);
 
     public Task<Result<Book>> UpdateAsync(Book book, IEnumerable<int> authorIds, CancellationToken ct = default)
         => UpdateCoreAsync(
@@ -89,18 +91,18 @@ public class BookService(
                 if (err != null) return err;
                 return null;
             },
-            async () =>
+            async token =>
             {
                 var response = await _supabaseClient.From<Book>()
                     .Where(x => x.Id == book.Id)
-                    .Update(book);
+                    .Update(book, cancellationToken: token);
                 var updatedBook = response.Models?.FirstOrDefault();
                 if (updatedBook == null) return null;
 
                 var authorIdsList = authorIds.ToList();
                 var authorsResponse = await _supabaseClient.From<Author>()
                     .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIdsList)
-                    .Get(cancellationToken: ct);
+                    .Get(cancellationToken: token);
                 var authors = authorsResponse.Models ?? [];
                 await _bookAuthorService.UpdateBookAuthorAssociationsAsync(updatedBook.Id, authors);
                 updatedBook.Authors = authors;
@@ -114,13 +116,14 @@ public class BookService(
             },
             unexpectedUserMessage: "An unexpected error occurred while updating the book",
             idForLogging: book?.Id,
-            entityNameForLogging: "book");
+            entityNameForLogging: "book",
+            ct: ct);
 
     public Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default)
         => DeleteCoreAsync(
             id,
-            async () => await _supabaseClient.From<Book>().Where(x => x.Id == id).Single(),
-            async () => await _supabaseClient.From<Book>().Where(x => x.Id == id).Delete(),
+            async token => await _supabaseClient.From<Book>().Where(x => x.Id == id).Single(cancellationToken: token),
+            async token => await _supabaseClient.From<Book>().Where(x => x.Id == id).Delete(cancellationToken: token),
             onSuccess: () =>
             {
                 _cache.Remove(CacheConstants.BooksListKey);
@@ -128,5 +131,6 @@ public class BookService(
             },
             notFoundMessage: $"Book with ID {id} not found",
             unexpectedUserMessage: "An unexpected error occurred while deleting the book",
-            entityNameForLogging: "book");
+            entityNameForLogging: "book",
+            ct: ct);
 }
