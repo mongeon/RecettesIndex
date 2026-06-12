@@ -210,6 +210,38 @@ public class BookAuthorServiceTests
 
     #endregion
 
+    #region LoadAuthorsForBooksAsync Tests
+
+    [Fact]
+    public async Task LoadAuthorsForBooksAsync_EmptyCollection_DoesNotThrow()
+    {
+        // Act
+        await _service.LoadAuthorsForBooksAsync(Array.Empty<Book>());
+    }
+
+    [Fact]
+    public async Task LoadAuthorsForBooksAsync_ExceptionThrown_SetsEmptyListOnAllBooks()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new() { Id = 1, Name = "Book One" },
+            new() { Id = 2, Name = "Book Two" }
+        };
+
+        // Act - force an error by using the mock client which will fail
+        await _service.LoadAuthorsForBooksAsync(books);
+
+        // Assert - should handle error gracefully for every book
+        Assert.All(books, book =>
+        {
+            Assert.NotNull(book.Authors);
+            Assert.Empty(book.Authors);
+        });
+    }
+
+    #endregion
+
     #region Error Handling Tests
 
     [Fact]
