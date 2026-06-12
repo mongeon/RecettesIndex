@@ -26,7 +26,6 @@ public class RecipeRatingValidationTests
     [Theory]
     [InlineData(-5)]
     [InlineData(-1)]
-    [InlineData(0)]
     [InlineData(6)]
     [InlineData(10)]
     [InlineData(100)]
@@ -43,14 +42,14 @@ public class RecipeRatingValidationTests
         Assert.Equal(invalidRating, recipe.Rating);
 
         // But validation attribute will catch this during validation
-        Assert.True(invalidRating < 1 || invalidRating > 5,
-            $"Rating {invalidRating} should be outside the valid range of 1-5");
+        Assert.True(invalidRating < 0 || invalidRating > 5,
+            $"Rating {invalidRating} should be outside the valid range of 0-5");
 
         // Note: Use RecipeValidationTests for actual validation testing
     }
 
     [Fact]
-    public void Recipe_Rating_DefaultValue_IsZeroAndRequiresValidation()
+    public void Recipe_Rating_DefaultValue_IsZeroMeaningNotRated()
     {
         // Arrange & Act
         var recipe = new Recipe();
@@ -58,8 +57,7 @@ public class RecipeRatingValidationTests
         // Assert
         Assert.Equal(0, recipe.Rating);
 
-        // Note: Default value of 0 is outside valid range
-        // Validation will fail until rating is set to 1-5
+        // Note: Default value of 0 means "not rated" and is valid
     }
 
     [Theory]

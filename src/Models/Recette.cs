@@ -25,10 +25,10 @@ public class Recipe : BaseModel
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the rating of the recipe (1-5 stars).
+    /// Gets or sets the rating of the recipe (1-5 stars, 0 = not rated).
     /// </summary>
     [Column("rating")]
-    [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
+    [Range(0, 5, ErrorMessage = "Rating must be between 0 and 5")]
     public int Rating { get; set; }
 
     /// <summary>
