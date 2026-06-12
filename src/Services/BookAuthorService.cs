@@ -137,4 +137,62 @@ public class BookAuthorService(Client supabaseClient, ILogger<BookAuthorService>
             book.Authors = [];
         }
     }
+
+    /// <summary>
+    /// Loads authors for multiple books in two queries instead of one pair per book
+    /// </summary>
+    public async Task LoadAuthorsForBooksAsync(IReadOnlyCollection<Book> books)
+    {
+        if (books.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var bookIds = books.Select(b => b.Id).ToList();
+
+            var bookAuthorsResponse = await _supabaseClient.From<BookAuthor>()
+                .Filter("book_id", Supabase.Postgrest.Constants.Operator.In, bookIds)
+                .Get();
+            var associations = bookAuthorsResponse.Models ?? [];
+
+            var authorIds = associations.Select(ba => ba.AuthorId).Distinct().ToList();
+            var authorsById = new Dictionary<int, Author>();
+            if (authorIds.Count > 0)
+            {
+                var authorsResponse = await _supabaseClient.From<Author>()
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.In, authorIds)
+                    .Get();
+                authorsById = (authorsResponse.Models ?? []).ToDictionary(a => a.Id);
+            }
+
+            var authorIdsByBookId = associations
+                .GroupBy(ba => ba.BookId)
+                .ToDictionary(g => g.Key, g => g.Select(ba => ba.AuthorId).ToList());
+
+            foreach (var book in books)
+            {
+                book.Authors = authorIdsByBookId.TryGetValue(book.Id, out var ids)
+                    ? ids.Where(authorsById.ContainsKey).Select(id => authorsById[id]).ToList()
+                    : [];
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Network error loading authors for {BookCount} books", books.Count);
+            foreach (var book in books)
+            {
+                book.Authors = [];
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error loading authors for {BookCount} books", books.Count);
+            foreach (var book in books)
+            {
+                book.Authors = [];
+            }
+        }
+    }
 }

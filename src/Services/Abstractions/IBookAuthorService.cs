@@ -30,4 +30,12 @@ public interface IBookAuthorService
     /// <param name="book">The book to load authors for. Its Authors property will be populated.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public Task LoadAuthorsForBookAsync(Book book);
+
+    /// <summary>
+    /// Loads authors for multiple books in a fixed number of queries (no per-book round trips)
+    /// and populates each book's Authors property.
+    /// </summary>
+    /// <param name="books">The books to load authors for. Their Authors properties will be populated.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public Task LoadAuthorsForBooksAsync(IReadOnlyCollection<Book> books);
 }
