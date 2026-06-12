@@ -190,11 +190,11 @@
     {
         try
         {
-            // Get all recipes to count by store
-            var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
+            // Lightweight summaries are enough to count recipes by store
+            var result = await RecipeService.GetRecipeSummariesAsync();
             if (result.IsSuccess)
             {
-                recipeCountsByStore = result.Value.Items
+                recipeCountsByStore = result.Value
                     .Where(r => r.StoreId.HasValue)
                     .GroupBy(r => r.StoreId!.Value)
                     .ToDictionary(g => g.Key, g => g.Count());
