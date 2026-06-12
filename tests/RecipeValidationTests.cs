@@ -14,6 +14,7 @@ public class RecipeValidationTests
     }
 
     [Theory]
+    [InlineData(0)] // 0 = not rated
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
@@ -37,7 +38,6 @@ public class RecipeValidationTests
 
     [Theory]
     [InlineData(-1)]
-    [InlineData(0)]
     [InlineData(6)]
     [InlineData(10)]
     [InlineData(100)]
@@ -55,23 +55,22 @@ public class RecipeValidationTests
 
         // Assert
         Assert.Single(validationResults);
-        Assert.Equal("Rating must be between 1 and 5", validationResults[0].ErrorMessage);
+        Assert.Equal("Rating must be between 0 and 5", validationResults[0].ErrorMessage);
         Assert.Contains("Rating", validationResults[0].MemberNames);
     }
 
     [Fact]
-    public void Recipe_DefaultRating_FailsValidation()
+    public void Recipe_DefaultRating_IsUnratedAndPassesValidation()
     {
         // Arrange
         var recipe = new Recipe { Name = "Test Recipe" };
-        // Default rating is 0, which is invalid
+        // Default rating is 0, which means "not rated" and is valid
 
         // Act
         var validationResults = ValidateModel(recipe);
 
         // Assert
-        Assert.Single(validationResults);
-        Assert.Equal("Rating must be between 1 and 5", validationResults[0].ErrorMessage);
+        Assert.Empty(validationResults);
     }
 
     [Fact]
@@ -169,7 +168,7 @@ public class RecipeValidationTests
         var recipe = new Recipe
         {
             Name = "Test Recipe",
-            Rating = 0 // Invalid
+            Rating = 6 // Invalid
         };
 
         // Act
@@ -179,6 +178,6 @@ public class RecipeValidationTests
         Assert.Single(validationResults);
         var validationResult = validationResults[0];
         Assert.Equal("Rating", validationResult.MemberNames.Single());
-        Assert.Equal("Rating must be between 1 and 5", validationResult.ErrorMessage);
+        Assert.Equal("Rating must be between 0 and 5", validationResult.ErrorMessage);
     }
 }

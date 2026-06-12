@@ -804,28 +804,41 @@
         NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
     }
     
+    private readonly HashSet<int> _togglingFavoriteIds = new();
+
     private async Task ToggleFavorite(Recipe recipe)
     {
-        await LocalStorage.ToggleFavoriteAsync(recipe.Id);
-        
-        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
-        favoritesCount = favoriteRecipeIds.Count;
-        
-        if (Filters.ShowFavorites)
+        // Ignore rapid double-clicks while a toggle for this recipe is in flight
+        if (!_togglingFavoriteIds.Add(recipe.Id))
+            return;
+
+        try
         {
-            if (isCardView)
-                await LoadCardViewData();
-            else
-                await Reload();
+            await LocalStorage.ToggleFavoriteAsync(recipe.Id);
+
+            favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+            favoritesCount = favoriteRecipeIds.Count;
+
+            if (Filters.ShowFavorites)
+            {
+                if (isCardView)
+                    await LoadCardViewData();
+                else
+                    await Reload();
+            }
+
+            StateHasChanged();
+
+            var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
+            Snackbar.Add(
+                isFavorite ? $"'{recipe.Name}' ajouté aux favoris ❤️" : $"'{recipe.Name}' retiré des favoris",
+                isFavorite ? Severity.Success : Severity.Info
+            );
         }
-        
-        StateHasChanged();
-        
-        var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
-        Snackbar.Add(
-            isFavorite ? $"'{recipe.Name}' ajouté aux favoris ❤️" : $"'{recipe.Name}' retiré des favoris",
-            isFavorite ? Severity.Success : Severity.Info
-        );
+        finally
+        {
+            _togglingFavoriteIds.Remove(recipe.Id);
+        }
     }
 
     private async Task ShowAddDialog()
