@@ -19,7 +19,19 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h6" Class="ml-2 d-none d-sm-flex" Style="font-weight: 700; letter-spacing: -0.5px;">Mes Recettes</MudText>
         <MudSpacer />
-        
+
+        <MudTextField T="string" @bind-Value="_globalSearchTerm"
+                      Placeholder="Rechercher une recette... (Ctrl+K)"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Margin="Margin.Dense" Variant="Variant.Outlined" Clearable="true"
+                      Immediate="true" OnKeyUp="OnGlobalSearchKeyUp"
+                      Class="global-search d-none d-md-flex mr-3"
+                      aria-label="Rechercher une recette" />
+        <MudTooltip Text="Rechercher une recette">
+            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Inherit"
+                           Class="d-flex d-md-none" OnClick="@(() => NavigationManager.NavigateTo("recipes"))" />
+        </MudTooltip>
+
         <MudTooltip Text="Basculer en mode sombre">
             <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
                           Color="Color.Inherit" 
@@ -89,6 +101,7 @@
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode;
+    private string _globalSearchTerm = string.Empty;
     private string _currentPath = string.Empty;
     private ErrorBoundary? _errorBoundary;
     
@@ -99,6 +112,9 @@
         {
             Primary = "#FF6B6B",
             Secondary = "#4ECDC4",
+            // Dark amber instead of the default light tertiary so icon+text
+            // combinations stay readable (WCAG AA) on light surfaces
+            Tertiary = "#C77800",
             Background = "#F7F5F3",
             Surface = "#FFFFFF",
             AppbarBackground = "#FF6B6B",
@@ -241,6 +257,16 @@
         _isDarkMode = !_isDarkMode;
         // Save the user's preference to local storage
         await JSRuntime.InvokeVoidAsync("localStorage.setItem", "recipes-theme-preference", _isDarkMode ? "dark" : "light");
+    }
+
+    private void OnGlobalSearchKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_globalSearchTerm))
+        {
+            var term = _globalSearchTerm.Trim();
+            _globalSearchTerm = string.Empty;
+            NavigationManager.NavigateTo($"recipes?search={Uri.EscapeDataString(term)}");
+        }
     }
 
     private async Task ShowSignInDialog()

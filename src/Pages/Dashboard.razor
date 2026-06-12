@@ -12,6 +12,7 @@
 <PageTitle>Tableau de Bord - Mes Recettes</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4 pa-0" />
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-6">
         <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Style="font-size: 2rem;" />
         <MudText Typo="Typo.h4">Tableau de Bord</MudText>
@@ -355,6 +356,11 @@
 
 @code {
     private bool loading = true;
+    private readonly List<BreadcrumbItem> breadcrumbs =
+    [
+        new BreadcrumbItem("Accueil", href: ""),
+        new BreadcrumbItem("Tableau de bord", href: "/dashboard", disabled: true)
+    ];
     private DashboardStatistics statistics = new();
     
     // Chart Data

@@ -362,14 +362,53 @@
 
 /* =============================================
    RECIPE CARD HOVER EFFECTS
+   (hover-capable devices only, so the lift effect
+   doesn't stick after a tap on touch screens)
    ============================================= */
 .recipe-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.recipe-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+@media (hover: hover) {
+    .recipe-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+    }
+}
+
+/* =============================================
+   KEYBOARD FOCUS VISIBILITY
+   ============================================= */
+.recipe-card:focus-visible,
+.mud-button-root:focus-visible,
+.mud-icon-button:focus-visible {
+    outline: 2px solid #FF6B6B;
+    outline-offset: 2px;
+}
+
+/* =============================================
+   GLOBAL SEARCH IN APP BAR
+   ============================================= */
+.global-search {
+    max-width: 300px;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+}
+
+.global-search .mud-input-slot,
+.global-search input,
+.global-search .mud-input-adornment .mud-icon-root,
+.global-search .mud-icon-button {
+    color: #ffffff !important;
+}
+
+.global-search input::placeholder {
+    color: rgba(255, 255, 255, 0.75) !important;
+    opacity: 1;
+}
+
+.global-search .mud-input-outlined-border {
+    border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
 /* =============================================
