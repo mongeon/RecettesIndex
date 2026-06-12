@@ -270,24 +270,79 @@
         }
     }
     
+    private static string? NormalizeFilterValue(string? value)
+        => string.IsNullOrWhiteSpace(value) || value == "all" ? null : value;
+
     private async Task ReadQueryParameters()
     {
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        
-        var bookIdParam = query["bookId"];
-        if (!string.IsNullOrEmpty(bookIdParam) && int.TryParse(bookIdParam, out var bookId))
+
+        var newSearch = query["search"] ?? string.Empty;
+        var newRating = NormalizeFilterValue(query["rating"]);
+        var newBook = NormalizeFilterValue(query["bookId"]);
+        var newStore = NormalizeFilterValue(query["storeId"]);
+        var newAuthor = NormalizeFilterValue(query["authorId"]);
+
+        var changed =
+            newSearch != Filters.SearchTerm
+            || newRating != NormalizeFilterValue(Filters.RatingFilter)
+            || newBook != NormalizeFilterValue(Filters.BookFilter)
+            || newStore != NormalizeFilterValue(Filters.StoreFilter)
+            || newAuthor != NormalizeFilterValue(Filters.AuthorFilter);
+
+        if (!changed)
         {
-            Filters.BookFilter = bookId.ToString();
+            return;
+        }
+
+        Filters.SearchTerm = newSearch;
+        Filters.RatingFilter = newRating;
+        Filters.BookFilter = newBook;
+        Filters.StoreFilter = newStore;
+        Filters.AuthorFilter = newAuthor;
+        if (Filters.HasActiveFilters())
+        {
             Filters.ShowAllRecipes = false;
-            
-            if (books.Any())
-            {
-                if (isCardView)
-                    await LoadCardViewData();
-                else
-                    await Reload();
-            }
+        }
+        currentPage = 1;
+        Filters.InvalidateFilterCountCache();
+
+        if (books.Any())
+        {
+            if (isCardView)
+                await LoadCardViewData();
+            else
+                await Reload();
+        }
+    }
+
+    /// <summary>
+    /// Mirrors the advanced filters into the URL (replace, not push) so filtered
+    /// views can be bookmarked and shared, then reloads the current view.
+    /// </summary>
+    private async Task ApplyFiltersAsync()
+    {
+        SyncFiltersToUrl();
+        if (isCardView)
+            await LoadCardViewData();
+        else
+            await Reload();
+    }
+
+    private void SyncFiltersToUrl()
+    {
+        var target = NavigationManager.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["search"] = string.IsNullOrWhiteSpace(Filters.SearchTerm) ? null : Filters.SearchTerm,
+            ["rating"] = NormalizeFilterValue(Filters.RatingFilter),
+            ["bookId"] = NormalizeFilterValue(Filters.BookFilter),
+            ["storeId"] = NormalizeFilterValue(Filters.StoreFilter),
+            ["authorId"] = NormalizeFilterValue(Filters.AuthorFilter),
+        });
+        if (target != NavigationManager.Uri)
+        {
+            NavigationManager.NavigateTo(target, forceLoad: false, replace: true);
         }
     }
     
@@ -521,10 +576,7 @@
         Filters.RatingFilter = null;
         currentPage = 1;
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ApplyQuickFilter(int rating)
@@ -536,10 +588,7 @@
         Filters.RatingFilter = rating >= 4 ? null : rating.ToString();
         currentPage = 1;
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ShowUnrated()
@@ -551,10 +600,7 @@
         Filters.RatingFilter = null;
         currentPage = 1;
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ShowFavorites()
@@ -579,10 +625,7 @@
 
         currentPage = 1;
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ShowRecent()
@@ -597,10 +640,7 @@
         Filters.SearchTerm = string.Empty;
         currentPage = 1;
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
     
     private async Task ShowRandom()
@@ -642,10 +682,7 @@
         Filters.Reset();
         currentPage = 1;
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
     
     #endregion
@@ -658,10 +695,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ClearRating()
@@ -674,10 +708,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ClearBook()
@@ -686,10 +717,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ClearStore()
@@ -698,10 +726,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task ClearAuthor()
@@ -710,10 +735,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
     
     #endregion
@@ -729,10 +751,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task OnBookChanged(string? value)
@@ -741,10 +760,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task OnStoreChanged(string? value)
@@ -753,10 +769,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task OnAuthorChanged(string? value)
@@ -765,10 +778,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
 
     private async Task OnSearchChanged(string value)
@@ -777,10 +787,7 @@
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 
-        if (isCardView)
-            await LoadCardViewData();
-        else
-            await Reload();
+        await ApplyFiltersAsync();
     }
     
     private async Task OnPageChanged(int page)
