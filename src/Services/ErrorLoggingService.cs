@@ -12,6 +12,7 @@ public class ErrorLoggingService(Supabase.Client supabaseClient, ILogger<ErrorLo
         {
             var log = new AppLog
             {
+                CreatedAt = DateTime.UtcNow,
                 Level = "Error",
                 Message = ex.Message,
                 Context = context,

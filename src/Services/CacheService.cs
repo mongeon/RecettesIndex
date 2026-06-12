@@ -52,7 +52,7 @@ public class CacheService(ILogger<CacheService> logger) : ICacheService
                     else
                     {
                         // Type mismatch - remove invalid entry
-                        _logger?.LogWarning("Cache type mismatch for key {Key}. Expected {ExpectedType}, got {ActualType}. Removing entry.", 
+                        _logger?.LogWarning("Cache type mismatch for key {Key}. Expected {ExpectedType}, got {ActualType}. Removing entry.",
                             key, typeof(T).Name, entry.Value?.GetType().Name ?? "null");
                         Remove(key);
                     }
@@ -64,50 +64,35 @@ public class CacheService(ILogger<CacheService> logger) : ICacheService
                     Remove(key);
                 }
             }
-
-            // Cache miss or invalid entry - call factory
-            _logger?.LogDebug("Cache miss for key: {Key}, calling factory", key);
-            var value = await factory(ct);
-            
-            // Only cache non-null values
-            if (value != null)
-            {
-                try
-                {
-                    var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
-                    _cache[key] = new CacheEntry(value, expiresAt);
-                    _logger?.LogDebug("Cached value for key: {Key}, expires at: {ExpiresAt}", key, expiresAt);
-                }
-                catch (Exception ex)
-                {
-                    // Failed to cache, but we still have the value
-                    _logger?.LogWarning(ex, "Failed to cache value for key: {Key}", key);
-                }
-            }
-            
-            return value;
-        }
-        catch (OperationCanceledException)
-        {
-            _logger?.LogInformation("Cache operation cancelled for key: {Key}", key);
-            throw;
         }
         catch (Exception ex)
         {
-            // Log the error but try to get fresh data
-            _logger?.LogError(ex, "Cache operation failed for key {Key}, attempting to call factory", key);
-            
+            // Cache lookup failed - fall through to the factory below
+            _logger?.LogError(ex, "Cache lookup failed for key {Key}, falling back to factory", key);
+        }
+
+        // Cache miss or lookup failure - call factory exactly once;
+        // its exceptions (including cancellation) propagate to the caller
+        _logger?.LogDebug("Cache miss for key: {Key}, calling factory", key);
+        var value = await factory(ct);
+
+        // Only cache non-null values
+        if (value != null)
+        {
             try
             {
-                // If cache fails, still try to get the value from factory
-                return await factory(ct);
+                var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
+                _cache[key] = new CacheEntry(value, expiresAt);
+                _logger?.LogDebug("Cached value for key: {Key}, expires at: {ExpiresAt}", key, expiresAt);
             }
-            catch (Exception factoryEx)
+            catch (Exception ex)
             {
-                _logger?.LogError(factoryEx, "Factory also failed for key {Key}", key);
-                throw;
+                // Failed to cache, but we still have the value
+                _logger?.LogWarning(ex, "Failed to cache value for key: {Key}", key);
             }
         }
+
+        return value;
     }
 
     /// <summary>
