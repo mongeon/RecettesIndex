@@ -28,7 +28,7 @@ public class Recipe : BaseModel
     public string Name { get; set; } = string.Empty;
     
     [Column("rating")]
-    [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
+    [Range(0, 5, ErrorMessage = "Rating must be between 0 and 5")]
     public int Rating { get; set; }
     
     [Column("created_at")]
@@ -52,7 +52,7 @@ public class Recipe : BaseModel
 
 **Validation Rules:**
 - `Name`: Required (cannot be empty)
-- `Rating`: Required, must be between 1 and 5 (inclusive)
+- `Rating`: Must be between 0 and 5 (0 = not rated)
 - `BookPage`: Optional, must be positive if provided
 - `Url`: Optional, must be a valid URL format if provided
 - `BookId`: Optional foreign key (reference to Book)
@@ -200,7 +200,7 @@ erDiagram
         int id PK
         string name
         text notes
-        int rating "1-5 stars with validation"
+        int rating "1-5 stars, 0 = not rated"
         int book_id FK
         int store_id FK
         int page
@@ -220,7 +220,7 @@ The application uses comprehensive validation through System.ComponentModel.Data
 | Property | Validation Rule | Error Message |
 |----------|----------------|---------------|
 | `Name` | Required | "The Name field is required." |
-| `Rating` | Range(1, 5) | "Rating must be between 1 and 5" |
+| `Rating` | Range(0, 5), 0 = not rated | "Rating must be between 0 and 5" |
 | `PageNumber` | Optional, validated positive when provided | "Book page number must be positive" |
 | `Url` | Url format | "Please enter a valid URL" |
 | `StoreId`/`BookId` | Optional foreign keys | N/A |
@@ -256,10 +256,10 @@ Our comprehensive test suite includes **533 tests** covering all validation scen
 ```csharp
 // Example: Rating validation test
 [Theory]
-[InlineData(1, true)]   // Valid: minimum
+[InlineData(0, true)]   // Valid: not rated
+[InlineData(1, true)]   // Valid: minimum rating
 [InlineData(3, true)]   // Valid: middle  
 [InlineData(5, true)]   // Valid: maximum
-[InlineData(0, false)]  // Invalid: below range
 [InlineData(6, false)]  // Invalid: above range
 [InlineData(-1, false)] // Invalid: negative
 public void Rating_ShouldValidateRange_ForAllValues(int rating, bool isValid)
@@ -272,7 +272,7 @@ public void Rating_ShouldValidateRange_ForAllValues(int rating, bool isValid)
 
 The service layer follows a query/service pattern and now relies on shared helpers to reduce duplication and standardize behavior:
 
-- `CrudServiceBase<TModel, TService>` centralizes common CRUD flows with consistent logging and error mapping
+- `CrudServiceBase<TModel, TService>` centralizes common CRUD flows with consistent logging, error mapping, and `CancellationToken` propagation down to the Supabase calls (cancellation is rethrown, never converted to a failure `Result`)
 - `ValidationGuards` provides reusable validation helpers used by all services
 - `CacheServiceExtensions` adds `GetOrEmptyAsync` for resilient list caching and `RemoveMany` for cache invalidation
 
@@ -288,8 +288,13 @@ public interface IRecipeService
     Task<Result<Recipe>> CreateAsync(Recipe recipe, CancellationToken ct = default);
     Task<Result<Recipe>> UpdateAsync(Recipe recipe, CancellationToken ct = default);
     Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default);
+    // Lightweight summaries (id, book_id, store_id, rating, created_at only)
+    // used by Stores counts and Dashboard statistics instead of loading full recipes
+    Task<Result<IReadOnlyList<Recipe>>> GetRecipeSummariesAsync(int? rating = null, CancellationToken ct = default);
+    Task<Result<IReadOnlyList<Recipe>>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default);
     Task<IReadOnlyList<Book>> GetBooksAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Author>> GetAuthorsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Store>> GetStoresAsync(CancellationToken ct = default);
 }
 ```
 
@@ -300,6 +305,10 @@ These services implement their respective interfaces and derive from the CRUD ba
 - Use Supabase for data persistence
 - Invalidate relevant caches on mutations
 - Keep domain-specific logic (e.g., book-author associations)
+
+`IBookAuthorService` exposes `LoadAuthorsForBooksAsync(IReadOnlyCollection<Book>)`, which loads the
+authors of many books in two queries (associations + authors) instead of one pair of queries per
+book; `BookService.GetAllAsync` uses it to avoid N+1 query patterns.
 
 ## 🔌 Supabase Integration
 
