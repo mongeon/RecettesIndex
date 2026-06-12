@@ -31,19 +31,24 @@ public abstract class CrudServiceBase<TModel, TService>
 
     protected async Task<Result<TModel>> GetByIdCoreAsync(
         int id,
-        Func<Task<TModel?>> fetchSingle,
+        Func<CancellationToken, Task<TModel?>> fetchSingle,
         string notFoundMessage,
         string logContext,
-        string unexpectedUserMessage)
+        string unexpectedUserMessage,
+        CancellationToken ct = default)
     {
         try
         {
-            var model = await fetchSingle();
+            var model = await fetchSingle(ct);
             if (model == null)
             {
                 return Result<TModel>.Failure(notFoundMessage);
             }
             return Result<TModel>.Success(model);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (HttpRequestException ex)
         {
@@ -60,9 +65,10 @@ public abstract class CrudServiceBase<TModel, TService>
     protected async Task<Result<TModel>> CreateCoreAsync(
         TModel entity,
         Func<string?> validate,
-        Func<Task<TModel?>> doInsert,
+        Func<CancellationToken, Task<TModel?>> doInsert,
         Action<TModel>? onSuccess,
-        string unexpectedUserMessage)
+        string unexpectedUserMessage,
+        CancellationToken ct = default)
     {
         try
         {
@@ -70,12 +76,16 @@ public abstract class CrudServiceBase<TModel, TService>
             if (err != null)
                 return Result<TModel>.Failure(err);
 
-            var created = await doInsert();
+            var created = await doInsert(ct);
             if (created == null)
                 return Result<TModel>.Failure("Failed to create entity");
 
             onSuccess?.Invoke(created);
             return Result<TModel>.Success(created);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (HttpRequestException ex)
         {
@@ -92,11 +102,12 @@ public abstract class CrudServiceBase<TModel, TService>
     protected async Task<Result<TModel>> UpdateCoreAsync(
         TModel entity,
         Func<string?> validate,
-        Func<Task<TModel?>> doUpdate,
+        Func<CancellationToken, Task<TModel?>> doUpdate,
         Action<TModel>? onSuccess,
         string unexpectedUserMessage,
         int? idForLogging = null,
-        string? entityNameForLogging = null)
+        string? entityNameForLogging = null,
+        CancellationToken ct = default)
     {
         try
         {
@@ -104,12 +115,16 @@ public abstract class CrudServiceBase<TModel, TService>
             if (err != null)
                 return Result<TModel>.Failure(err);
 
-            var updated = await doUpdate();
+            var updated = await doUpdate(ct);
             if (updated == null)
                 return Result<TModel>.Failure("Failed to update entity");
 
             onSuccess?.Invoke(updated);
             return Result<TModel>.Success(updated);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (HttpRequestException ex)
         {
@@ -131,12 +146,13 @@ public abstract class CrudServiceBase<TModel, TService>
 
     protected async Task<Result<bool>> DeleteCoreAsync(
         int id,
-        Func<Task<TModel?>> getExisting,
-        Func<Task> doDelete,
+        Func<CancellationToken, Task<TModel?>> getExisting,
+        Func<CancellationToken, Task> doDelete,
         Action? onSuccess,
         string notFoundMessage,
         string unexpectedUserMessage,
-        string entityNameForLogging)
+        string entityNameForLogging,
+        CancellationToken ct = default)
     {
         try
         {
@@ -144,15 +160,19 @@ public abstract class CrudServiceBase<TModel, TService>
             if (err != null)
                 return Result<bool>.Failure(err);
 
-            var existing = await getExisting();
+            var existing = await getExisting(ct);
             if (existing == null)
             {
                 return Result<bool>.Failure(notFoundMessage);
             }
 
-            await doDelete();
+            await doDelete(ct);
             onSuccess?.Invoke();
             return Result<bool>.Success(true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (HttpRequestException ex)
         {

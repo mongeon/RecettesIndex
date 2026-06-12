@@ -13,33 +13,36 @@ public class FakeCrudServiceString(ICacheService cache, Client client, ILogger<F
     public Task<IReadOnlyList<string>> GetAllCachedAsync_Public(string key, Func<CancellationToken, Task<IReadOnlyList<string>>> fetch, CancellationToken ct = default)
         => GetAllCachedAsync(key, fetch, ct);
 
-    public Task<Result<string>> GetByIdCoreAsync_Public(int id, Func<Task<string?>> fetchSingle, string notFoundMessage, string logContext, string unexpectedUserMessage)
-        => GetByIdCoreAsync(id, fetchSingle, notFoundMessage, logContext, unexpectedUserMessage);
+    public Task<Result<string>> GetByIdCoreAsync_Public(int id, Func<CancellationToken, Task<string?>> fetchSingle, string notFoundMessage, string logContext, string unexpectedUserMessage, CancellationToken ct = default)
+        => GetByIdCoreAsync(id, fetchSingle, notFoundMessage, logContext, unexpectedUserMessage, ct);
 
     public Task<Result<string>> CreateCoreAsync_Public(string entity,
         Func<string?> validate,
-        Func<Task<string?>> doInsert,
+        Func<CancellationToken, Task<string?>> doInsert,
         Action<string>? onSuccess,
-        string unexpectedUserMessage)
-        => CreateCoreAsync(entity, validate, doInsert, onSuccess, unexpectedUserMessage);
+        string unexpectedUserMessage,
+        CancellationToken ct = default)
+        => CreateCoreAsync(entity, validate, doInsert, onSuccess, unexpectedUserMessage, ct);
 
     public Task<Result<string>> UpdateCoreAsync_Public(string entity,
         Func<string?> validate,
-        Func<Task<string?>> doUpdate,
+        Func<CancellationToken, Task<string?>> doUpdate,
         Action<string>? onSuccess,
         string unexpectedUserMessage,
         int? idForLogging = null,
-        string? entityNameForLogging = null)
-        => UpdateCoreAsync(entity, validate, doUpdate, onSuccess, unexpectedUserMessage, idForLogging, entityNameForLogging);
+        string? entityNameForLogging = null,
+        CancellationToken ct = default)
+        => UpdateCoreAsync(entity, validate, doUpdate, onSuccess, unexpectedUserMessage, idForLogging, entityNameForLogging, ct);
 
     public Task<Result<bool>> DeleteCoreAsync_Public(int id,
-        Func<Task<string?>> getExisting,
-        Func<Task> doDelete,
+        Func<CancellationToken, Task<string?>> getExisting,
+        Func<CancellationToken, Task> doDelete,
         Action? onSuccess,
         string notFoundMessage,
         string unexpectedUserMessage,
-        string entityNameForLogging)
-        => DeleteCoreAsync(id, getExisting, doDelete, onSuccess, notFoundMessage, unexpectedUserMessage, entityNameForLogging);
+        string entityNameForLogging,
+        CancellationToken ct = default)
+        => DeleteCoreAsync(id, getExisting, doDelete, onSuccess, notFoundMessage, unexpectedUserMessage, entityNameForLogging, ct);
 }
 
 public class CrudServiceBaseTests
@@ -79,7 +82,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task GetByIdCoreAsync_NotFound_ReturnsFailure()
     {
-        var result = await _service.GetByIdCoreAsync_Public(42, () => Task.FromResult<string?>(null), "not found", "get", "unexpected");
+        var result = await _service.GetByIdCoreAsync_Public(42, _ => Task.FromResult<string?>(null), "not found", "get", "unexpected");
         Assert.False(result.IsSuccess);
         Assert.Contains("not found", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -87,7 +90,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task GetByIdCoreAsync_HttpRequestException_ReturnsNetworkFailure()
     {
-        var result = await _service.GetByIdCoreAsync_Public(42, () => throw new HttpRequestException("net"), "not found", "get", "unexpected");
+        var result = await _service.GetByIdCoreAsync_Public(42, _ => throw new HttpRequestException("net"), "not found", "get", "unexpected");
         Assert.False(result.IsSuccess);
         Assert.Contains("network", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -95,7 +98,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task GetByIdCoreAsync_Success_ReturnsValue()
     {
-        var result = await _service.GetByIdCoreAsync_Public(7, () => Task.FromResult<string?>("ok"), "not found", "get", "unexpected");
+        var result = await _service.GetByIdCoreAsync_Public(7, _ => Task.FromResult<string?>("ok"), "not found", "get", "unexpected");
         Assert.True(result.IsSuccess);
         Assert.Equal("ok", result.Value);
     }
@@ -103,7 +106,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task CreateCoreAsync_ValidationFailure_ReturnsFailure()
     {
-        var result = await _service.CreateCoreAsync_Public("x", () => "invalid input", () => Task.FromResult<string?>("x"), _ => { }, "unexpected");
+        var result = await _service.CreateCoreAsync_Public("x", () => "invalid input", _ => Task.FromResult<string?>("x"), _ => { }, "unexpected");
         Assert.False(result.IsSuccess);
         Assert.Contains("invalid", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -111,7 +114,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task CreateCoreAsync_InsertNull_ReturnsFailure()
     {
-        var result = await _service.CreateCoreAsync_Public("x", () => null, () => Task.FromResult<string?>(null), _ => { }, "unexpected");
+        var result = await _service.CreateCoreAsync_Public("x", () => null, _ => Task.FromResult<string?>(null), _ => { }, "unexpected");
         Assert.False(result.IsSuccess);
         Assert.Contains("failed", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -120,7 +123,7 @@ public class CrudServiceBaseTests
     public async Task CreateCoreAsync_Success_InvokesOnSuccess()
     {
         var called = false;
-        var result = await _service.CreateCoreAsync_Public("x", () => null, () => Task.FromResult<string?>("created"), _ => called = true, "unexpected");
+        var result = await _service.CreateCoreAsync_Public("x", () => null, _ => Task.FromResult<string?>("created"), _ => called = true, "unexpected");
         Assert.True(result.IsSuccess);
         Assert.Equal("created", result.Value);
         Assert.True(called);
@@ -129,7 +132,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task UpdateCoreAsync_ValidationFailure_ReturnsFailure()
     {
-        var result = await _service.UpdateCoreAsync_Public("x", () => "bad", () => Task.FromResult<string?>("x"), _ => { }, "unexpected", 1, "entity");
+        var result = await _service.UpdateCoreAsync_Public("x", () => "bad", _ => Task.FromResult<string?>("x"), _ => { }, "unexpected", 1, "entity");
         Assert.False(result.IsSuccess);
         Assert.Contains("bad", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -137,7 +140,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task UpdateCoreAsync_UpdateNull_ReturnsFailure()
     {
-        var result = await _service.UpdateCoreAsync_Public("x", () => null, () => Task.FromResult<string?>(null), _ => { }, "unexpected", 1, "entity");
+        var result = await _service.UpdateCoreAsync_Public("x", () => null, _ => Task.FromResult<string?>(null), _ => { }, "unexpected", 1, "entity");
         Assert.False(result.IsSuccess);
         Assert.Contains("failed", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -145,7 +148,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task DeleteCoreAsync_InvalidId_ReturnsFailure()
     {
-        var result = await _service.DeleteCoreAsync_Public(0, () => Task.FromResult<string?>("existing"), () => Task.CompletedTask, () => { }, "not found", "unexpected", "entity");
+        var result = await _service.DeleteCoreAsync_Public(0, _ => Task.FromResult<string?>("existing"), _ => Task.CompletedTask, () => { }, "not found", "unexpected", "entity");
         Assert.False(result.IsSuccess);
         Assert.Contains("invalid", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -153,7 +156,7 @@ public class CrudServiceBaseTests
     [Fact]
     public async Task DeleteCoreAsync_NotFound_ReturnsFailure()
     {
-        var result = await _service.DeleteCoreAsync_Public(9, () => Task.FromResult<string?>(null), () => Task.CompletedTask, () => { }, "not found", "unexpected", "entity");
+        var result = await _service.DeleteCoreAsync_Public(9, _ => Task.FromResult<string?>(null), _ => Task.CompletedTask, () => { }, "not found", "unexpected", "entity");
         Assert.False(result.IsSuccess);
         Assert.Contains("not found", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
@@ -162,9 +165,52 @@ public class CrudServiceBaseTests
     public async Task DeleteCoreAsync_Success_ReturnsTrue()
     {
         var called = false;
-        var result = await _service.DeleteCoreAsync_Public(9, () => Task.FromResult<string?>("x"), () => Task.CompletedTask, () => called = true, "not found", "unexpected", "entity");
+        var result = await _service.DeleteCoreAsync_Public(9, _ => Task.FromResult<string?>("x"), _ => Task.CompletedTask, () => called = true, "not found", "unexpected", "entity");
         Assert.True(result.IsSuccess);
         Assert.True(result.Value);
         Assert.True(called);
+    }
+
+    [Fact]
+    public async Task GetByIdCoreAsync_PassesCancellationTokenToFetch()
+    {
+        using var cts = new CancellationTokenSource();
+        CancellationToken received = default;
+
+        await _service.GetByIdCoreAsync_Public(1, ct =>
+        {
+            received = ct;
+            return Task.FromResult<string?>("ok");
+        }, "not found", "get", "unexpected", cts.Token);
+
+        Assert.Equal(cts.Token, received);
+    }
+
+    [Fact]
+    public async Task GetByIdCoreAsync_Cancelled_PropagatesOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            _service.GetByIdCoreAsync_Public(1, ct =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult<string?>("ok");
+            }, "not found", "get", "unexpected", cts.Token));
+    }
+
+    [Fact]
+    public async Task CreateCoreAsync_Cancelled_PropagatesOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            _service.CreateCoreAsync_Public("x", () => null, ct =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult<string?>("created");
+            }, _ => { }, "unexpected", cts.Token));
     }
 }

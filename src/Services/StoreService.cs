@@ -25,10 +25,11 @@ public class StoreService(
     public Task<Result<Store>> GetByIdAsync(int id, CancellationToken ct = default)
         => GetByIdCoreAsync(
             id,
-            async () => await _supabaseClient.From<Store>().Where(x => x.Id == id).Single(),
+            async token => await _supabaseClient.From<Store>().Where(x => x.Id == id).Single(cancellationToken: token),
             $"Store with ID {id} not found",
             "getting store by id",
-            "An unexpected error occurred while loading the store");
+            "An unexpected error occurred while loading the store",
+            ct);
 
     public Task<Result<Store>> CreateAsync(Store store, CancellationToken ct = default)
         => CreateCoreAsync(
@@ -41,10 +42,10 @@ public class StoreService(
                 if (err != null) return err;
                 return null;
             },
-            async () =>
+            async token =>
             {
                 store.CreationDate = DateTime.UtcNow;
-                var response = await _supabaseClient.From<Store>().Insert(store);
+                var response = await _supabaseClient.From<Store>().Insert(store, cancellationToken: token);
                 return response.Models?.FirstOrDefault();
             },
             onSuccess: created =>
@@ -52,7 +53,8 @@ public class StoreService(
                 _cache.Remove(CacheConstants.StoresListKey);
                 _logger.LogInformation("Store created successfully: {StoreId}", created.Id);
             },
-            unexpectedUserMessage: "An unexpected error occurred while creating the store");
+            unexpectedUserMessage: "An unexpected error occurred while creating the store",
+            ct: ct);
 
     public Task<Result<Store>> UpdateAsync(Store store, CancellationToken ct = default)
         => UpdateCoreAsync(
@@ -67,9 +69,9 @@ public class StoreService(
                 if (err != null) return err;
                 return null;
             },
-            async () =>
+            async token =>
             {
-                var response = await _supabaseClient.From<Store>().Where(x => x.Id == store.Id).Update(store);
+                var response = await _supabaseClient.From<Store>().Where(x => x.Id == store.Id).Update(store, cancellationToken: token);
                 return response.Models?.FirstOrDefault();
             },
             onSuccess: updated =>
@@ -79,13 +81,14 @@ public class StoreService(
             },
             unexpectedUserMessage: "An unexpected error occurred while updating the store",
             idForLogging: store?.Id,
-            entityNameForLogging: "store");
+            entityNameForLogging: "store",
+            ct: ct);
 
     public Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default)
         => DeleteCoreAsync(
             id,
-            async () => await _supabaseClient.From<Store>().Where(x => x.Id == id).Single(),
-            async () => await _supabaseClient.From<Store>().Where(x => x.Id == id).Delete(),
+            async token => await _supabaseClient.From<Store>().Where(x => x.Id == id).Single(cancellationToken: token),
+            async token => await _supabaseClient.From<Store>().Where(x => x.Id == id).Delete(cancellationToken: token),
             onSuccess: () =>
             {
                 _cache.Remove(CacheConstants.StoresListKey);
@@ -93,5 +96,6 @@ public class StoreService(
             },
             notFoundMessage: $"Store with ID {id} not found",
             unexpectedUserMessage: "An unexpected error occurred while deleting the store",
-            entityNameForLogging: "store");
+            entityNameForLogging: "store",
+            ct: ct);
 }
