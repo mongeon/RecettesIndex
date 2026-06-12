@@ -383,11 +383,11 @@
 
             CalculateBasicStatistics(recipes, books, authors, stores);
             CalculateRatingStatistics(recipes);
-            CalculateTopRatedRecipes(recipes);
             CalculateBookStatistics(recipes, books);
             CalculateStoreStatistics(recipes, stores);
             CalculateAuthorStatistics(recipes, books, authors);
             CalculateRecentActivity(recipes, books);
+            await LoadHighlightRecipesAsync(recipes);
             
             // Prepare Chart Data
             PrepareCharts(recipes);
@@ -434,7 +434,10 @@
 
     private async Task<(List<Recipe>? recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)> LoadBaseDataAsync()
     {
-        var recipesResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000);
+        // Lightweight summaries (id, book_id, store_id, rating, created_at) are
+        // enough for the aggregate statistics; full recipes are fetched separately
+        // for the few highlighted ones.
+        var recipesResult = await RecipeService.GetRecipeSummariesAsync();
         var books = await RecipeService.GetBooksAsync();
         var authors = await RecipeService.GetAuthorsAsync();
         var stores = await RecipeService.GetStoresAsync();
@@ -445,7 +448,7 @@
             return (null, books, authors, stores);
         }
 
-        return (recipesResult.Value.Items.ToList(), books, authors, stores);
+        return (recipesResult.Value.ToList(), books, authors, stores);
     }
 
     private void CalculateBasicStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)
@@ -471,14 +474,53 @@
         statistics.UnratedCount = recipes.Count(r => r.Rating == 0);
     }
 
-    private void CalculateTopRatedRecipes(List<Recipe> recipes)
+    private async Task LoadHighlightRecipesAsync(List<Recipe> summaries)
     {
-        statistics.TopRatedRecipes = recipes
+        // Summaries have no names; fetch full objects only for the few recipes
+        // that are displayed individually (top rated + most recent).
+        var topRatedIds = summaries
             .Where(r => r.Rating > 0)
             .OrderByDescending(r => r.Rating)
             .ThenByDescending(r => r.CreationDate)
             .Take(5)
+            .Select(r => r.Id)
             .ToList();
+
+        var mostRecentId = summaries
+            .OrderByDescending(r => r.CreationDate)
+            .Select(r => (int?)r.Id)
+            .FirstOrDefault();
+
+        var idsToFetch = topRatedIds.ToHashSet();
+        if (mostRecentId.HasValue)
+        {
+            idsToFetch.Add(mostRecentId.Value);
+        }
+
+        if (idsToFetch.Count == 0)
+        {
+            statistics.TopRatedRecipes = new List<Recipe>();
+            statistics.MostRecentRecipe = null;
+            return;
+        }
+
+        var fullRecipesResult = await RecipeService.GetRecipesByIdsAsync(idsToFetch);
+        if (!fullRecipesResult.IsSuccess)
+        {
+            Logger.LogWarning("Failed to load highlighted recipes for dashboard: {Error}", fullRecipesResult.ErrorMessage);
+            statistics.TopRatedRecipes = new List<Recipe>();
+            statistics.MostRecentRecipe = null;
+            return;
+        }
+
+        var recipesById = fullRecipesResult.Value.ToDictionary(r => r.Id);
+        statistics.TopRatedRecipes = topRatedIds
+            .Where(recipesById.ContainsKey)
+            .Select(id => recipesById[id])
+            .ToList();
+        statistics.MostRecentRecipe = mostRecentId.HasValue && recipesById.TryGetValue(mostRecentId.Value, out var recent)
+            ? recent
+            : null;
     }
 
     private void CalculateBookStatistics(List<Recipe> recipes, IReadOnlyList<Book> books)
@@ -542,10 +584,7 @@
 
     private void CalculateRecentActivity(List<Recipe> recipes, IReadOnlyList<Book> books)
     {
-        statistics.MostRecentRecipe = recipes
-            .OrderByDescending(r => r.CreationDate)
-            .FirstOrDefault();
-
+        // MostRecentRecipe is set in LoadHighlightRecipesAsync (needs the full object)
         statistics.MostRecentBook = books
             .OrderByDescending(b => b.CreationDate)
             .FirstOrDefault();

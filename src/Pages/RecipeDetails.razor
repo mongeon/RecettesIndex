@@ -357,17 +357,38 @@ else
         
         try
         {
-            var allRecipesResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 10000, ct: ct);
-            if (!allRecipesResult.IsSuccess)
+            // Build a candidate pool from targeted queries (same book, same store,
+            // same authors) instead of loading every recipe and filtering client-side.
+            const int candidatePoolSize = 25;
+            var candidates = new Dictionary<int, Recipe>();
+
+            async Task AddCandidatesAsync(int? bookId, int? storeId, int? authorId)
             {
-                relatedRecipes = new List<Recipe>();
-                return;
+                var result = await RecipeService.SearchAsync(null, null, bookId, storeId, authorId, 1, candidatePoolSize, ct: ct);
+                if (result.IsSuccess)
+                {
+                    foreach (var candidate in result.Value.Items)
+                    {
+                        candidates.TryAdd(candidate.Id, candidate);
+                    }
+                }
             }
 
-            var allRecipes = allRecipesResult.Value.Items;
-            
+            if (recipe.BookId.HasValue)
+            {
+                await AddCandidatesAsync(recipe.BookId, null, null);
+            }
+            if (recipe.StoreId.HasValue)
+            {
+                await AddCandidatesAsync(null, recipe.StoreId, null);
+            }
+            foreach (var authorId in book?.Authors?.Select(a => a.Id) ?? Enumerable.Empty<int>())
+            {
+                await AddCandidatesAsync(null, null, authorId);
+            }
+
             // Calculate similarity scores
-            var scoredRecipes = allRecipes
+            relatedRecipes = candidates.Values
                 .Where(r => r.Id != recipe.Id) // Exclude current recipe
                 .Select(r => new
                 {
@@ -379,8 +400,6 @@ else
                 .Take(6)
                 .Select(x => x.Recipe)
                 .ToList();
-            
-            relatedRecipes = scoredRecipes;
         }
         catch (Exception ex)
         {
