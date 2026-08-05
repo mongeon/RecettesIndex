@@ -9,7 +9,7 @@ namespace RecettesIndex.Tests.Pages;
 /// Tests to verify that CreationDate is preserved when editing recipes.
 /// These tests focus on the data copying logic used in EditRecipeDialog.
 /// </summary>
-public class EditRecipeDialogTests : TestContext
+public class EditRecipeDialogTests : BunitContext
 {
     public EditRecipeDialogTests()
     {

@@ -9,7 +9,7 @@ namespace RecettesIndex.Tests.Pages;
 /// Tests to verify that CreationDate is preserved when editing authors.
 /// These tests focus on the data copying logic used in EditAuthorDialog.
 /// </summary>
-public class EditAuthorDialogTests : TestContext
+public class EditAuthorDialogTests : BunitContext
 {
     public EditAuthorDialogTests()
     {
