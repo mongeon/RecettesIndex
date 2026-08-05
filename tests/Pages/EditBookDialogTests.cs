@@ -12,7 +12,7 @@ namespace RecettesIndex.Tests.Pages;
 /// Tests to verify that CreationDate is preserved when editing books.
 /// These tests focus on the data copying logic without full component rendering.
 /// </summary>
-public class EditBookDialogTests : TestContext
+public class EditBookDialogTests : BunitContext
 {
     public EditBookDialogTests()
     {
