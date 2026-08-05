@@ -237,7 +237,7 @@
         try
         {
             // Show confirmation dialog
-            bool? confirm = await DialogService.ShowMessageBox(
+            bool? confirm = await DialogService.ShowMessageBoxAsync(
                 "Confirmer la suppression",
                 $"Êtes-vous sûr de vouloir supprimer '{storeToDelete.Name}' ? Cette action est irréversible.",
                 yesText: "Supprimer",
@@ -251,7 +251,7 @@
             // Check if there are recipes associated with this store
             if (recipeCountsByStore.TryGetValue(storeToDelete.Id, out var count) && count > 0)
             {
-                await DialogService.ShowMessageBox(
+                await DialogService.ShowMessageBoxAsync(
                     "Suppression impossible",
                     $"Ce magasin ne peut pas être supprimé car {count} recette(s) y sont associées. Veuillez d'abord supprimer ou modifier ces recettes.",
                     cancelText: "OK");

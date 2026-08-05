@@ -104,7 +104,7 @@
         if (isBusy)
             return;
 
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_form.IsValid)
             return;
 
@@ -148,7 +148,7 @@
         if (isBusy)
             return;
 
-        await _resetForm.Validate();
+        await _resetForm.ValidateAsync();
         if (!_resetForm.IsValid)
             return;
 

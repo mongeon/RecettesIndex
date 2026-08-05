@@ -234,7 +234,7 @@
         errorMessage = null;
         isSaving = true;
         
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_form.IsValid)
         {
             isSaving = false;
@@ -331,7 +331,7 @@
     {
         if (HasUnsavedChanges())
         {
-            bool? confirm = await DialogService.ShowMessageBox(
+            bool? confirm = await DialogService.ShowMessageBoxAsync(
                 "Modifications non sauvegardées",
                 "Voulez-vous vraiment fermer et perdre les modifications en cours ?",
                 yesText: "Fermer",
