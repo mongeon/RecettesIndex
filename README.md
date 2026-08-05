@@ -19,7 +19,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 ## 🚀 Quick Start
 
 ### Prerequisites
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Git](https://git-scm.com/)
 - A [Supabase](https://supabase.com) account (free tier available)
 
@@ -105,7 +105,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 
 ## 🏗️ Tech Stack
 
-- **Frontend**: Blazor WebAssembly (.NET 9.0)
+- **Frontend**: Blazor WebAssembly (.NET 10.0)
 - **UI Framework**: MudBlazor (Material Design)
 - **Backend**: Supabase (PostgreSQL + REST API)
 - **Authentication**: Supabase Auth
@@ -115,7 +115,7 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 
 ## 🧪 Testing
 
-This project maintains comprehensive unit test coverage with **533 tests** across all business logic (counted via `dotnet test --list-tests | Measure-Object`):
+This project maintains comprehensive unit test coverage with **559 tests** across all business logic (as reported by `dotnet test`):
 
 ```bash
 # Run all tests
@@ -205,7 +205,7 @@ RecettesIndex/
 │   │   └── staticwebapp.config.json # Azure Static Web Apps config
 │   ├── 📄 Program.cs    # App entry point
 │   └── 📄 _Imports.razor # Global imports
-├── 📁 tests/           # Unit test project (318 tests)
+├── 📁 tests/           # Unit test project (559 tests)
 │   ├── � Integration/  # Integration tests
 │   ├── � Models/       # Model tests
 │   ├── � Pages/        # Component tests
