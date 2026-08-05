@@ -106,7 +106,7 @@
                     @if (trendSeries.Any())
                     {
                         <MudChart T="double" ChartType="ChartType.Line" ChartSeries="@trendSeries" ChartLabels="@trendXAxisLabels" Width="100%" Height="300px"
-                                ChartOptions="@(new LineChartOptions { YAxisLines = true })"></MudChart>
+                                ChartOptions="@(new LineChartOptions { YAxisLines = true, YAxisTicks = 1, YAxisFormat = "0", YAxisRequireZeroPoint = true })"></MudChart>
                     }
                     else
                     {
