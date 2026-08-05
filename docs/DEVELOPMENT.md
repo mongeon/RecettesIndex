@@ -4,7 +4,7 @@ Current development practices for Mes Recettes: Blazor WebAssembly + MudBlazor, 
 
 ## Development Environment
 - VS Code with C# Dev Kit and GitLens
-- .NET 9.0 SDK
+- .NET 10.0 SDK
 - Git + GitHub MCP Server for PRs/issues
 - Recommended setting: `dotnet.defaultSolution = "RecettesIndex.sln"`
 
@@ -150,9 +150,9 @@ test_job:
   name: Test
   steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '9.x'
     - name: Restore dependencies

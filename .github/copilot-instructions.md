@@ -1,7 +1,7 @@
 # Copilot Instructions — RecettesIndex
 
 ## Project Snapshot
-- Blazor WebAssembly app on .NET 9 (`src/RecettesIndex.csproj`) with MudBlazor + Supabase.
+- Blazor WebAssembly app on .NET 10 (`src/RecettesIndex.csproj`) with MudBlazor + Supabase.
 - Main architecture: page/components -> service abstractions -> Supabase query/data layer.
 - Entry point and DI wiring are in `src/Program.cs`.
 

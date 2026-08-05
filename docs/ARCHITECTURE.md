@@ -240,7 +240,7 @@ This Unidirectional Data Flow ensures predictability and easier debugging.
 
 ```mermaid
 graph LR
-    A[.NET 9.0] --> B[Blazor WebAssembly]
+    A[.NET 10.0] --> B[Blazor WebAssembly]
     B --> C[MudBlazor]
     C --> D[Material Design]
     B --> E[SignalR Client]
@@ -535,7 +535,7 @@ public void Rating_ShouldValidateRange_ForAllValues(int rating, bool isValid)
 ```mermaid
 flowchart LR
     A[Code Push] --> B[GitHub Actions Trigger]
-    B --> C[Setup .NET 9.0]
+    B --> C[Setup .NET 10.0]
     C --> D[Restore Dependencies]
     D --> E[Build Solution]
     E --> F[Run Test Suite]
@@ -805,12 +805,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
     
     - name: Restore dependencies
       run: dotnet restore

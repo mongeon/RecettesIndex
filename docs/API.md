@@ -251,7 +251,7 @@ The application uses comprehensive validation through System.ComponentModel.Data
 
 ### Validation Testing
 
-Our comprehensive test suite includes **533 tests** covering all validation scenarios, services, components, and integration testing (measured via `dotnet test --list-tests | Measure-Object`):
+Our comprehensive test suite includes **559 tests** covering all validation scenarios, services, components, and integration testing (as reported by `dotnet test`):
 
 ```csharp
 // Example: Rating validation test

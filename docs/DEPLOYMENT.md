@@ -59,7 +59,7 @@ graph TD
 ## 📋 Prerequisites
 
 ### Development Environment
-- .NET 9.0 SDK or later
+- .NET 10.0 SDK or later
 - Git version control
 - Code editor (VS Code recommended)
 
@@ -104,12 +104,12 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
     
     - name: Restore dependencies
       run: dotnet restore
@@ -167,7 +167,7 @@ jobs:
   publish = "dist/wwwroot"
 
 [build.environment]
-  DOTNET_VERSION = "9.0.x"
+  DOTNET_VERSION = "10.0.x"
 
 [[redirects]]
   from = "/*"
@@ -235,10 +235,20 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
       with:
         submodules: true
-    
+
+    # Static Web Apps' built-in build engine (Oryx) does not ship the .NET 10
+    # SDK yet, so publish here and upload the result with skip_app_build.
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Publish
+      run: dotnet publish src/RecettesIndex.csproj -c Release -o publish
+
     - name: Build And Deploy
       id: builddeploy
       uses: Azure/static-web-apps-deploy@v1
@@ -246,9 +256,9 @@ jobs:
         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         action: "upload"
-        app_location: "/"
-        output_location: "wwwroot"
-        app_build_command: "dotnet publish -c Release -o published"
+        app_location: "publish/wwwroot"
+        output_location: ""
+        skip_app_build: true
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -313,7 +323,7 @@ on:
     branches: [main, develop]
 
 env:
-  DOTNET_VERSION: '9.0.x'
+  DOTNET_VERSION: '10.0.x'
 
 jobs:
   test:
@@ -322,10 +332,10 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
@@ -350,7 +360,7 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -372,10 +382,10 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
@@ -430,12 +440,12 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
     
     - name: Build and publish
       run: |
@@ -539,7 +549,7 @@ await builder.Build().RunAsync();
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorWebAssemblyLoadAllGlobalizationData>false</BlazorWebAssemblyLoadAllGlobalizationData>
