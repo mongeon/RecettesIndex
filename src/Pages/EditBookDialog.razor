@@ -57,7 +57,7 @@
     private Book book = new();
     private string? errorMessage;
     private List<Author> authors = [];
-    private IEnumerable<Author> selectedAuthors = new HashSet<Author>();
+    private IReadOnlyCollection<Author?>? selectedAuthors = new HashSet<Author?>();
     private bool isSaving = false;
     
     protected override async Task OnInitializedAsync()
@@ -74,7 +74,7 @@
         };
         
         // Pre-select authors by finding matching objects in the loaded authors list
-        selectedAuthors = authors.Where(a => book.Authors.Any(ba => ba.Id == a.Id)).ToHashSet();
+        selectedAuthors = authors.Where(a => book.Authors.Any(ba => ba.Id == a.Id)).ToHashSet<Author?>();
     }
     
     private async Task SaveAsync()
@@ -82,7 +82,7 @@
         errorMessage = null;
         isSaving = true;
         
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_form.IsValid)
         {
             isSaving = false;
@@ -92,7 +92,7 @@
         try
         {
             // Get author IDs
-            var authorIds = selectedAuthors.Select(a => a.Id).ToList();
+            var authorIds = (selectedAuthors ?? []).Where(a => a is not null).Select(a => a!.Id).ToList();
             
             // Use service layer for update
             var result = await BookService.UpdateAsync(book, authorIds);

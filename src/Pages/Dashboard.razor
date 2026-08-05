@@ -80,8 +80,8 @@
                     </MudText>
                     @if (ratingChartData.Any())
                     {
-                        <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px"
-                                InputData="@ratingChartData" InputLabels="@ratingChartLabels"
+                        <MudChart T="double" ChartType="ChartType.Donut" Width="300px" Height="300px"
+                                ChartSeries="@([ratingChartData])" ChartLabels="@ratingChartLabels"
                                 ChartOptions="@(new ChartOptions { ChartPalette = new[] { "#4CAF50", "#2196F3", "#FFC107", "#FF9800", "#F44336" } })">
                         </MudChart>
                     }
@@ -105,8 +105,8 @@
                     </MudText>
                     @if (trendSeries.Any())
                     {
-                        <MudChart ChartType="ChartType.Line" ChartSeries="@trendSeries" XAxisLabels="@trendXAxisLabels" Width="100%" Height="300px"
-                                ChartOptions="@(new ChartOptions { YAxisLines = true })"></MudChart>
+                        <MudChart T="double" ChartType="ChartType.Line" ChartSeries="@trendSeries" ChartLabels="@trendXAxisLabels" Width="100%" Height="300px"
+                                ChartOptions="@(new LineChartOptions { YAxisLines = true })"></MudChart>
                     }
                     else
                     {
@@ -366,7 +366,7 @@
     // Chart Data
     private double[] ratingChartData = Array.Empty<double>();
     private string[] ratingChartLabels = Array.Empty<string>();
-    private List<ChartSeries> trendSeries = new();
+    private List<ChartSeries<double>> trendSeries = new();
     private string[] trendXAxisLabels = Array.Empty<string>();
 
     protected override async Task OnInitializedAsync()
@@ -431,9 +431,9 @@
             (double)recipes.Count(r => r.CreationDate.Month == month.Month && r.CreationDate.Year == month.Year)
         ).ToArray();
 
-        trendSeries = new List<ChartSeries>
+        trendSeries = new List<ChartSeries<double>>
         {
-            new ChartSeries { Name = "Recettes Ajoutées", Data = monthlyData }
+            new ChartSeries<double> { Name = "Recettes Ajoutées", Data = monthlyData }
         };
         trendXAxisLabels = last6Months.Select(d => d.ToString("MMM")).ToArray();
     }

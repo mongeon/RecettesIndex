@@ -53,7 +53,7 @@
     private Book book = new();
     private string? errorMessage;
     private List<Author> authors = new();
-    private IEnumerable<Author> selectedAuthors = new HashSet<Author>();
+    private IReadOnlyCollection<Author?>? selectedAuthors = new HashSet<Author?>();
     private bool isSaving = false;
 
     protected override async Task OnInitializedAsync()
@@ -67,7 +67,7 @@
         errorMessage = null;
         isSaving = true;
         
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_form.IsValid)
         {
             isSaving = false;
@@ -77,7 +77,7 @@
         try
         {
             // Get author IDs
-            var authorIds = selectedAuthors.Select(a => a.Id).ToList();
+            var authorIds = (selectedAuthors ?? []).Where(a => a is not null).Select(a => a!.Id).ToList();
             
             // Use service layer for creation
             var result = await BookService.CreateAsync(book, authorIds);
