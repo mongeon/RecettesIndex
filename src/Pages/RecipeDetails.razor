@@ -72,7 +72,7 @@ else
                                        Color="@(favoriteRecipeIds.Contains(recipe.Id) ? Color.Error : Color.Default)"
                                        Size="Size.Large"
                                        OnClick="@(() => ToggleFavorite(recipe))"
-                                       Style="background-color: rgba(255,255,255,0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 50%;" />
+                                       Style="background-color: var(--mud-palette-surface); box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 50%;" />
                     </MudTooltip>
                 </div>
                 
