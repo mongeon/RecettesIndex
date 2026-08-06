@@ -1,3 +1,18 @@
+/* =============================================
+   JETONS DE MARQUE — VALEURS FIXES
+   Le corail et le turquoise de marque servent de *surface* : fonds, teintes,
+   bordures, grandes icônes. Ils ne doivent jamais servir d'encre (2,8:1 et
+   1,9:1 sur blanc). Pour le texte, utiliser --app-accent-ink / --app-teal-ink,
+   redéfinis par thème dans MainLayout.razor.
+   ============================================= */
+:root {
+    --app-accent: #FF6B6B;
+    --app-teal: #4ECDC4;
+    /* Encre corail des éléments toujours posés sur une surface quasi blanche
+       (puces du bandeau), donc indépendante du thème — 4,9:1 sur blanc. */
+    --app-accent-ink-on-white: #C9403A;
+}
+
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;
@@ -36,7 +51,10 @@
     left: 0;
     width: 100%;
     height: 100vh;
-    background: linear-gradient(135deg, #FF6B6B 0%, #ff8e53 100%);
+    /* Écran de démarrage : affiché avant que Blazor (et donc le thème) ne soit
+       chargé, donc en valeurs fixes. Assombri pour porter le texte blanc —
+       4,9:1 et 5,7:1 au lieu de 2,8:1 et 2,4:1. */
+    background: linear-gradient(135deg, #C9403A 0%, #A94A1C 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -293,7 +311,8 @@
     margin-top: 40px;
     text-align: center;
     font-size: 12px;
-    color: #777;
+    /* #777 donnait 4,5:1 tout juste — encre 2 pour rester au-dessus (7,0:1). */
+    color: #5F584F;
     border-top: 1px solid #eee;
     padding-top: 15px;
 }
@@ -382,7 +401,9 @@
 .recipe-card:focus-visible,
 .mud-button-root:focus-visible,
 .mud-icon-button:focus-visible {
-    outline: 2px solid #FF6B6B;
+    /* Corail action (encre), pas le corail de marque : l'anneau doit se voir
+       sur les fonds clairs comme sur les fonds sombres. */
+    outline: 2px solid var(--mud-palette-primary);
     outline-offset: 2px;
 }
 
@@ -391,24 +412,32 @@
    ============================================= */
 .global-search {
     max-width: 300px;
-    background-color: rgba(255, 255, 255, 0.15);
+    /* Teinte foncée plutôt que claire : elle assombrit la barre dans les deux
+       thèmes, ce qui préserve le contraste du texte blanc en clair (5,8:1) sans
+       casser celui de l'encre foncée en sombre (4,8:1). Une teinte blanche
+       éclaircissait le corail foncé et faisait retomber le blanc à 3,9:1. */
+    background-color: rgba(0, 0, 0, 0.10);
     border-radius: 8px;
 }
 
+/* Le champ vit dans la barre du haut, qui est en Color.Primary : son encre suit
+   donc le texte de contraste de la palette (blanc en clair sur corail foncé,
+   encre foncée en sombre sur corail vif) au lieu d'un blanc en dur. */
 .global-search .mud-input-slot,
 .global-search input,
 .global-search .mud-input-adornment .mud-icon-root,
 .global-search .mud-icon-button {
-    color: #ffffff !important;
+    color: var(--mud-palette-primary-text) !important;
 }
 
 .global-search input::placeholder {
-    color: rgba(255, 255, 255, 0.75) !important;
-    opacity: 1;
+    color: var(--mud-palette-primary-text) !important;
+    opacity: 0.75;
 }
 
 .global-search .mud-input-outlined-border {
-    border-color: rgba(255, 255, 255, 0.5) !important;
+    border-color: var(--mud-palette-primary-text) !important;
+    opacity: 0.5;
 }
 
 /* =============================================

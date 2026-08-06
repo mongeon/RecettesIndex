@@ -16,20 +16,17 @@
     pointer-events: none;
 }
 
-/* High-contrast chips rendered inside the hero gradient */
+/* High-contrast chips rendered inside the hero gradient.
+   La puce est toujours posée sur un fond blanc plein, quel que soit le thème :
+   son encre est donc fixe, et c'est le corail d'action du mode clair (4,9:1).
+   Le fond est plein et non translucide — à 95 % le corail transparaissait et
+   faisait retomber le texte à 4,4:1. */
 ::deep .hero-section .hero-chip {
-    background-color: rgba(255, 255, 255, 0.95) !important;
-    color: var(--mud-palette-primary) !important;
+    background-color: #FFFFFF !important;
+    color: var(--app-accent-ink-on-white) !important;
     font-weight: 600 !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-}
-
-/* Dark theme adjustments */
-::deep .mud-theme-dark .hero-section .hero-chip {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    color: var(--mud-palette-primary-darken) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(0, 0, 0, 0.09) !important;
 }
 
 @media (max-width: 960px) {

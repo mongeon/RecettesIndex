@@ -1,7 +1,10 @@
-/* Hero section — coral gradient */
+/* Hero section — coral gradient.
+   Le dégradé suit maintenant le corail d'action et sa variante foncée : le
+   texte du bandeau tient 4,9:1 et 6,8:1 en clair (contre 2,8:1 et 2,4:1 avec
+   #FF6B6B → #ff8e53), et l'encre foncée tient 5,9:1 et 4,8:1 en sombre. */
 .mud-paper.hero-section {
-    background: linear-gradient(135deg, #FF6B6B 0%, #ff8e53 100%) !important;
-    color: white !important;
+    background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%) !important;
+    color: var(--mud-palette-primary-text) !important;
     min-height: 160px;
 }
 
@@ -14,7 +17,8 @@
 /* Horizontal recipe scroll area */
 .recipe-scroll {
     scrollbar-width: thin;
-    scrollbar-color: var(--mud-palette-primary) transparent;
+    /* Décor, pas du texte : le corail de marque garde ce rôle-là. */
+    scrollbar-color: var(--app-accent) transparent;
     transition: opacity 0.3s ease-in-out;
 }
 
@@ -23,7 +27,7 @@
 }
 
 .recipe-scroll::-webkit-scrollbar-thumb {
-    background-color: var(--mud-palette-primary);
+    background-color: var(--app-accent);
     border-radius: 6px;
 }
 

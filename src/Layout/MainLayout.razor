@@ -14,6 +14,21 @@
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
+@* Jetons de marque hors palette MudBlazor : MudBlazor n'a pas de jeton
+   « texte primaire » distinct du fond primaire, donc les deux rôles du corail
+   et du turquoise sont exposés ici en variables CSS, redéfinies par thème.
+   --app-accent / --app-teal   = la marque, pour les fonds et grandes icônes
+   --app-accent-ink / --app-teal-ink = l'encre, pour tout ce qui se lit.
+   Les valeurs fixes (indépendantes du thème) vivent dans wwwroot/css/app.css. *@
+<style>
+    :root {
+        --app-accent-ink: @(_isDarkMode ? "#FF8A85" : "#C9403A");
+        --app-accent-soft: @(_isDarkMode ? "rgba(255, 107, 107, 0.20)" : "rgba(255, 107, 107, 0.12)");
+        --app-teal-ink: @(_isDarkMode ? "#4ECDC4" : "#1B7F78");
+        --app-teal-soft: @(_isDarkMode ? "rgba(78, 205, 196, 0.20)" : "rgba(78, 205, 196, 0.12)");
+    }
+</style>
+
 <MudLayout>
     <MudAppBar Elevation="0" Color="Color.Primary" Dense="false">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
@@ -105,43 +120,110 @@
     private string _currentPath = string.Empty;
     private ErrorBoundary? _errorBoundary;
     
-    // Define light and dark themes
+    // Define light and dark themes.
+    //
+    // Contrast model (chantier 1 du handoff design) : la couleur de marque #FF6B6B
+    // était utilisée à la fois comme fond et comme encre. En texte sur blanc elle
+    // donne 2,8:1, sous la norme WCAG AA de 4,5:1 (et 1,9:1 pour le turquoise).
+    // Les deux rôles sont maintenant séparés :
+    //   - Primary / Secondary   = l'encre, ce qui se lit (texte, liens, boutons pleins)
+    //   - PrimaryLighten / SecondaryLighten = la marque, réservée aux surfaces
+    // Le corail de marque ne change pas ; il cesse simplement de servir d'encre.
+    // Les *ContrastText sont choisis pour que rien ne pose du blanc sur un fond
+    // saturé : en clair on fonce le fond, en sombre on fonce le texte.
+    // Chaque paire est vérifiée >= 4,5:1 (ratios en commentaire).
     private MudTheme _currentTheme = new MudTheme
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#FF6B6B",
-            Secondary = "#4ECDC4",
-            // Dark amber instead of the default light tertiary so icon+text
-            // combinations stay readable (WCAG AA) on light surfaces
-            Tertiary = "#C77800",
-            Background = "#F7F5F3",
+            Primary = "#C9403A",              // corail action/encre — 4,9:1 sur blanc
+            PrimaryContrastText = "#FFFFFF",  // 4,9:1 sur #C9403A
+            PrimaryDarken = "#A6302B",        // survol des boutons pleins — 6,8:1
+            PrimaryLighten = "#FF6B6B",       // corail de marque : fonds uniquement
+            Secondary = "#1B7F78",            // turquoise encre — 4,8:1 sur blanc
+            SecondaryContrastText = "#FFFFFF",// 4,8:1 — jamais de blanc sur #4ECDC4
+            SecondaryDarken = "#14625C",      // 7,2:1
+            SecondaryLighten = "#4ECDC4",     // turquoise de marque : fonds uniquement
+            Tertiary = "#8A5300",             // ambre foncé — 6,3:1
+            TertiaryContrastText = "#FFFFFF",
+            TertiaryDarken = "#6B4000",
+            // Les *Lighten sont fixés plutôt que dérivés : RecipeCard s'en sert
+            // comme fin de dégradé sous une icône blanche de 72px (seuil 3:1).
+            Info = "#1668B8",                 // 5,7:1
+            InfoContrastText = "#FFFFFF",
+            InfoDarken = "#11518F",
+            InfoLighten = "#2A82D0",          // 4,0:1
+            Success = "#1E6B33",              // 6,6:1
+            SuccessContrastText = "#FFFFFF",
+            SuccessDarken = "#155226",
+            SuccessLighten = "#2E8C46",       // 4,2:1
+            Warning = "#A34B00",              // 5,9:1
+            WarningContrastText = "#FFFFFF",
+            WarningDarken = "#7D3A00",
+            WarningLighten = "#C25E00",       // 4,3:1
+            Error = "#B03A36",                // 6,0:1
+            ErrorContrastText = "#FFFFFF",
+            ErrorDarken = "#8C2E2B",
+            ErrorLighten = "#C94A45",         // 4,6:1
+            Background = "#FAF8F6",
             Surface = "#FFFFFF",
-            AppbarBackground = "#FF6B6B",
-            DrawerBackground = "#F7F5F3",
-            DrawerText = "#474747",
-            Success = "#6BCB77",
-            TextPrimary = "#333333",
-            TextSecondary = "#666666",
-            PrimaryContrastText = "#ffffff",
-            SecondaryContrastText = "#ffffff"
+            AppbarBackground = "#C9403A",     // fond foncé pour porter du texte blanc
+            AppbarText = "#FFFFFF",
+            DrawerBackground = "#FAF8F6",
+            DrawerText = "#5F584F",           // encre 2 — 7,0:1
+            DrawerIcon = "#5F584F",
+            TextPrimary = "#26231F",          // encre 1 — 15,6:1
+            TextSecondary = "#5F584F",        // encre 2 — 7,0:1
+            TextDisabled = "#9B9288",         // encre 3 — 3,1:1, libellés seulement
+            ActionDefault = "#5F584F",
+            LinesDefault = "rgba(0, 0, 0, 0.09)",
+            LinesInputs = "rgba(0, 0, 0, 0.09)",
+            TableLines = "rgba(0, 0, 0, 0.05)",
+            Divider = "rgba(0, 0, 0, 0.09)",
+            DividerLight = "rgba(0, 0, 0, 0.05)"
         },
         PaletteDark = new PaletteDark
         {
-            Primary = "#FF6B6B",
-            Secondary = "#4ECDC4",
-            Tertiary = "#FFD166",
-            Background = "#1A1A1A",
-            Surface = "#242424",
-            AppbarBackground = "#272727",
-            DrawerBackground = "#1E1E1E",
-            DrawerText = "#DDDDDD",
-            Success = "#6BCB77",
-            Warning = "#F4A261",
-            Info = "#5BC4BF",
-            Error = "#FF6B6B",
-            TextPrimary = "#EEEEEE",
-            TextSecondary = "#AAAAAA"
+            // En sombre le corail vif passe en texte (5,9:1) : le seul cas fautif
+            // est le blanc sur bouton corail plein, corrigé par un encrage foncé.
+            Primary = "#FF6B6B",              // 5,9:1 sur la surface sombre
+            PrimaryContrastText = "#201F24",  // texte foncé, jamais blanc — 5,9:1
+            PrimaryDarken = "#F0574F",        // survol des boutons pleins — 4,8:1
+            PrimaryLighten = "#FF8A85",       // encre corail des liens/titres — 7,2:1
+            Secondary = "#4ECDC4",            // 8,5:1
+            SecondaryContrastText = "#17161A",
+            SecondaryDarken = "#3FB8AF",
+            SecondaryLighten = "#7FDCD6",
+            Tertiary = "#FFD166",             // 11,4:1
+            TertiaryContrastText = "#201F24",
+            TertiaryDarken = "#E8B94A",
+            Info = "#5BC4BF",                 // 7,9:1
+            InfoContrastText = "#201F24",
+            InfoDarken = "#45ADA8",
+            Success = "#6BCB77",              // 8,1:1
+            SuccessContrastText = "#201F24",
+            SuccessDarken = "#54B460",
+            Warning = "#F4A261",              // 7,9:1
+            WarningContrastText = "#201F24",
+            WarningDarken = "#DC8944",
+            Error = "#FF8A85",                // 7,2:1
+            ErrorContrastText = "#201F24",
+            ErrorDarken = "#F0706A",
+            Background = "#17161A",
+            Surface = "#201F24",
+            AppbarBackground = "#201F24",
+            DrawerBackground = "#1B1A1F",
+            DrawerText = "#A8A29B",           // encre 2 — 6,5:1
+            DrawerIcon = "#A8A29B",
+            TextPrimary = "#F2EFEA",          // encre 1 — 14,3:1
+            TextSecondary = "#A8A29B",        // encre 2 — 6,5:1
+            TextDisabled = "#7C766F",         // encre 3 — 3,7:1, libellés seulement
+            ActionDefault = "#A8A29B",
+            LinesDefault = "rgba(255, 255, 255, 0.12)",
+            LinesInputs = "rgba(255, 255, 255, 0.12)",
+            TableLines = "rgba(255, 255, 255, 0.07)",
+            Divider = "rgba(255, 255, 255, 0.12)",
+            DividerLight = "rgba(255, 255, 255, 0.07)"
         },
         LayoutProperties = new LayoutProperties
         {
