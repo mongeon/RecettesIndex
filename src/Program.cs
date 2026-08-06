@@ -47,6 +47,7 @@ builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<IEtiquetteService, EtiquetteService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddScoped<IErrorLoggingService, ErrorLoggingService>();
 
