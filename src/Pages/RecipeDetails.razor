@@ -64,7 +64,7 @@ else
             <MudStack Spacing="3" AlignItems="AlignItems.Center">
                 <!-- Favorite Toggle -->
                 <div>
-                    <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.9;" Class="mb-2" Align="Align.Center">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.95;" Class="mb-2" Align="Align.Center">
                         Favori
                     </MudText>
                     <MudTooltip Text="@(favoriteRecipeIds.Contains(recipe.Id) ? "Retirer des favoris" : "Ajouter aux favoris")">
@@ -80,7 +80,7 @@ else
                 @if (recipe.Rating > 0)
                 {
                     <div>
-                        <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.9;" Class="mb-2" Align="Align.Center">
+                        <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.95;" Class="mb-2" Align="Align.Center">
                             Évaluation
                         </MudText>
                         <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
