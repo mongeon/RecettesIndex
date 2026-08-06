@@ -36,6 +36,11 @@ public static class CacheConstants
     /// Cache key for stores list.
     /// </summary>
     public const string StoresListKey = "stores:list";
+
+    /// <summary>
+    /// Cache key for tags list.
+    /// </summary>
+    public const string EtiquettesListKey = "etiquettes:list";
 }
 
 /// <summary>

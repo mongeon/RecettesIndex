@@ -81,6 +81,17 @@ public class Recipe : BaseModel
     public Store? Store { get; set; }
 
     /// <summary>
+    /// Gets or sets the tags attached to this recipe.
+    /// </summary>
+    /// <remarks>
+    /// Embedded through the <c>recettes_etiquettes</c> junction table, exactly like
+    /// <see cref="Book.Authors"/> goes through <c>books_authors</c>. The outer join keeps
+    /// untagged recipes in the result set.
+    /// </remarks>
+    [Reference(typeof(Etiquette), includeInQuery: true, useInnerJoin: false)]
+    public List<Etiquette> Etiquettes { get; set; } = [];
+
+    /// <summary>
     /// Gets whether this recipe is from a book.
     /// </summary>
     [JsonIgnore]
