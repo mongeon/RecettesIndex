@@ -1,66 +1,176 @@
-/* Card hover elevation effect */
+/* Fiche de recette (bloc 1b).
+   La couleur de la bordure gauche est posée en inline par le composant, puisqu'elle
+   dépend de la note. */
+
 .recipe-card {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 15px 16px 12px;
+    border-radius: 11px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    border-left: 3px solid var(--mud-palette-lines-default);
+    /* Ombre et fond seulement : le translateY précédent faisait sauter toute la
+       grille au survol. */
+    transition: box-shadow 180ms cubic-bezier(.4, 0, .2, 1);
 }
 
-.recipe-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+@media (hover: hover) {
+    .recipe-card:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, .08);
+    }
 }
 
-.recipe-card:hover .recipe-visual {
-    transform: scale(1.1) rotate(5deg);
-}
-
-/* Card image area — gradient per rating is set inline via GetCardImageStyle() */
-.recipe-card-image {
-    height: 140px;
-    position: relative;
+.recipe-card-top {
     display: flex;
     align-items: center;
+    gap: 6px;
+}
+
+.recipe-card-pizzas {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+
+::deep .card-pizza {
+    font-size: 15px !important;
+    color: var(--mud-palette-text-disabled);
+}
+
+::deep .card-pizza-on {
+    color: var(--app-accent);
+}
+
+.recipe-card-score {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--mud-palette-text-disabled);
+    font-variant-numeric: tabular-nums;
+}
+
+.recipe-card-spacer {
+    flex: 1 1 auto;
+}
+
+.recipe-card-fav {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
+    border: none;
+    background: transparent;
+    padding: 2px;
+    cursor: pointer;
+    line-height: 0;
+}
+
+::deep .fav-icon {
+    font-size: 19px !important;
+    color: var(--mud-palette-text-disabled);
+}
+
+::deep .fav-icon-on {
+    color: var(--app-accent);
+}
+
+.recipe-card-name {
+    display: block;
+    margin-top: 10px;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    color: var(--mud-palette-text-primary);
+    text-decoration: none;
+    text-wrap: pretty;
+}
+
+.recipe-card-name:hover {
+    text-decoration: underline;
+}
+
+.recipe-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.recipe-card-tag {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+/* min-height plutôt que height : une note longue s'étend, une carte sans note
+   garde quand même son pied aligné sur celui de ses voisines. */
+.recipe-card-notes {
+    margin: 8px 0 0;
+    min-height: 40px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--mud-palette-text-secondary);
+    text-wrap: pretty;
+}
+
+.recipe-card-sep {
+    height: 1px;
+    margin-top: auto;
+    background-color: var(--app-line-soft);
+}
+
+.recipe-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 10px;
+    min-width: 0;
+}
+
+::deep .recipe-card-source-icon {
+    font-size: 17px !important;
+    flex: 0 0 auto;
+}
+
+::deep .source-book {
+    color: var(--app-accent-ink);
+}
+
+::deep .source-store {
+    color: var(--app-teal-ink);
+}
+
+::deep .source-plain {
+    color: var(--mud-palette-text-disabled);
+}
+
+.recipe-card-source {
+    font-size: 12.5px;
+    color: var(--mud-palette-text-secondary);
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Animated food icon */
-.recipe-visual {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.recipe-card-page {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background-color: var(--app-accent-soft);
+    color: var(--mud-palette-primary);
+    font-size: 12.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
-/* Rating badge overlay */
-.recipe-rating-overlay {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-}
-
-/* Favorite heart button */
-.favorite-icon {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 10;
-}
-
-::deep .favorite-icon .mud-icon-button {
-    transition: transform 0.2s ease;
-}
-
-::deep .favorite-icon .mud-icon-button:hover {
-    transform: scale(1.15);
-}
-
-::deep .favorite-icon .mud-icon-button:active {
-    transform: scale(0.95);
-}
-
-/* Two-line clamped title */
-.recipe-card-title {
-    font-weight: 600;
-    line-height: 1.3;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+.recipe-card-date {
+    flex: 0 0 auto;
+    font-size: 12px;
+    color: var(--mud-palette-text-disabled);
+    white-space: nowrap;
 }
