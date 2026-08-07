@@ -1,0 +1,55 @@
+@using MudBlazor
+
+@*
+    Une puce-menu de la barre de filtres (bloc 1a).
+
+    MudSelect apporte son propre habillage de champ — étiquette flottante, trait de
+    soulignement, hauteur imposée — qui ne donne pas la pastille de 34px du design.
+    MudMenu fournit le comportement (ouverture, fermeture au clic extérieur, clavier)
+    et laisse l'activateur entièrement à notre main, d'où ce composant.
+*@
+
+<MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Dense="true">
+    <ActivatorContent>
+        <span class="@(IsActive ? "filter-pill filter-pill-on" : "filter-pill")">
+            <span class="filter-pill-label">@Label@(IsActive ? " :" : "")</span>
+            @if (IsActive && !string.IsNullOrEmpty(SelectedLabel))
+            {
+                <span class="filter-pill-value">@SelectedLabel</span>
+            }
+            <MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Class="filter-pill-chevron" />
+        </span>
+    </ActivatorContent>
+    <ChildContent>
+        @foreach (var option in Options)
+        {
+            <MudMenuItem OnClick="@(() => OnSelected.InvokeAsync(option.Value))">
+                <span class="filter-menu-item">
+                    <span>@option.Label</span>
+                    @if (option.Count.HasValue)
+                    {
+                        <span class="filter-menu-count">@option.Count</span>
+                    }
+                </span>
+            </MudMenuItem>
+        }
+    </ChildContent>
+</MudMenu>
+
+@code {
+    /// <summary>An entry of the menu. A null <paramref name="Value"/> clears the filter.</summary>
+    /// <param name="Value">Filter value, or null for the "all" reset entry.</param>
+    /// <param name="Label">Text shown in the menu.</param>
+    /// <param name="Count">Recipe count shown right-aligned, when known.</param>
+    public record Option(string? Value, string Label, int? Count);
+
+    /// <summary>The filter's own name, shown when nothing is selected.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>What the filter is currently set to, shown instead of nothing when active.</summary>
+    [Parameter] public string? SelectedLabel { get; set; }
+
+    [Parameter, EditorRequired] public bool IsActive { get; set; }
+    [Parameter, EditorRequired] public List<Option> Options { get; set; } = [];
+    [Parameter, EditorRequired] public EventCallback<string?> OnSelected { get; set; }
+}

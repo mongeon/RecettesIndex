@@ -1,0 +1,198 @@
+@using MudBlazor
+@using RecettesIndex.Models
+
+@*
+    Barre de filtres unique (bloc 1a du handoff).
+
+    Remplace les trois étages précédents — puces rapides, panneau d'expansion
+    « Filtres Avancés » et rangée de puces d'état actif — par une seule carte.
+    Le filtrage se fait à la frappe : il n'y a aucun bouton « appliquer », et le
+    compteur de résultats à droite du champ est la confirmation que le filtre a pris.
+*@
+
+<div class="filter-bar">
+    <div class="filter-bar-row">
+        <div class="filter-field">
+            <MudIcon Icon="@Icons.Material.Outlined.Search" Class="filter-field-icon" />
+            <input type="text"
+                   class="filter-field-input"
+                   placeholder="@Placeholder"
+                   value="@SearchTerm"
+                   @oninput="OnSearchInput"
+                   aria-label="Filtrer les recettes" />
+            <span class="filter-field-count">@ResultCountLabel</span>
+        </div>
+
+        <RecipeFilterMenu Label="Livre"
+                          SelectedLabel="@SelectedBookLabel"
+                          IsActive="@IsActive(BookFilter)"
+                          Options="@BookOptions"
+                          OnSelected="OnBookChanged" />
+
+        <RecipeFilterMenu Label="Magasin"
+                          SelectedLabel="@SelectedStoreLabel"
+                          IsActive="@IsActive(StoreFilter)"
+                          Options="@StoreOptions"
+                          OnSelected="OnStoreChanged" />
+
+        <RecipeFilterMenu Label="Auteur"
+                          SelectedLabel="@SelectedAuthorLabel"
+                          IsActive="@IsActive(AuthorFilter)"
+                          Options="@AuthorOptions"
+                          OnSelected="OnAuthorChanged" />
+
+        <RecipeFilterMenu Label="Note"
+                          SelectedLabel="@SelectedRatingLabel"
+                          IsActive="@IsActive(RatingFilter)"
+                          Options="@RatingOptions"
+                          OnSelected="OnRatingChanged" />
+
+        @if (HasActiveFilters)
+        {
+            <button type="button" class="filter-reset" @onclick="OnClearAllFilters">Réinitialiser</button>
+        }
+    </div>
+</div>
+
+@if (Etiquettes.Count > 0)
+{
+    <div class="tag-row">
+        @foreach (var tag in Etiquettes)
+        {
+            var isOn = SelectedEtiquetteIds.Contains(tag.Id);
+            var count = EtiquetteCounts.GetValueOrDefault(tag.Id, 0);
+            <button type="button"
+                    class="@(isOn ? "tag-chip tag-chip-on" : "tag-chip")"
+                    aria-pressed="@isOn"
+                    @onclick="() => OnEtiquetteToggled.InvokeAsync(tag.Id)">
+                <span>@tag.Name</span>
+                <span class="tag-chip-count">@count</span>
+            </button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string? RatingFilter { get; set; }
+    [Parameter, EditorRequired] public string? BookFilter { get; set; }
+    [Parameter, EditorRequired] public string? StoreFilter { get; set; }
+    [Parameter, EditorRequired] public string? AuthorFilter { get; set; }
+    [Parameter, EditorRequired] public bool HasActiveFilters { get; set; }
+
+    /// <summary>Number of recipes matching the current filters, shown live beside the field.</summary>
+    [Parameter, EditorRequired] public int ResultCount { get; set; }
+
+    /// <summary>Placeholder for the filter field; differs between the list and grid views.</summary>
+    [Parameter] public string Placeholder { get; set; } = "Filtrer cette liste…";
+
+    [Parameter, EditorRequired] public List<Book> Books { get; set; } = [];
+    [Parameter, EditorRequired] public List<Store> Stores { get; set; } = [];
+    [Parameter, EditorRequired] public List<Author> Authors { get; set; } = [];
+    [Parameter, EditorRequired] public List<Etiquette> Etiquettes { get; set; } = [];
+
+    [Parameter, EditorRequired] public Dictionary<int, int> BookRecipeCounts { get; set; } = [];
+    [Parameter, EditorRequired] public Dictionary<int, int> StoreRecipeCounts { get; set; } = [];
+    [Parameter, EditorRequired] public Dictionary<int, int> AuthorRecipeCounts { get; set; } = [];
+    [Parameter, EditorRequired] public Dictionary<int, int> EtiquetteCounts { get; set; } = [];
+    [Parameter, EditorRequired] public HashSet<int> SelectedEtiquetteIds { get; set; } = [];
+
+    [Parameter, EditorRequired] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnRatingChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnBookChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnStoreChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string?> OnAuthorChanged { get; set; }
+    [Parameter, EditorRequired] public EventCallback<int> OnEtiquetteToggled { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClearAllFilters { get; set; }
+
+    private string ResultCountLabel => ResultCount == 1 ? "1 résultat" : $"{ResultCount} résultats";
+
+    private static bool IsActive(string? value) => !string.IsNullOrWhiteSpace(value) && value != "all";
+
+    private Task OnSearchInput(ChangeEventArgs e)
+        => OnSearchChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+
+    // ── Menu options ──────────────────────────────────────────────────────────
+    // Each list starts with the "all" reset entry so a menu can be cleared without
+    // reaching for the Réinitialiser link.
+
+    private List<RecipeFilterMenu.Option> BookOptions
+    {
+        get
+        {
+            var options = new List<RecipeFilterMenu.Option>
+            {
+                new(null, $"Tous les livres ({Books.Count})", null)
+            };
+            foreach (var b in Books)
+            {
+                options.Add(new RecipeFilterMenu.Option(
+                    b.Id.ToString(), b.Name, BookRecipeCounts.GetValueOrDefault(b.Id, 0)));
+            }
+            return options;
+        }
+    }
+
+    private List<RecipeFilterMenu.Option> StoreOptions
+    {
+        get
+        {
+            var options = new List<RecipeFilterMenu.Option>
+            {
+                new(null, $"Tous les magasins ({Stores.Count})", null)
+            };
+            foreach (var s in Stores)
+            {
+                options.Add(new RecipeFilterMenu.Option(
+                    s.Id.ToString(), s.Name, StoreRecipeCounts.GetValueOrDefault(s.Id, 0)));
+            }
+            return options;
+        }
+    }
+
+    private List<RecipeFilterMenu.Option> AuthorOptions
+    {
+        get
+        {
+            var options = new List<RecipeFilterMenu.Option>
+            {
+                new(null, $"Tous les auteurs ({Authors.Count})", null)
+            };
+            foreach (var a in Authors)
+            {
+                options.Add(new RecipeFilterMenu.Option(
+                    a.Id.ToString(), a.FullName, AuthorRecipeCounts.GetValueOrDefault(a.Id, 0)));
+            }
+            return options;
+        }
+    }
+
+    private static readonly List<RecipeFilterMenu.Option> RatingOptions = new()
+    {
+        new(null, "Toutes les notes", null),
+        new("5", "5 pizzas", null),
+        new("4", "4 et plus", null),
+        new("3", "3 et plus", null),
+        new("0", "Non évaluées", null)
+    };
+
+    // ── Selected labels ───────────────────────────────────────────────────────
+    // An active menu shows what it is filtering on rather than its own name, so the
+    // bar reads as a sentence: « Livre : Cuisine indienne maison ».
+
+    private string? SelectedBookLabel => IsActive(BookFilter) && int.TryParse(BookFilter, out var id)
+        ? Books.FirstOrDefault(b => b.Id == id)?.Name
+        : null;
+
+    private string? SelectedStoreLabel => IsActive(StoreFilter) && int.TryParse(StoreFilter, out var id)
+        ? Stores.FirstOrDefault(s => s.Id == id)?.Name
+        : null;
+
+    private string? SelectedAuthorLabel => IsActive(AuthorFilter) && int.TryParse(AuthorFilter, out var id)
+        ? Authors.FirstOrDefault(a => a.Id == id)?.FullName
+        : null;
+
+    private string? SelectedRatingLabel => IsActive(RatingFilter)
+        ? RatingOptions.FirstOrDefault(o => o.Value == RatingFilter)?.Label
+        : null;
+}
