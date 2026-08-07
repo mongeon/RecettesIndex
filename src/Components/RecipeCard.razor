@@ -1,251 +1,120 @@
 @using MudBlazor
 @using RecettesIndex.Models
-@using RecettesIndex.Services
-@using RecettesIndex.Pages
 
-<MudCard Elevation="0" Class="recipe-card" Outlined="true" Style="height: 100%; display: flex; flex-direction: column;" role="article" aria-label="@Recipe.Name">
-    <div class="recipe-card-image" 
-         style="@GetCardImageStyle()" 
-         @onclick="@(() => OnView.InvokeAsync(Recipe))">
-        <!-- Fun emoji/icon display -->
-        <div class="recipe-visual">
-            <MudIcon Icon="@GetRecipeIcon()" Size="Size.Large" Style="font-size: 72px; color: rgba(255,255,255,0.9);" />
-        </div>
-        
-        <!-- Favorite Icon (Top Left) -->
-        <div class="favorite-icon" @onclick:stopPropagation="true">
-            <MudTooltip Text="@(IsFavorite ? "Retirer des favoris" : "Ajouter aux favoris")">
-                <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
-                              Color="@(IsFavorite ? Color.Error : Color.Default)"
-                              Size="Size.Small"
-                              aria-label="@(IsFavorite ? "Retirer des favoris" : "Ajouter aux favoris")"
-                              OnClick="@(() => OnToggleFavorite.InvokeAsync(Recipe))"
-                              Style="background-color: var(--mud-palette-surface); box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
-            </MudTooltip>
-        </div>
-        
-        <div class="recipe-rating-overlay">
-            @if (Recipe.Rating > 0)
+@*
+    Fiche de recette (bloc 1b du handoff).
+
+    Une fiche typographique, plus une vignette. Disparaissent : le bloc dégradé de
+    140px, l'icône alimentaire tirée au hasard du nom, la puce de note en
+    superposition et la rangée de quatre boutons d'action en pied. Ils occupaient
+    l'essentiel de la surface sans porter d'information ; la couleur ne sert plus
+    qu'à la note, réduite à un filet de 3px sur le bord gauche.
+*@
+
+<article class="recipe-card" style="@($"border-left-color: {RatingEdgeColor};")">
+    <div class="recipe-card-top">
+        <span class="recipe-card-pizzas">
+            @for (var i = 1; i <= 5; i++)
             {
-                <MudChip T="string" Size="Size.Small" Color="@GetRatingColor()" Icon="@Icons.Material.Filled.LocalPizza">
-                    @Recipe.Rating
-                </MudChip>
+                <MudIcon Icon="@(i <= Recipe.Rating ? Icons.Material.Filled.LocalPizza : Icons.Material.Outlined.LocalPizza)"
+                         Class="@(i <= Recipe.Rating ? "card-pizza card-pizza-on" : "card-pizza")" />
             }
-            else
-            {
-                <MudChip T="string" Size="Size.Small" Color="Color.Dark" Icon="@Icons.Material.Filled.HelpOutline">
-                    Non évaluée
-                </MudChip>
-            }
-        </div>
-    </div>
-    
-    <MudCardContent Class="flex-grow-1" Style="padding-bottom: 8px;">
-        <MudText Typo="Typo.h6" Class="recipe-card-title" Style="margin-bottom: 8px; min-height: 48px;">
-            @Recipe.Name
-        </MudText>
-        
+        </span>
+
         @if (Recipe.Rating > 0)
         {
-            <div style="margin-bottom: 8px;">
-                <PizzaRating Value="@Recipe.Rating" ReadOnly="true" Size="Size.Small" />
-            </div>
+            <span class="recipe-card-score">@Recipe.Rating/5</span>
         }
-        
-        <!-- Source Badges -->
-        <MudStack Row Spacing="1" Class="mb-2">
-            @if (Recipe.IsFromBook && Book != null)
+
+        <span class="recipe-card-spacer"></span>
+
+        <button type="button"
+                class="recipe-card-fav"
+                aria-label="@(IsFavorite ? "Retirer des favoris" : "Ajouter aux favoris")"
+                aria-pressed="@IsFavorite"
+                @onclick="() => OnToggleFavorite.InvokeAsync(Recipe)">
+            <MudIcon Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
+                     Class="@(IsFavorite ? "fav-icon fav-icon-on" : "fav-icon")" />
+        </button>
+    </div>
+
+    <a class="recipe-card-name" href="@($"/recipes/{Recipe.Id}")">@Recipe.Name</a>
+
+    @if (Recipe.Etiquettes.Count > 0)
+    {
+        <div class="recipe-card-tags">
+            @foreach (var tag in Recipe.Etiquettes)
             {
-                <MudChip T="string" 
-                         Size="Size.Small" 
-                         Icon="@Icons.Material.Filled.MenuBook" 
-                         Color="Color.Primary"
-                         Variant="Variant.Filled">
-                    @Book.Name
-                </MudChip>
-                @if (Recipe.BookPage.HasValue)
-                {
-                    <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.BookmarkBorder" Color="Color.Default">
-                        p. @Recipe.BookPage
-                    </MudChip>
-                }
+                <span class="recipe-card-tag">@tag.Name</span>
             }
-            else if (Recipe.IsFromStore && (Store != null || Recipe.Store != null))
-            {
-                var storeToDisplay = Store ?? Recipe.Store;
-                <MudChip T="string" 
-                         Size="Size.Small" 
-                         Icon="@Icons.Material.Filled.Storefront" 
-                         Color="Color.Secondary"
-                         Variant="Variant.Filled">
-                    @storeToDisplay?.Name
-                </MudChip>
-            }
-            else
-            {
-                <MudChip T="string" 
-                         Size="Size.Small" 
-                         Icon="@Icons.Material.Filled.Home" 
-                         Color="Color.Tertiary"
-                         Variant="Variant.Filled">
-                    Maison
-                </MudChip>
-            }
-        </MudStack>
-        
-        @if (!string.IsNullOrWhiteSpace(Recipe.Notes))
+        </div>
+    }
+
+    @* Hauteur minimale même sans notes : sinon les cartes d'une même rangée
+       cesseraient d'aligner leurs pieds. *@
+    <p class="recipe-card-notes">@Recipe.Notes</p>
+
+    <div class="recipe-card-sep"></div>
+
+    <div class="recipe-card-foot">
+        <MudIcon Icon="@SourceIcon" Class="@($"recipe-card-source-icon {SourceColorClass}")" />
+        <span class="recipe-card-source">@SourceLabel</span>
+        @if (Recipe.BookPage is int page)
         {
-            var preview = Recipe.Notes.Length > 80 ? Recipe.Notes.Substring(0, 80) + "..." : Recipe.Notes;
-            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2" Style="font-size: 0.875rem; line-height: 1.4;">
-                @preview
-            </MudText>
+            <span class="recipe-card-page">p. @page</span>
         }
-    </MudCardContent>
-    
-    <MudDivider />
-    
-    <MudCardActions Class="d-flex justify-space-between pa-2">
-        <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
-            <MudTooltip Text="Voir les détails">
-                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                              Color="Color.Primary"
-                              Size="Size.Small"
-                              aria-label="Voir les détails"
-                              OnClick="@(() => OnView.InvokeAsync(Recipe))" />
-            </MudTooltip>
-            
-            <MudTooltip Text="Imprimer">
-                <MudIconButton Icon="@Icons.Material.Filled.Print"
-                              Color="Color.Default"
-                              Size="Size.Small"
-                              aria-label="Imprimer"
-                              OnClick="@(() => OnPrint.InvokeAsync(Recipe))" />
-            </MudTooltip>
-            
-            @if (IsAuthenticated)
-            {
-                <MudTooltip Text="Modifier">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                  Color="Color.Secondary"
-                                  Size="Size.Small"
-                                  aria-label="Modifier"
-                                  OnClick="@(() => OnEdit.InvokeAsync(Recipe))" />
-                </MudTooltip>
-                
-                <MudTooltip Text="Supprimer">
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                  Color="Color.Error"
-                                  Size="Size.Small"
-                                  aria-label="Supprimer"
-                                  OnClick="@(() => OnDelete.InvokeAsync(Recipe))" />
-                </MudTooltip>
-            }
-        </MudButtonGroup>
-        
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.75rem;">
-            @GetRelativeDate(Recipe.CreationDate)
-        </MudText>
-    </MudCardActions>
-</MudCard>
+        <span class="recipe-card-spacer"></span>
+        <span class="recipe-card-date">@RelativeDate(Recipe.CreationDate)</span>
+    </div>
+</article>
 
 @code {
-    [Parameter, EditorRequired]
-    public Recipe Recipe { get; set; } = null!;
-    
-    [Parameter]
-    public Book? Book { get; set; }
-    
-    [Parameter]
-    public Store? Store { get; set; }
-    
-    [Parameter]
-    public bool IsAuthenticated { get; set; }
-    
-    [Parameter]
-    public bool IsFavorite { get; set; }
-    
-    [Parameter]
-    public EventCallback<Recipe> OnView { get; set; }
-    
-    [Parameter]
-    public EventCallback<Recipe> OnEdit { get; set; }
-    
-    [Parameter]
-    public EventCallback<Recipe> OnDelete { get; set; }
-    
-    [Parameter]
-    public EventCallback<Recipe> OnPrint { get; set; }
-    
-    [Parameter]
-    public EventCallback<Recipe> OnToggleFavorite { get; set; }
+    [Parameter, EditorRequired] public Recipe Recipe { get; set; } = null!;
+    [Parameter] public Book? Book { get; set; }
+    [Parameter] public Store? Store { get; set; }
+    [Parameter] public bool IsFavorite { get; set; }
+    [Parameter, EditorRequired] public EventCallback<Recipe> OnToggleFavorite { get; set; }
 
-    private string GetRelativeDate(DateTime date)
+    /// <summary>
+    /// The 3px left edge is the only colour left on the card, and it encodes the rating.
+    /// Decorative, so it may sit below the text contrast threshold.
+    /// </summary>
+    private string RatingEdgeColor => Recipe.Rating switch
+    {
+        5 => "#6BCB77",
+        4 => "var(--app-teal)",
+        3 => "#E8A33D",
+        2 or 1 => "#D9534F",
+        _ => "var(--mud-palette-lines-default)"
+    };
+
+    private string SourceIcon =>
+        Recipe.IsFromBook ? Icons.Material.Outlined.MenuBook
+        : Recipe.IsFromStore ? Icons.Material.Outlined.Storefront
+        : Recipe.IsFromUrl ? Icons.Material.Outlined.Language
+        : Icons.Material.Outlined.Home;
+
+    private string SourceColorClass =>
+        Recipe.IsFromBook ? "source-book"
+        : Recipe.IsFromStore ? "source-store"
+        : "source-plain";
+
+    private string SourceLabel =>
+        Recipe.IsFromBook ? Book?.Name ?? "Livre"
+        : Recipe.IsFromStore ? Store?.Name ?? "Magasin"
+        : Recipe.IsFromUrl && !string.IsNullOrWhiteSpace(Recipe.Url) ? HostOf(Recipe.Url)
+        : "Maison";
+
+    private static string HostOf(string url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : url;
+
+    private static string RelativeDate(DateTime date)
     {
         var span = DateTime.UtcNow - date;
         if (span.TotalDays < 1) return "Aujourd'hui";
         if (span.TotalDays < 2) return "Hier";
         if (span.TotalDays < 7) return $"Il y a {(int)span.TotalDays}j";
         if (span.TotalDays < 30) return $"Il y a {(int)(span.TotalDays / 7)} sem.";
-        if (span.TotalDays < 365) return date.ToString("MMM yyyy");
-        return date.ToString("dd MMM yyyy");
-    }
-
-    private Color GetRatingColor() => Recipe.Rating switch
-    {
-        5 => Color.Success,
-        4 => Color.Info,
-        3 => Color.Warning,
-        2 => Color.Default,
-        1 => Color.Error,
-        _ => Color.Dark
-    };
-    
-    private string GetCardImageStyle()
-    {
-        var gradient = Recipe.Rating switch
-        {
-            5 => "linear-gradient(135deg, var(--mud-palette-success) 0%, var(--mud-palette-success-lighten) 100%)",
-            4 => "linear-gradient(135deg, var(--mud-palette-info) 0%, var(--mud-palette-info-lighten) 100%)",
-            3 => "linear-gradient(135deg, var(--mud-palette-warning) 0%, var(--mud-palette-warning-lighten) 100%)",
-            2 => "linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)",
-            1 => "linear-gradient(135deg, var(--mud-palette-error) 0%, var(--mud-palette-error-lighten) 100%)",
-            _ => "linear-gradient(135deg, #757575 0%, #9E9E9E 100%)"
-        };
-        
-        return $"height: 140px; position: relative; display: flex; align-items: center; justify-content: center; background: {gradient}; overflow: hidden; cursor: pointer;";
-    }
-    
-    private string GetRecipeIcon()
-    {
-        // Use recipe name hash to deterministically assign an icon
-        var hash = Math.Abs(Recipe.Name.GetHashCode());
-        
-        // Array of fun food-related Material Design icons
-        var foodIcons = new[]
-        {
-            Icons.Material.Filled.Restaurant,      // Fork & knife
-            Icons.Material.Filled.LocalPizza,      // Pizza
-            Icons.Material.Filled.LunchDining,     // Burger
-            Icons.Material.Filled.Cake,            // Cake
-            Icons.Material.Filled.Icecream,        // Ice cream
-            Icons.Material.Filled.LocalBar,        // Cocktail
-            Icons.Material.Filled.Coffee,          // Coffee
-            Icons.Material.Filled.EmojiFoodBeverage, // Hot drink
-            Icons.Material.Filled.Egg,             // Egg
-            Icons.Material.Filled.BakeryDining,    // Bread
-            Icons.Material.Filled.RamenDining,     // Ramen
-            Icons.Material.Filled.Fastfood,        // Fast food
-            Icons.Material.Filled.DinnerDining,    // Dinner plate
-            Icons.Material.Filled.BreakfastDining, // Breakfast
-            Icons.Material.Filled.BrunchDining,    // Brunch
-            Icons.Material.Filled.SoupKitchen,     // Soup
-            Icons.Material.Filled.SetMeal,         // Set meal
-            Icons.Material.Filled.RiceBowl,        // Rice bowl
-            Icons.Material.Filled.FreeBreakfast,   // Toast
-            Icons.Material.Filled.Tapas            // Tapas
-        };
-        
-        // Select icon based on hash (ensures same recipe always gets same icon)
-        return foodIcons[hash % foodIcons.Length];
+        return date.ToString("MMM yyyy");
     }
 }

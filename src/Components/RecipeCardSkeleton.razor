@@ -1,52 +1,31 @@
 @using MudBlazor
 
+@*
+    Silhouette de chargement de la fiche (bloc 1b).
+
+    Elle suit la carte réelle : rangée de pizzas, titre, étiquettes, notes, pied.
+    L'ancienne version annonçait un bloc image de 180px et trois boutons ronds que
+    la carte n'a plus — le contenu semblait alors sauter en place à l'arrivée.
+*@
+
 <div class="skeleton-card">
-    <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
-                 Height="180px" 
-                 Animation="Animation.Wave"
-                 Class="skeleton-card-image" />
-    
-    <div class="skeleton-card-content">
-        <MudSkeleton SkeletonType="SkeletonType.Text" 
-                     Height="28px" 
-                     Animation="Animation.Wave"
-                     Class="mb-2" />
-        <MudSkeleton SkeletonType="SkeletonType.Text" 
-                     Width="60%" 
-                     Height="28px" 
-                     Animation="Animation.Wave"
-                     Class="mb-3" />
-        
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
-                     Width="40%" 
-                     Height="24px" 
-                     Animation="Animation.Wave"
-                     Class="mb-2" />
-        
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
-                     Width="70%" 
-                     Height="20px" 
-                     Animation="Animation.Wave"
-                     Class="mb-1" />
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
-                     Width="90%" 
-                     Height="20px" 
-                     Animation="Animation.Wave" />
+    <div class="skeleton-card-top">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="88px" Height="15px" Animation="Animation.Wave" />
     </div>
-    
-    <div class="skeleton-card-actions">
-        <MudSkeleton SkeletonType="SkeletonType.Circle" 
-                     Width="40px" 
-                     Height="40px" 
-                     Animation="Animation.Wave" />
-        <MudSkeleton SkeletonType="SkeletonType.Circle" 
-                     Width="40px" 
-                     Height="40px" 
-                     Animation="Animation.Wave" />
-        <MudSkeleton SkeletonType="SkeletonType.Circle" 
-                     Width="40px" 
-                     Height="40px" 
-                     Animation="Animation.Wave" />
+
+    <MudSkeleton SkeletonType="SkeletonType.Text" Height="24px" Animation="Animation.Wave" Class="mt-2" />
+    <MudSkeleton SkeletonType="SkeletonType.Text" Width="55%" Height="24px" Animation="Animation.Wave" />
+
+    <div class="skeleton-card-tags">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="62px" Height="18px" Animation="Animation.Wave" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="48px" Height="18px" Animation="Animation.Wave" />
+    </div>
+
+    <MudSkeleton SkeletonType="SkeletonType.Text" Height="16px" Animation="Animation.Wave" Class="mt-2" />
+    <MudSkeleton SkeletonType="SkeletonType.Text" Width="75%" Height="16px" Animation="Animation.Wave" />
+
+    <div class="skeleton-card-foot">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="120px" Height="16px" Animation="Animation.Wave" />
     </div>
 </div>
 

@@ -384,16 +384,9 @@
    (hover-capable devices only, so the lift effect
    doesn't stick after a tap on touch screens)
    ============================================= */
-.recipe-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-@media (hover: hover) {
-    .recipe-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
-    }
-}
+/* Le survol des cartes vit maintenant dans RecipeCard.razor.css, et ne joue plus
+   que sur l'ombre : le translateY faisait sauter toute la grille au passage de la
+   souris. */
 
 /* =============================================
    KEYBOARD FOCUS VISIBILITY

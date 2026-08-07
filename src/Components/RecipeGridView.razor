@@ -17,12 +17,7 @@
             <RecipeCard Recipe="@recipe"
                        Book="@book"
                        Store="@store"
-                       IsAuthenticated="@IsAuthenticated"
                        IsFavorite="@FavoriteRecipeIds.Contains(recipe.Id)"
-                       OnView="OnViewRecipe"
-                       OnEdit="OnEditRecipe"
-                       OnDelete="OnDeleteRecipe"
-                       OnPrint="OnPrintRecipe"
                        OnToggleFavorite="OnToggleFavorite" />
         </MudItem>
     }
@@ -53,15 +48,10 @@
     [Parameter, EditorRequired] public List<Book> Books { get; set; } = new();
     [Parameter, EditorRequired] public List<Store> Stores { get; set; } = new();
     [Parameter, EditorRequired] public List<int> FavoriteRecipeIds { get; set; } = new();
-    [Parameter, EditorRequired] public bool IsAuthenticated { get; set; }
     [Parameter, EditorRequired] public int CurrentPage { get; set; }
     [Parameter, EditorRequired] public int TotalPages { get; set; }
     [Parameter] public int TotalCount { get; set; }
 
-    [Parameter, EditorRequired] public EventCallback<Recipe> OnViewRecipe { get; set; }
-    [Parameter, EditorRequired] public EventCallback<Recipe> OnEditRecipe { get; set; }
-    [Parameter, EditorRequired] public EventCallback<Recipe> OnDeleteRecipe { get; set; }
-    [Parameter, EditorRequired] public EventCallback<Recipe> OnPrintRecipe { get; set; }
     [Parameter, EditorRequired] public EventCallback<Recipe> OnToggleFavorite { get; set; }
     [Parameter, EditorRequired] public EventCallback<int> OnPageChanged { get; set; }
 }
