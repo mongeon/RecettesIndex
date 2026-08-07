@@ -42,9 +42,9 @@
                 </a>
                 break;
 
-            case RecipeSourceKind.Web:
+            case RecipeSourceKind.Web when ExternalHref is not null:
                 <a class="source-action source-action-accent"
-                   href="@Recipe.Url"
+                   href="@ExternalHref"
                    target="_blank"
                    rel="noopener noreferrer">
                     Ouvrir le lien ↗
@@ -80,6 +80,12 @@
     [Parameter] public EventCallback OnAssociateBook { get; set; }
 
     private RecipeSourceKind Kind => RecipeSource.Classify(Recipe);
+
+    /// <summary>
+    /// The stored URL made absolute, or null when there is nothing safe to link to. The
+    /// banner still shows the domain in that case — it just does not offer the button.
+    /// </summary>
+    private string? ExternalHref => RecipeSource.ExternalHref(Recipe.Url);
 
     private string SourceIcon => Kind switch
     {
