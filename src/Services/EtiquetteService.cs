@@ -26,7 +26,12 @@ public class EtiquetteService(
             ct);
 
     public Task<Result<Etiquette>> GetOrCreateAsync(string name, CancellationToken ct = default)
-        => CreateCoreAsync(
+    {
+        // Tracks whether this call actually inserted, so the "get" path leaves the cached
+        // list — and every consumer already holding it — untouched.
+        var inserted = false;
+
+        return CreateCoreAsync(
             new Etiquette { Name = name?.Trim() ?? string.Empty },
             // Not ValidationGuards.RequireNonEmpty: its message is English, and this one
             // surfaces directly in the French tag picker.
@@ -35,35 +40,59 @@ public class EtiquetteService(
             {
                 var trimmed = name!.Trim();
 
-                // The database enforces uniqueness on lower(btrim(name)), so match the same
-                // way here rather than letting the insert fail on the unique index.
-                var existing = await _supabaseClient.From<Etiquette>().Get(cancellationToken: token);
-                var match = existing.Models?.FirstOrDefault(
-                    e => string.Equals(e.Name.Trim(), trimmed, StringComparison.OrdinalIgnoreCase));
+                // The cached list is the same data the tag picker is already showing, so
+                // the common "tag already exists" path costs no round trip at all.
+                var match = FindByName(await GetAllAsync(token), trimmed);
                 if (match != null)
                 {
                     return match;
                 }
 
-                var response = await _supabaseClient.From<Etiquette>()
-                    .Insert(new Etiquette { Name = trimmed, CreationDate = DateTime.UtcNow }, cancellationToken: token);
-                return response.Models?.FirstOrDefault();
+                try
+                {
+                    var response = await _supabaseClient.From<Etiquette>()
+                        .Insert(new Etiquette { Name = trimmed, CreationDate = DateTime.UtcNow }, cancellationToken: token);
+                    inserted = true;
+                    return response.Models?.FirstOrDefault();
+                }
+                catch (Supabase.Postgrest.Exceptions.PostgrestException ex) when (ex.StatusCode == 409)
+                {
+                    // Someone created the same tag between our lookup and this insert. The
+                    // unique index on lower(btrim(name)) did its job; honouring the
+                    // get-or-create contract means returning their row, not an error.
+                    _logger.LogInformation("Etiquette {Name} was created concurrently; reusing it", trimmed);
+                    var fresh = await _supabaseClient.From<Etiquette>().Get(cancellationToken: token);
+                    return FindByName(fresh.Models ?? [], trimmed);
+                }
             },
             onSuccess: created =>
             {
-                _cache.Remove(CacheConstants.EtiquettesListKey);
-                _logger.LogInformation("Etiquette resolved successfully: {EtiquetteId}", created.Id);
+                if (inserted)
+                {
+                    _cache.Remove(CacheConstants.EtiquettesListKey);
+                    _logger.LogInformation("Etiquette created successfully: {EtiquetteId}", created.Id);
+                }
             },
             unexpectedUserMessage: "Une erreur inattendue est survenue lors de l'enregistrement de l'étiquette",
             ct: ct);
+    }
+
+    /// <summary>
+    /// Matches a tag the same way the database unique index does: on the trimmed name,
+    /// ignoring case. Keeps C# and SQL from disagreeing about what counts as a duplicate.
+    /// </summary>
+    private static Etiquette? FindByName(IEnumerable<Etiquette> etiquettes, string trimmedName)
+        => etiquettes.FirstOrDefault(
+            e => string.Equals(e.Name.Trim(), trimmedName, StringComparison.OrdinalIgnoreCase));
 
     public async Task<Result<bool>> SetForRecipeAsync(int recipeId, IReadOnlyCollection<int> etiquetteIds, CancellationToken ct = default)
     {
         try
         {
-            var err = ValidationGuards.RequirePositive(recipeId, "recipe ID");
-            if (err != null)
-                return Result<bool>.Failure(err);
+            // Not ValidationGuards.RequirePositive: it answers "Invalid recipe ID", and this
+            // message can reach the French UI.
+            if (recipeId <= 0)
+                return Result<bool>.Failure("Identifiant de recette invalide");
 
             var wanted = (etiquetteIds ?? []).Where(id => id > 0).Distinct().ToHashSet();
 
@@ -74,11 +103,19 @@ public class EtiquetteService(
 
             // Only write the difference: an unchanged selection costs no round trip, and a
             // tag that stays attached keeps its original created_at.
-            foreach (var toAdd in wanted.Except(current))
+            var toAdd = wanted.Except(current).ToList();
+            if (toAdd.Count > 0)
             {
-                await _supabaseClient.From<RecipeEtiquette>().Insert(
-                    new RecipeEtiquette { RecipeId = recipeId, EtiquetteId = toAdd, CreationDate = DateTime.UtcNow },
-                    cancellationToken: ct);
+                // One request for the whole batch, as BookAuthorService does — tagging a
+                // recipe with six labels is one insert, not six.
+                var rows = toAdd.Select(etiquetteId => new RecipeEtiquette
+                {
+                    RecipeId = recipeId,
+                    EtiquetteId = etiquetteId,
+                    CreationDate = DateTime.UtcNow
+                }).ToList();
+
+                await _supabaseClient.From<RecipeEtiquette>().Insert(rows, cancellationToken: ct);
             }
 
             foreach (var toRemove in current.Except(wanted))
