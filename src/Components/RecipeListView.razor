@@ -1,0 +1,136 @@
+@using MudBlazor
+@using RecettesIndex.Models
+
+@*
+    Liste dense (bloc 1a du handoff).
+
+    Une ligne = une recette = la réponse à « c'était où ? ». Les colonnes sont
+    ordonnées comme on pose la question : la note, le nom, d'où ça vient, la page.
+
+    Remplace le MudTable et sa pagination numérotée. MudTable impose sa propre
+    structure de tableau et son pager ; le design demande une grille à gabarit fixe,
+    des lignes de 52px et un pied « Charger 20 de plus ». C'est une grille CSS.
+*@
+
+<div class="recipe-list">
+    <div class="recipe-list-head" role="row">
+        <span role="columnheader">Note</span>
+        <span role="columnheader">Recette</span>
+        <span role="columnheader" class="col-source">Source</span>
+        <span role="columnheader" class="recipe-list-right">Page</span>
+        <span role="columnheader" class="recipe-list-right col-added">Ajoutée</span>
+    </div>
+
+    @foreach (var recipe in Recipes)
+    {
+        var source = Describe(recipe);
+        <a class="@RowClass" href="@($"/recipes/{recipe.Id}")" role="row" aria-label="@recipe.Name">
+            <span class="recipe-list-rating" role="cell">
+                @for (var i = 1; i <= 5; i++)
+                {
+                    <MudIcon Icon="@(i <= recipe.Rating ? Icons.Material.Filled.LocalPizza : Icons.Material.Outlined.LocalPizza)"
+                             Class="@(i <= recipe.Rating ? "pizza pizza-on" : "pizza")" />
+                }
+            </span>
+
+            <span class="recipe-list-name" role="cell">
+                <span class="recipe-list-title">@recipe.Name</span>
+                @foreach (var tag in recipe.Etiquettes.Take(2))
+                {
+                    <span class="recipe-list-tag">@tag.Name</span>
+                }
+            </span>
+
+            <span class="recipe-list-source" role="cell">
+                <MudIcon Icon="@source.Icon" Class="@($"recipe-list-source-icon {source.ColorClass}")" />
+                <span class="recipe-list-source-name">@source.Label</span>
+            </span>
+
+            @* Une recette sans page n'est pas une anomalie : un tiret en encre 3 le dit
+               sans crier, là où un blanc laisserait croire à une donnée manquante. *@
+            <span class="@(recipe.BookPage.HasValue ? "recipe-list-page" : "recipe-list-page recipe-list-page-none")" role="cell">
+                @(recipe.BookPage?.ToString() ?? "—")
+            </span>
+
+            <span class="recipe-list-added" role="cell">@RelativeDate(recipe.CreationDate)</span>
+        </a>
+    }
+
+    <div class="recipe-list-foot">
+        <span class="recipe-list-count">@LoadedLabel</span>
+        @if (HasMore)
+        {
+            <button type="button" class="recipe-list-more" @onclick="OnLoadMore">
+                Charger @LoadMoreStep de plus
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<Recipe> Recipes { get; set; } = [];
+    [Parameter, EditorRequired] public List<Book> Books { get; set; } = [];
+    [Parameter, EditorRequired] public List<Store> Stores { get; set; } = [];
+
+    /// <summary>Total number of recipes matching the current filters, not just the loaded ones.</summary>
+    [Parameter, EditorRequired] public int TotalCount { get; set; }
+
+    /// <summary>Whether more rows remain to be fetched.</summary>
+    [Parameter, EditorRequired] public bool HasMore { get; set; }
+
+    /// <summary>How many rows the footer button promises to add.</summary>
+    [Parameter] public int LoadMoreStep { get; set; } = 20;
+
+    /// <summary>Compact rows (52px) versus comfortable ones (60px).</summary>
+    [Parameter] public bool Dense { get; set; } = true;
+
+    [Parameter, EditorRequired] public EventCallback OnLoadMore { get; set; }
+
+    private string RowClass => Dense ? "recipe-list-row" : "recipe-list-row recipe-list-row-roomy";
+
+    private string LoadedLabel => Recipes.Count == TotalCount
+        ? $"{TotalCount} recette{(TotalCount > 1 ? "s" : "")}"
+        : $"{Recipes.Count} des {TotalCount} recettes";
+
+    private record SourceInfo(string Icon, string ColorClass, string Label);
+
+    /// <summary>
+    /// Maps a recipe to the icon, colour and label of its source. One place, so a book
+    /// looks the same here, on the cards and in the mobile list.
+    /// </summary>
+    private SourceInfo Describe(Recipe recipe)
+    {
+        if (recipe.IsFromBook && recipe.BookId is int bookId)
+        {
+            var book = Books.FirstOrDefault(b => b.Id == bookId);
+            return new SourceInfo(Icons.Material.Outlined.MenuBook, "source-book", book?.Name ?? "Livre");
+        }
+
+        if (recipe.IsFromStore && recipe.StoreId is int storeId)
+        {
+            var store = Stores.FirstOrDefault(s => s.Id == storeId);
+            return new SourceInfo(Icons.Material.Outlined.Storefront, "source-store", store?.Name ?? "Magasin");
+        }
+
+        if (recipe.IsFromUrl && !string.IsNullOrWhiteSpace(recipe.Url))
+        {
+            return new SourceInfo(Icons.Material.Outlined.Language, "source-web", HostOf(recipe.Url));
+        }
+
+        return new SourceInfo(Icons.Material.Outlined.Home, "source-home", "Maison");
+    }
+
+    /// <summary>Shows "ricardocuisine.com" rather than the full URL, which never fits.</summary>
+    private static string HostOf(string url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : url;
+
+    private static string RelativeDate(DateTime date)
+    {
+        var span = DateTime.UtcNow - date;
+        if (span.TotalDays < 1) return "Aujourd'hui";
+        if (span.TotalDays < 2) return "Hier";
+        if (span.TotalDays < 7) return $"Il y a {(int)span.TotalDays}j";
+        if (span.TotalDays < 30) return $"Il y a {(int)(span.TotalDays / 7)} sem.";
+        return date.ToString("MMM yyyy");
+    }
+}
