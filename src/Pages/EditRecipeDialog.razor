@@ -6,6 +6,7 @@
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IEtiquetteService EtiquetteService
 @inject ILogger<EditRecipeDialog> Logger
 
 <MudDialog>
@@ -130,7 +131,15 @@
                 </MudStack>
             </MudPaper>
         }
-        
+
+        <MudStack Spacing="2" Class="mt-2">
+            <MudText Typo="Typo.subtitle2">
+                <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" Class="mr-1" />
+                Étiquettes
+            </MudText>
+            <EtiquettePicker @bind-SelectedIds="selectedEtiquetteIds" />
+        </MudStack>
+
         </MudForm>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
@@ -178,6 +187,7 @@
     private Store? selectedStore;
     private string sourceType = "none";
     private bool isSaving = false;
+    private HashSet<int> selectedEtiquetteIds = [];
     
     protected override async Task OnInitializedAsync()
     {
@@ -221,6 +231,9 @@
                 sourceType = "none";
             }
             _initialSourceType = sourceType;
+
+            // Les étiquettes arrivent imbriquées avec la recette (Recipe.Etiquettes).
+            selectedEtiquetteIds = RecipeToEdit.Etiquettes.Select(e => e.Id).ToHashSet();
         }
         catch (Exception ex)
         {
@@ -294,6 +307,16 @@
             
             if (result.IsSuccess)
             {
+                // Après la recette : les étiquettes vivent dans leur propre table et
+                // n'ont de sens qu'une fois la mise à jour acceptée.
+                var tags = await EtiquetteService.SetForRecipeAsync(recipe.Id, selectedEtiquetteIds);
+                if (!tags.IsSuccess)
+                {
+                    // La recette est enregistrée : le dire, plutôt que de laisser croire
+                    // à un échec complet.
+                    Snackbar.Add(tags.ErrorMessage ?? "Les étiquettes n'ont pas pu être enregistrées.", Severity.Warning);
+                }
+
                 Snackbar.Add("Recette modifiée avec succès!", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(result.Value));
             }
