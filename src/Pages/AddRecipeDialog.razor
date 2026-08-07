@@ -5,6 +5,7 @@
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IEtiquetteService EtiquetteService
 @inject ILogger<AddRecipeDialog> Logger
 
 <MudDialog>
@@ -130,7 +131,15 @@
                 </MudStack>
             </MudPaper>
         }
-        
+
+        <MudStack Spacing="2" Class="mt-2">
+            <MudText Typo="Typo.subtitle2">
+                <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" Class="mr-1" />
+                Étiquettes
+            </MudText>
+            <EtiquettePicker @bind-SelectedIds="selectedEtiquetteIds" />
+        </MudStack>
+
         </MudForm>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
@@ -178,6 +187,7 @@
     private Store? selectedStore;
     private string sourceType = "none";
     private bool isSaving = false;
+    private HashSet<int> selectedEtiquetteIds = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -260,6 +270,17 @@
             
             if (result.IsSuccess)
             {
+                // L'identifiant n'existe qu'après l'insertion : les étiquettes ne
+                // peuvent être rattachées qu'ici.
+                if (selectedEtiquetteIds.Count > 0 && result.Value is not null)
+                {
+                    var tags = await EtiquetteService.SetForRecipeAsync(result.Value.Id, selectedEtiquetteIds);
+                    if (!tags.IsSuccess)
+                    {
+                        Snackbar.Add(tags.ErrorMessage ?? "Les étiquettes n'ont pas pu être enregistrées.", Severity.Warning);
+                    }
+                }
+
                 Snackbar.Add("Recette ajoutée avec succès!", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(result.Value));
             }

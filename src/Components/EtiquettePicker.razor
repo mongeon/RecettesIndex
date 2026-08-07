@@ -1,0 +1,129 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services.Abstractions
+@inject IEtiquetteService EtiquetteService
+
+@*
+    Sélecteur d'étiquettes des formulaires d'ajout et de modification.
+
+    Les étiquettes existantes sont des puces à bascule, parce qu'en pratique on
+    réutilise presque toujours les mêmes ; la création reste possible sur place,
+    sans quitter la boîte, pour le cas où l'étiquette n'existe pas encore.
+
+    Le composant ne persiste rien : il rend la sélection au formulaire, qui
+    l'enregistre au moment du « Enregistrer » avec le reste de la recette.
+*@
+
+<div class="tag-picker">
+    @if (_all.Count > 0)
+    {
+        <div class="tag-row">
+            @foreach (var tag in _all)
+            {
+                var isOn = SelectedIds.Contains(tag.Id);
+                <button type="button"
+                        class="@(isOn ? "tag-chip tag-chip-on" : "tag-chip")"
+                        aria-pressed="@isOn"
+                        @onclick="() => Toggle(tag.Id)">
+                    @tag.Name
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="tag-picker-empty">Aucune étiquette pour l'instant — créez la première ci-dessous.</div>
+    }
+
+    <div class="tag-picker-new">
+        <MudTextField @bind-Value="_newName"
+                      Placeholder="Nouvelle étiquette…"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      MaxLength="40"
+                      OnKeyDown="OnKeyDown"
+                      aria-label="Nom de la nouvelle étiquette" />
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   Disabled="@(_creating || string.IsNullOrWhiteSpace(_newName))"
+                   OnClick="CreateAsync">
+            Créer
+        </MudButton>
+    </div>
+
+    @if (_error != null)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Error">@_error</MudText>
+    }
+</div>
+
+@code {
+    /// <summary>Tag IDs attached to the recipe being edited.</summary>
+    [Parameter] public HashSet<int> SelectedIds { get; set; } = [];
+
+    [Parameter] public EventCallback<HashSet<int>> SelectedIdsChanged { get; set; }
+
+    private List<Etiquette> _all = [];
+    private string _newName = string.Empty;
+    private bool _creating;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _all = (await EtiquetteService.GetAllAsync()).ToList();
+    }
+
+    private async Task Toggle(int id)
+    {
+        if (!SelectedIds.Remove(id))
+        {
+            SelectedIds.Add(id);
+        }
+        await SelectedIdsChanged.InvokeAsync(SelectedIds);
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        // Entrée crée l'étiquette sans quitter le champ ; sans ça, elle validerait
+        // le formulaire entier et fermerait la boîte.
+        if (e.Key == "Enter")
+        {
+            await CreateAsync();
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (_creating || string.IsNullOrWhiteSpace(_newName))
+        {
+            return;
+        }
+
+        _creating = true;
+        _error = null;
+        try
+        {
+            var result = await EtiquetteService.GetOrCreateAsync(_newName);
+            if (!result.IsSuccess || result.Value is null)
+            {
+                _error = result.ErrorMessage ?? "Impossible de créer l'étiquette.";
+                return;
+            }
+
+            // GetOrCreate : saisir une étiquette existante la sélectionne au lieu
+            // d'échouer sur l'index unique.
+            await ReloadAsync();
+            SelectedIds.Add(result.Value.Id);
+            await SelectedIdsChanged.InvokeAsync(SelectedIds);
+            _newName = string.Empty;
+        }
+        finally
+        {
+            _creating = false;
+        }
+    }
+}

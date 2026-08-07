@@ -662,6 +662,30 @@
 }
 
 /* =============================================
+   SÉLECTEUR D'ÉTIQUETTES (formulaires d'ajout / modification)
+   ============================================= */
+.tag-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tag-picker-empty {
+    font-size: 13px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.tag-picker-new {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tag-picker-new .mud-input-control {
+    flex: 1 1 auto;
+}
+
+/* =============================================
    FILTRES EN MOBILE — FEUILLE DU BAS (bloc 1e)
    ============================================= */
 .filter-mobile {
@@ -832,8 +856,11 @@
     }
 
     /* Deux classes contre une : l'emporte sur la règle ci-dessus sans dépendre de
-       l'ordre de déclaration. */
-    .sheet .tag-row {
+       l'ordre de déclaration. Le sélecteur des formulaires est concerné au même
+       titre que la feuille — masquer .tag-row pour la barre de filtres ne doit pas
+       vider la boîte d'ajout. */
+    .sheet .tag-row,
+    .tag-picker .tag-row {
         display: flex;
         margin-top: 0;
     }
