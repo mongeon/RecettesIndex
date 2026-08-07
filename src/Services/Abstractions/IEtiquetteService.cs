@@ -15,6 +15,18 @@ public interface IEtiquetteService
     Task<IReadOnlyList<Etiquette>> GetAllAsync(CancellationToken ct = default);
 
     /// <summary>
+    /// Returns how many recipes carry each tag, keyed by tag ID.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tag ID to recipe count; tags attached to nothing are absent.</returns>
+    /// <remarks>
+    /// Feeds the counters on the filter bar's tag row. Kept separate from the recipe
+    /// summaries query, whose explicit column projection deliberately excludes the
+    /// embedded tags and should stay cheap.
+    /// </remarks>
+    Task<Dictionary<int, int>> GetRecipeCountsAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Retrieves an existing tag by name, or creates it when no match exists.
     /// </summary>
     /// <param name="name">The tag label; compared case-insensitively and trimmed.</param>

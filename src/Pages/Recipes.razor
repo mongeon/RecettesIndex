@@ -11,6 +11,7 @@
 @inject IJSRuntime JSRuntime
 @inject ILogger<Recipes> Logger
 @inject IRecipeService RecipeService
+@inject IEtiquetteService EtiquetteService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject ILocalStorageService LocalStorage
@@ -35,62 +36,32 @@
         </MudTooltip>
     </MudStack>
     
-    <!-- Quick Filter Buttons -->
-    <RecipeQuickFilters ShowAllRecipes="@Filters.ShowAllRecipes"
-                       QuickFilterRating="@Filters.QuickFilterRating"
-                       QuickFilterUnrated="@Filters.QuickFilterUnrated"
-                       ShowRecentRecipes="@Filters.ShowRecentRecipes"
-                       ShowFavorites="@Filters.ShowFavorites"
-                       HasActiveFilters="@Filters.HasActiveFilters()"
-                       TotalCount="@totalCount"
-                       FiveStarCount="@fiveStarCount"
-                       FourPlusStarCount="@fourPlusStarCount"
-                       UnratedCount="@unratedCount"
-                       FavoritesCount="@favoritesCount"
-                       OnShowAll="ShowAll"
-                       OnApplyQuickFilter="ApplyQuickFilter"
-                       OnShowUnrated="ShowUnrated"
-                       OnShowFavorites="ShowFavorites"
-                       OnShowRecent="ShowRecent"
-                       OnShowRandom="ShowRandom"
-                       OnClearAllFilters="ClearAllFilters" />
-    
-    <!-- Collapsible Advanced Filters -->
-    <RecipeAdvancedFilters SearchTerm="@Filters.SearchTerm"
-                          RatingFilter="@Filters.RatingFilter"
-                          BookFilter="@Filters.BookFilter"
-                          StoreFilter="@Filters.StoreFilter"
-                          AuthorFilter="@Filters.AuthorFilter"
-                          ActiveFilterCount="@Filters.GetActiveFilterCount()"
-                          Books="@books"
-                          Stores="@stores"
-                          Authors="@authors"
-                          BookRecipeCounts="@bookRecipeCounts"
-                          StoreRecipeCounts="@storeRecipeCounts"
-                          AuthorRecipeCounts="@authorRecipeCounts"
-                          OnSearchChanged="OnSearchChanged"
-                          OnRatingChanged="OnRatingChanged"
-                          OnBookChanged="OnBookChanged"
-                          OnStoreChanged="OnStoreChanged"
-                          OnAuthorChanged="OnAuthorChanged"
-                          OnClearAllFilters="ClearAllFilters" />
-
-    <!-- Active Filters Display -->
-    <RecipeActiveFilters HasActiveFilters="@Filters.HasActiveFilters()"
-                        SearchTerm="@Filters.SearchTerm"
-                        RatingFilter="@Filters.RatingFilter"
-                        BookFilter="@Filters.BookFilter"
-                        StoreFilter="@Filters.StoreFilter"
-                        AuthorFilter="@Filters.AuthorFilter"
-                        Books="@books"
-                        Stores="@stores"
-                        Authors="@authors"
-                        OnClearSearch="ClearSearch"
-                        OnClearRating="ClearRating"
-                        OnClearBook="ClearBook"
-                        OnClearStore="ClearStore"
-                        OnClearAuthor="ClearAuthor"
-                        OnClearAll="ClearAllFilters" />
+    <!-- Barre de filtres unique : remplace les puces rapides, le panneau
+         « Filtres Avancés » et la rangée de puces d'état actif. -->
+    <RecipeFilterBar SearchTerm="@Filters.SearchTerm"
+                     RatingFilter="@Filters.RatingFilter"
+                     BookFilter="@Filters.BookFilter"
+                     StoreFilter="@Filters.StoreFilter"
+                     AuthorFilter="@Filters.AuthorFilter"
+                     HasActiveFilters="@Filters.HasActiveFilters()"
+                     ResultCount="@filteredTotal"
+                     Placeholder="@(isCardView ? "Filtrer cette liste…" : "Rechercher une recette, un livre, un auteur…")"
+                     Books="@books"
+                     Stores="@stores"
+                     Authors="@authors"
+                     Etiquettes="@etiquettes"
+                     BookRecipeCounts="@bookRecipeCounts"
+                     StoreRecipeCounts="@storeRecipeCounts"
+                     AuthorRecipeCounts="@authorRecipeCounts"
+                     EtiquetteCounts="@etiquetteRecipeCounts"
+                     SelectedEtiquetteIds="@Filters.SelectedEtiquetteIds"
+                     OnSearchChanged="OnSearchChanged"
+                     OnRatingChanged="OnRatingChanged"
+                     OnBookChanged="OnBookChanged"
+                     OnStoreChanged="OnStoreChanged"
+                     OnAuthorChanged="OnAuthorChanged"
+                     OnEtiquetteToggled="OnEtiquetteToggled"
+                     OnClearAllFilters="ClearAllFilters" />
 
     <!-- Loading State -->
     @if (isLoading)
@@ -172,7 +143,14 @@
 
     private List<int> favoriteRecipeIds = new();
 
-    // Filter counts
+    // Filter counts.
+    //
+    // fiveStarCount, fourPlusStarCount, unratedCount and favoritesCount currently have no
+    // reader: the quick-filter chips that used them are gone, folded into the filter bar.
+    // They are kept — along with the ShowFavorites / ShowRecent / ShowUnrated /
+    // ApplyQuickFilter handlers below — because they are precisely the "MES VUES" saved
+    // views of the side menu, which lands with the common chrome. Deleting them now would
+    // mean writing them again next.
     private int totalCount = 0;
     private int fiveStarCount = 0;
     private int fourPlusStarCount = 0;
@@ -181,6 +159,8 @@
     private Dictionary<int, int> bookRecipeCounts = new();
     private Dictionary<int, int> storeRecipeCounts = new();
     private Dictionary<int, int> authorRecipeCounts = new();
+    private List<Etiquette> etiquettes = [];
+    private Dictionary<int, int> etiquetteRecipeCounts = new();
     
     // View state
     private bool _isCardView = false;
@@ -273,6 +253,28 @@
     private static string? NormalizeFilterValue(string? value)
         => string.IsNullOrWhiteSpace(value) || value == "all" ? null : value;
 
+    /// <summary>
+    /// Reads the comma-separated tag IDs from the URL, ignoring anything unparseable
+    /// rather than failing the whole page on a hand-edited link.
+    /// </summary>
+    private static HashSet<int> ParseTagIds(string? value)
+    {
+        var ids = new HashSet<int>();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return ids;
+        }
+
+        foreach (var part in value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (int.TryParse(part, out var id) && id > 0)
+            {
+                ids.Add(id);
+            }
+        }
+        return ids;
+    }
+
     private async Task ReadQueryParameters()
     {
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
@@ -283,13 +285,15 @@
         var newBook = NormalizeFilterValue(query["bookId"]);
         var newStore = NormalizeFilterValue(query["storeId"]);
         var newAuthor = NormalizeFilterValue(query["authorId"]);
+        var newTags = ParseTagIds(query["tags"]);
 
         var changed =
             newSearch != Filters.SearchTerm
             || newRating != NormalizeFilterValue(Filters.RatingFilter)
             || newBook != NormalizeFilterValue(Filters.BookFilter)
             || newStore != NormalizeFilterValue(Filters.StoreFilter)
-            || newAuthor != NormalizeFilterValue(Filters.AuthorFilter);
+            || newAuthor != NormalizeFilterValue(Filters.AuthorFilter)
+            || !newTags.SetEquals(Filters.SelectedEtiquetteIds);
 
         if (!changed)
         {
@@ -301,6 +305,11 @@
         Filters.BookFilter = newBook;
         Filters.StoreFilter = newStore;
         Filters.AuthorFilter = newAuthor;
+        Filters.SelectedEtiquetteIds.Clear();
+        foreach (var id in newTags)
+        {
+            Filters.SelectedEtiquetteIds.Add(id);
+        }
         if (Filters.HasActiveFilters())
         {
             Filters.ShowAllRecipes = false;
@@ -339,6 +348,10 @@
             ["bookId"] = NormalizeFilterValue(Filters.BookFilter),
             ["storeId"] = NormalizeFilterValue(Filters.StoreFilter),
             ["authorId"] = NormalizeFilterValue(Filters.AuthorFilter),
+            // Comma-separated so a tag-filtered view stays shareable, like the others.
+            ["tags"] = Filters.SelectedEtiquetteIds.Count == 0
+                ? null
+                : string.Join(",", Filters.SelectedEtiquetteIds.OrderBy(id => id)),
         });
         if (target != NavigationManager.Uri)
         {
@@ -351,11 +364,13 @@
         books = (await RecipeService.GetBooksAsync())?.ToList() ?? new();
         authors = (await RecipeService.GetAuthorsAsync())?.ToList() ?? new();
         stores = (await RecipeService.GetStoresAsync())?.ToList() ?? new();
+        etiquettes = (await EtiquetteService.GetAllAsync()).ToList();
     }
 
     private async Task LoadFilterCounts()
     {
         favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
+        etiquetteRecipeCounts = await EtiquetteService.GetRecipeCountsAsync();
 
         var allRecipes = await LoadAllRecipesForCounts();
         if (allRecipes.Count > 0)
@@ -438,7 +453,8 @@
             int? authorId = Filters.GetAuthorIdFilter();
 
             var result = await RecipeService.SearchAsync(
-                Filters.SearchTerm, rating, bookId, storeId, authorId, currentPage, pageSize, "created_at", true);
+                Filters.SearchTerm, rating, bookId, storeId, authorId, currentPage, pageSize, "created_at", true,
+                etiquetteIds: Filters.SelectedEtiquetteIds);
 
             if (result.IsSuccess)
             {
@@ -517,7 +533,8 @@
         var sortLabel = state.SortLabel;
         var sortDescending = state.SortDirection == SortDirection.Descending;
 
-        var result = await RecipeService.SearchAsync(Filters.SearchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending, ct: token);
+        var result = await RecipeService.SearchAsync(Filters.SearchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending,
+            etiquetteIds: Filters.SelectedEtiquetteIds, ct: token);
         if (!result.IsSuccess)
         {
             return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
@@ -775,6 +792,19 @@
     private async Task OnAuthorChanged(string? value)
     {
         Filters.AuthorFilter = value;
+        currentPage = 1;
+        Filters.InvalidateFilterCountCache();
+
+        await ApplyFiltersAsync();
+    }
+
+    private async Task OnEtiquetteToggled(int etiquetteId)
+    {
+        if (!Filters.SelectedEtiquetteIds.Remove(etiquetteId))
+        {
+            Filters.SelectedEtiquetteIds.Add(etiquetteId);
+        }
+
         currentPage = 1;
         Filters.InvalidateFilterCountCache();
 

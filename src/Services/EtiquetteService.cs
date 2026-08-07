@@ -25,6 +25,28 @@ public class EtiquetteService(
             },
             ct);
 
+    public async Task<Dictionary<int, int>> GetRecipeCountsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var res = await _supabaseClient.From<RecipeEtiquette>().Get(cancellationToken: ct);
+            return (res.Models ?? [])
+                .GroupBy(x => x.EtiquetteId)
+                .ToDictionary(g => g.Key, g => g.Count());
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Counters are decoration on the tag row: losing them must not take the
+            // whole filter bar down with them.
+            _logger.LogWarning(ex, "Could not load tag counts; the tag row will show zeroes");
+            return [];
+        }
+    }
+
     public Task<Result<Etiquette>> GetOrCreateAsync(string name, CancellationToken ct = default)
     {
         // Tracks whether this call actually inserted, so the "get" path leaves the cached
