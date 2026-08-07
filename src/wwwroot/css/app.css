@@ -403,34 +403,47 @@
 /* =============================================
    GLOBAL SEARCH IN APP BAR
    ============================================= */
+/* Déclencheur de la palette dans la barre du haut : il ressemble à un champ mais
+   n'en est pas un — la saisie se fait dans la palette. */
 .global-search {
-    max-width: 300px;
-    /* Teinte foncée plutôt que claire : elle assombrit la barre dans les deux
-       thèmes, ce qui préserve le contraste du texte blanc en clair (5,8:1) sans
-       casser celui de l'encre foncée en sombre (4,8:1). Une teinte blanche
-       éclaircissait le corail foncé et faisait retomber le blanc à 3,9:1. */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 340px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid;
+    border-color: color-mix(in srgb, var(--mud-palette-primary-text) 40%, transparent);
+    border-radius: 9px;
     background-color: rgba(0, 0, 0, 0.10);
-    border-radius: 8px;
+    color: var(--mud-palette-primary-text);
+    font-family: inherit;
+    cursor: pointer;
 }
 
-/* Le champ vit dans la barre du haut, qui est en Color.Primary : son encre suit
-   donc le texte de contraste de la palette (blanc en clair sur corail foncé,
-   encre foncée en sombre sur corail vif) au lieu d'un blanc en dur. */
-.global-search .mud-input-slot,
-.global-search input,
-.global-search .mud-input-adornment .mud-icon-root,
-.global-search .mud-icon-button {
-    color: var(--mud-palette-primary-text) !important;
+.global-search-icon {
+    font-size: 18px !important;
+    flex: 0 0 auto;
 }
 
-.global-search input::placeholder {
-    color: var(--mud-palette-primary-text) !important;
-    opacity: 0.75;
+.global-search-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    text-align: left;
+    opacity: 0.85;
 }
 
-.global-search .mud-input-outlined-border {
-    border-color: var(--mud-palette-primary-text) !important;
-    opacity: 0.5;
+.global-search-kbd {
+    flex: 0 0 auto;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background-color: color-mix(in srgb, var(--mud-palette-primary-text) 20%, transparent);
+    font-size: 11px;
+    font-weight: 700;
 }
 
 /* =============================================
@@ -659,6 +672,210 @@
 .tag-chip-on .tag-chip-count {
     color: inherit;
     opacity: 0.75;
+}
+
+/* =============================================
+   PALETTE DE RECHERCHE INSTANTANÉE (bloc 1c)
+   ============================================= */
+.palette-scrim {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(20, 17, 14, .42);
+    z-index: 1500;
+}
+
+/* Alignée en haut plutôt que centrée : la palette s'ouvre sous la main, et la
+   liste peut s'allonger vers le bas sans que le champ ne bouge. */
+.palette {
+    position: fixed;
+    top: 88px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1501;
+    width: min(660px, calc(100vw - 32px));
+    max-height: calc(100vh - 128px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .35);
+    overflow: hidden;
+}
+
+.palette-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.palette-field-icon {
+    font-size: 22px !important;
+    color: var(--mud-palette-primary);
+    flex: 0 0 auto;
+}
+
+.palette-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--mud-palette-text-primary);
+}
+
+.palette-input::placeholder {
+    color: var(--mud-palette-text-disabled);
+    font-weight: 400;
+}
+
+.palette-esc,
+.palette-key {
+    flex: 0 0 auto;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.palette-results {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-bottom: 6px;
+}
+
+.palette-group {
+    padding: 12px 18px 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+}
+
+.palette-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 18px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Une seule ligne active à la fois, qu'on y soit arrivé au clavier ou à la souris :
+   le survol déplace la sélection au lieu d'ajouter un second surlignage. */
+.palette-row-on {
+    background-color: var(--app-accent-soft);
+}
+
+.palette-pizzas {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    flex: 0 0 auto;
+}
+
+.palette-pizza {
+    font-size: 14px !important;
+    color: var(--mud-palette-text-disabled);
+}
+
+.palette-pizza-on {
+    color: var(--app-accent);
+}
+
+.palette-book-icon,
+.palette-create-icon {
+    font-size: 19px !important;
+    flex: 0 0 auto;
+}
+
+.palette-book-icon {
+    color: var(--app-accent-ink);
+}
+
+.palette-create-icon {
+    color: var(--app-teal-ink);
+}
+
+.palette-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.palette-source {
+    flex: 0 1 auto;
+    max-width: 40%;
+    font-size: 13px;
+    color: var(--mud-palette-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.palette-page {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background-color: var(--app-accent-soft);
+    color: var(--mud-palette-primary);
+    font-size: 12.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.palette-empty {
+    padding: 18px;
+    font-size: 13.5px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.palette-foot {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 10px 18px;
+    background-color: var(--app-field);
+    font-size: 12px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.palette-foot-note {
+    margin-left: auto;
+}
+
+/* Sur téléphone la palette occupe la largeur : l'aide clavier n'a plus d'objet. */
+@media (max-width: 767px) {
+    .palette {
+        top: 16px;
+        max-height: calc(100vh - 32px);
+    }
+
+    .palette-foot {
+        display: none;
+    }
+
+    .palette-source {
+        display: none;
+    }
 }
 
 /* =============================================
