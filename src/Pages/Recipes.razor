@@ -517,7 +517,7 @@
         var sortLabel = state.SortLabel;
         var sortDescending = state.SortDirection == SortDirection.Descending;
 
-        var result = await RecipeService.SearchAsync(Filters.SearchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending, token);
+        var result = await RecipeService.SearchAsync(Filters.SearchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending, ct: token);
         if (!result.IsSuccess)
         {
             return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };

@@ -29,7 +29,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     /// <param name="sortDescending">Whether to sort in descending order.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result containing a tuple of recipe list and total count.</returns>
-    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? storeId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, CancellationToken ct = default)
+    public async Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? storeId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, IReadOnlyCollection<int>? etiquetteIds = null, CancellationToken ct = default)
     {
         try
         {
@@ -88,6 +88,12 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
                 var bookIds = await _q.GetBookIdsByAuthorAsync(authorId.Value, ct);
                 var idsByAuthor = await _q.GetRecipeIdsByBookIdsAsync(bookIds, rating, ct);
                 ids.IntersectWith(idsByAuthor);
+            }
+
+            if (etiquetteIds is { Count: > 0 })
+            {
+                var idsByEtiquette = await _q.GetRecipeIdsByEtiquetteIdsAsync(etiquetteIds, ct);
+                ids.IntersectWith(idsByEtiquette);
             }
 
             var total = ids.Count;
