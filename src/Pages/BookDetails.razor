@@ -93,12 +93,7 @@ else
                                         <MudItem xs="12" sm="6" md="4" lg="3">
                                             <RecipeCard Recipe="@recipe"
                                                        Book="@book"
-                                                       IsAuthenticated="@AuthService.IsAuthenticated"
                                                        IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                                                       OnView="@ViewRecipe"
-                                                       OnEdit="@(async (r) => await Task.CompletedTask)"
-                                                       OnDelete="@(async (r) => await Task.CompletedTask)"
-                                                       OnPrint="@PrintRecipe"
                                                        OnToggleFavorite="@ToggleFavorite" />
                                         </MudItem>
                                     }

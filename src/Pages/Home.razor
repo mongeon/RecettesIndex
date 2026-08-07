@@ -199,12 +199,7 @@
                 <div class="flex-shrink-0" style="width: 320px;">
                     <RecipeCard Recipe="@recipe"
                                Book="@book"
-                               IsAuthenticated="@AuthService.IsAuthenticated"
                                IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                               OnView="@((r) => ShowRecipeDetails(r))"
-                               OnEdit="@(async (r) => await Task.CompletedTask)"
-                               OnDelete="@(async (r) => await Task.CompletedTask)"
-                               OnPrint="@((r) => PrintRecipe(r))"
                                OnToggleFavorite="@ToggleFavorite" />
                 </div>
             }
@@ -219,12 +214,7 @@
                     <MudItem xs="12">
                         <RecipeCard Recipe="@recipe"
                                    Book="@book"
-                                   IsAuthenticated="@AuthService.IsAuthenticated"
                                    IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                                   OnView="@((r) => ShowRecipeDetails(r))"
-                                   OnEdit="@(async (r) => await Task.CompletedTask)"
-                                   OnDelete="@(async (r) => await Task.CompletedTask)"
-                                   OnPrint="@((r) => PrintRecipe(r))"
                                    OnToggleFavorite="@ToggleFavorite" />
                     </MudItem>
                 }
@@ -369,12 +359,7 @@
                 <div class="flex-shrink-0" style="width: 340px;">
                     <RecipeCard Recipe="@recipe"
                                Book="@book"
-                               IsAuthenticated="@AuthService.IsAuthenticated"
                                IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                               OnView="@((r) => ShowRecipeDetails(r))"
-                               OnEdit="@(async (r) => await Task.CompletedTask)"
-                               OnDelete="@(async (r) => await Task.CompletedTask)"
-                               OnPrint="@((r) => PrintRecipe(r))"
                                OnToggleFavorite="@ToggleFavorite" />
                 </div>
             }
@@ -402,12 +387,7 @@
                     <MudItem xs="12">
                         <RecipeCard Recipe="@recipe"
                                    Book="@book"
-                                   IsAuthenticated="@AuthService.IsAuthenticated"
                                    IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                                   OnView="@((r) => ShowRecipeDetails(r))"
-                                   OnEdit="@(async (r) => await Task.CompletedTask)"
-                                   OnDelete="@(async (r) => await Task.CompletedTask)"
-                                   OnPrint="@((r) => PrintRecipe(r))"
                                    OnToggleFavorite="@ToggleFavorite" />
                     </MudItem>
                 }
