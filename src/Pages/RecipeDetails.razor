@@ -219,12 +219,7 @@ else
                             <RecipeCard Recipe="@relatedRecipe"
                                        Book="@relatedRecipe.Book"
                                        Store="@relatedRecipe.Store"
-                                       IsAuthenticated="@AuthService.IsAuthenticated"
                                        IsFavorite="@favoriteRecipeIds.Contains(relatedRecipe.Id)"
-                                       OnView="@HandleViewRelatedRecipe"
-                                       OnEdit="@(async (r) => await Task.CompletedTask)"
-                                       OnDelete="@(async (r) => await Task.CompletedTask)"
-                                       OnPrint="@HandlePrintRelatedRecipe"
                                        OnToggleFavorite="@ToggleFavorite" />
                         </MudItem>
                     }

@@ -61,7 +61,7 @@
         <span class="recipe-card-source">@SourceLabel</span>
         @if (Recipe.BookPage is int page)
         {
-            <span class="recipe-card-page">p. @page</span>
+            <span class="recipe-card-page">p. @(page)</span>
         }
         <span class="recipe-card-spacer"></span>
         <span class="recipe-card-date">@RelativeDate(Recipe.CreationDate)</span>
