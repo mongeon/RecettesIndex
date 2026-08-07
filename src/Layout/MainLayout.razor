@@ -8,6 +8,7 @@
 @inject NavigationManager NavigationManager
 @inject MudBlazor.ISnackbar Snackbar
 @inject RecettesIndex.Services.Abstractions.IErrorLoggingService ErrorLoggingService
+@inject Microsoft.Extensions.Logging.ILogger<MainLayout> Logger
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="@_currentTheme" />
 <MudDialogProvider />
@@ -43,7 +44,7 @@
                 aria-label="Rechercher une recette">
             <MudIcon Icon="@Icons.Material.Outlined.Search" Class="global-search-icon" />
             <span class="global-search-text">Rechercher une recette, un livre, un auteur…</span>
-            <span class="global-search-kbd">⌘K</span>
+            <span class="global-search-kbd">@ShortcutLabel</span>
         </button>
         <MudTooltip Text="Rechercher une recette">
             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Inherit"
@@ -125,6 +126,11 @@
     private ErrorBoundary? _errorBoundary;
     private CommandPalette? _palette;
     private DotNetObjectReference<MainLayout>? _selfRef;
+
+    /// <summary>Ctrl ailleurs, ⌘ sur Apple : afficher l'autre symbole désigne une
+    /// touche que l'utilisateur n'a pas.</summary>
+    private bool _isApplePlatform;
+    private string ShortcutLabel => _isApplePlatform ? "⌘K" : "Ctrl K";
     
     // Define light and dark themes.
     //
@@ -307,14 +313,26 @@
     {
         if (firstRender)
         {
+            // Le raccourci s'enregistre en premier et à part : il ne doit pas dépendre
+            // de la réussite de l'initialisation d'authentification, et un index.html
+            // encore servi depuis le cache du service worker n'expose pas encore
+            // recettesShortcuts — l'appel échouerait alors et emporterait le reste.
+            try
+            {
+                _selfRef = DotNetObjectReference.Create(this);
+                await JSRuntime.InvokeVoidAsync("recettesShortcuts.register", _selfRef);
+                _isApplePlatform = await JSRuntime.InvokeAsync<bool>("recettesShortcuts.isApple");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Le raccourci clavier de la palette n'a pas pu être enregistré");
+            }
+
             await AuthService.InitializeAsync();
 
             // Load user's theme preference from local storage
             var storedTheme = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "recipes-theme-preference");
             _isDarkMode = storedTheme == "dark";
-
-            _selfRef = DotNetObjectReference.Create(this);
-            await JSRuntime.InvokeVoidAsync("recettesShortcuts.register", _selfRef);
 
             StateHasChanged();
         }
