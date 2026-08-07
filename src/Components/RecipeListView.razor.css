@@ -1,0 +1,205 @@
+/* Liste dense (bloc 1a).
+   Les sélecteurs visant un composant MudBlazor passent par ::deep : la classe posée
+   sur un MudIcon atterrit sur son élément racine, qui ne porte pas l'attribut de
+   portée du composant parent. */
+
+.recipe-list {
+    border-radius: 11px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    overflow: hidden;
+}
+
+/* Le gabarit est partagé par l'en-tête et les lignes : c'est ce qui garantit
+   l'alignement des colonnes sans tableau. */
+.recipe-list-head,
+.recipe-list-row {
+    display: grid;
+    grid-template-columns: 96px 1fr 240px 70px 100px;
+    gap: 12px;
+    padding: 0 16px;
+    align-items: center;
+}
+
+.recipe-list-head {
+    height: 36px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.recipe-list-right {
+    text-align: right;
+}
+
+.recipe-list-row {
+    min-height: 52px;
+    border-bottom: 1px solid var(--app-line-soft);
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+.recipe-list-row-roomy {
+    min-height: 60px;
+}
+
+.recipe-list-row:hover {
+    background-color: var(--app-field);
+}
+
+.recipe-list-row:last-of-type {
+    border-bottom: none;
+}
+
+.recipe-list-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+
+::deep .pizza {
+    font-size: 14px !important;
+    color: var(--mud-palette-text-disabled);
+}
+
+::deep .pizza-on {
+    color: var(--app-accent);
+}
+
+.recipe-list-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.recipe-list-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recipe-list-tag {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.recipe-list-source {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 13.5px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.recipe-list-source-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+::deep .recipe-list-source-icon {
+    font-size: 17px !important;
+    flex: 0 0 auto;
+}
+
+/* Une icône par type de source, colorée de la même façon partout dans l'app. */
+::deep .source-book {
+    color: var(--app-accent-ink);
+}
+
+::deep .source-store {
+    color: var(--app-teal-ink);
+}
+
+::deep .source-web,
+::deep .source-home {
+    color: var(--mud-palette-text-disabled);
+}
+
+/* Chiffres tabulaires : les numéros de page s'alignent en colonne au lieu de danser. */
+.recipe-list-page {
+    text-align: right;
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--mud-palette-text-primary);
+}
+
+.recipe-list-page-none {
+    color: var(--mud-palette-text-disabled);
+    font-weight: 400;
+}
+
+.recipe-list-added {
+    text-align: right;
+    font-size: 12.5px;
+    color: var(--mud-palette-text-disabled);
+    white-space: nowrap;
+}
+
+.recipe-list-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--mud-palette-lines-default);
+    font-size: 13px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.recipe-list-more {
+    border: none;
+    background: transparent;
+    padding: 0 4px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--mud-palette-primary);
+    cursor: pointer;
+}
+
+.recipe-list-more:hover {
+    text-decoration: underline;
+}
+
+/* Sous 1200px la date d'ajout est la première à partir : c'est la colonne dont on a
+   le moins besoin pour répondre à « c'était où ? ». */
+@media (max-width: 1199px) {
+    .recipe-list-head,
+    .recipe-list-row {
+        grid-template-columns: 96px 1fr 200px 70px;
+    }
+
+    .recipe-list-added,
+    .col-added {
+        display: none;
+    }
+}
+
+@media (max-width: 899px) {
+    .recipe-list-head,
+    .recipe-list-row {
+        grid-template-columns: 88px 1fr 60px;
+    }
+
+    .recipe-list-source,
+    .col-source {
+        display: none;
+    }
+}
