@@ -192,7 +192,7 @@
     }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 899px) and (min-width: 768px) {
     .recipe-list-head,
     .recipe-list-row {
         grid-template-columns: 88px 1fr 60px;
@@ -200,6 +200,77 @@
 
     .recipe-list-source,
     .col-source {
+        display: none;
+    }
+}
+
+/* Mobile (bloc 1e) : la ligne passe sur deux étages plutôt que de rétrécir ses
+   colonnes jusqu'à l'illisible. Le nom occupe le premier, la source et la page le
+   second — c'est-à-dire la question puis la réponse. 64px de haut : la ligne est
+   la cible tactile, et 52px passeraient sous le confort minimal. */
+@media (max-width: 767px) {
+    .recipe-list-head {
+        display: none;
+    }
+
+    .recipe-list-row {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "name rating"
+            "source page";
+        gap: 2px 10px;
+        min-height: 64px;
+        padding: 12px 14px;
+        align-items: center;
+    }
+
+    .recipe-list-name {
+        grid-area: name;
+    }
+
+    .recipe-list-title {
+        font-size: 15.5px;
+    }
+
+    /* Les étiquettes cèdent la place : sur cette largeur, le nom complet vaut mieux
+       que deux puces tronquées. */
+    .recipe-list-tag {
+        display: none;
+    }
+
+    .recipe-list-rating {
+        grid-area: rating;
+        justify-self: end;
+    }
+
+    ::deep .pizza {
+        font-size: 13px !important;
+    }
+
+    .recipe-list-source,
+    .col-source {
+        display: flex;
+        grid-area: source;
+        font-size: 13px;
+    }
+
+    ::deep .recipe-list-source-icon {
+        font-size: 16px !important;
+    }
+
+    .recipe-list-page {
+        grid-area: page;
+        justify-self: end;
+        font-size: 12px;
+        color: var(--mud-palette-primary);
+    }
+
+    .recipe-list-page-none {
+        color: var(--mud-palette-text-disabled);
+    }
+
+    .recipe-list-added,
+    .col-added {
         display: none;
     }
 }
