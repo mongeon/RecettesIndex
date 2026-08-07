@@ -105,6 +105,24 @@ else
                     <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
                         <MudTabPanel Text="Détails" Icon="@Icons.Material.Filled.Info">
                             <MudGrid>
+                                @* Les étiquettes arrivent imbriquées avec la recette. Elles
+                                   sont affichées ici en attendant la refonte du détail :
+                                   pouvoir en poser sans pouvoir les relire n'aurait pas de sens. *@
+                                @if (recipe.Etiquettes.Count > 0)
+                                {
+                                    <MudItem xs="12">
+                                        <MudStack Row Spacing="1" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" />
+                                            @foreach (var tag in recipe.Etiquettes)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                                                         Href="@($"/recipes?tags={tag.Id}")">
+                                                    @tag.Name
+                                                </MudChip>
+                                            }
+                                        </MudStack>
+                                    </MudItem>
+                                }
                                 <MudItem xs="12" md="6">
                                     @if (!string.IsNullOrEmpty(recipe.Notes))
                                     {
