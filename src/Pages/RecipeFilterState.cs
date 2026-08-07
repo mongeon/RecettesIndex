@@ -15,6 +15,14 @@ public class RecipeFilterState
     public string? StoreFilter { get; set; }
     public string? AuthorFilter { get; set; }
 
+    /// <summary>
+    /// IDs of the tags currently selected in the filter bar's tag row.
+    /// </summary>
+    /// <remarks>
+    /// Several selected tags narrow rather than widen: a recipe must carry all of them.
+    /// </remarks>
+    public HashSet<int> SelectedEtiquetteIds { get; } = [];
+
     // ── Quick filter flags ────────────────────────────────────────────────────
 
     public bool ShowAllRecipes { get; set; } = true;
@@ -44,6 +52,7 @@ public class RecipeFilterState
         if (BookFilter != null && BookFilter != "all") count++;
         if (StoreFilter != null && StoreFilter != "all") count++;
         if (AuthorFilter != null && AuthorFilter != "all") count++;
+        count += SelectedEtiquetteIds.Count;
 
         _cachedActiveFilterCount = count;
         return count;
@@ -58,7 +67,8 @@ public class RecipeFilterState
         || (RatingFilter != null && RatingFilter != "all")
         || (BookFilter != null && BookFilter != "all")
         || (StoreFilter != null && StoreFilter != "all")
-        || (AuthorFilter != null && AuthorFilter != "all");
+        || (AuthorFilter != null && AuthorFilter != "all")
+        || SelectedEtiquetteIds.Count > 0;
 
     // ── Parsed filter value helpers ───────────────────────────────────────────
 
@@ -114,6 +124,7 @@ public class RecipeFilterState
         BookFilter = null;
         StoreFilter = null;
         AuthorFilter = null;
+        SelectedEtiquetteIds.Clear();
         ShowAllRecipes = true;
         ShowRecentRecipes = false;
         QuickFilterRating = null;
