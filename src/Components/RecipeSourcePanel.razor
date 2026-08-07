@@ -1,0 +1,75 @@
+@using RecettesIndex.Models
+
+@*
+    Le panneau « quoi d'autre du même endroit » (bloc 2c).
+
+    Purement présentationnel : la page de détail décide *quoi* lister — les voisines
+    du livre, du commerce, du site, les autres recettes maison, ou à défaut celles qui
+    partagent une étiquette — et le panneau se contente de l'afficher. Il remplace la
+    grille de six cartes « Recettes Similaires » qui occupait le bas de la page.
+*@
+
+<aside class="source-panel">
+    <div class="source-panel-title">@Title</div>
+
+    @if (Tags is { Count: > 0 })
+    {
+        <div class="source-panel-tags">
+            @foreach (var tag in Tags)
+            {
+                <a class="source-panel-tag" href="@($"/recipes?tags={tag.Id}")">@tag.Name</a>
+            }
+        </div>
+    }
+
+    @if (Items.Count == 0)
+    {
+        <p class="source-panel-empty">@EmptyMessage</p>
+    }
+    else
+    {
+        <div class="source-panel-rows">
+            @foreach (var item in Items)
+            {
+                <a class="source-panel-row" href="@($"/recipes/{item.RecipeId}")">
+                    <span class="source-panel-name">@item.Name</span>
+                    <span class="source-panel-meta">@item.Meta</span>
+                </a>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(LinkHref) && !string.IsNullOrEmpty(LinkText))
+    {
+        <a class="source-panel-link" href="@LinkHref">@LinkText</a>
+    }
+</aside>
+
+@code {
+    /// <summary>One row of the panel.</summary>
+    /// <param name="RecipeId">Target of the row's link.</param>
+    /// <param name="Name">Recipe name, truncated by CSS when it does not fit.</param>
+    /// <param name="Meta">Right-aligned detail — a page number, or a rating.</param>
+    public record Item(int RecipeId, string Name, string Meta);
+
+    /// <summary>Heading, which names the grouping: « Aussi dans ce livre », etc.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public IReadOnlyList<Item> Items { get; set; } = [];
+
+    /// <summary>
+    /// Shown above the rows in the fallback grouping, where the tags themselves are what
+    /// ties the listed recipes together.
+    /// </summary>
+    [Parameter] public IReadOnlyList<Etiquette>? Tags { get; set; }
+
+    [Parameter] public string? LinkText { get; set; }
+
+    /// <summary>
+    /// Omitted whenever no route can actually reproduce the grouping — a link that
+    /// silently lands on the unfiltered list is worse than no link.
+    /// </summary>
+    [Parameter] public string? LinkHref { get; set; }
+
+    [Parameter] public string EmptyMessage { get; set; } = "Rien d'autre pour l'instant.";
+}

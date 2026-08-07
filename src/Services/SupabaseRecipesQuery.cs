@@ -104,7 +104,11 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
     {
         try
         {
-            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>().Select("id,book_id,store_id,rating,created_at");
+            // `url` complète le portrait de la source : sans elle, une recette trouvée en
+            // ligne est indiscernable d'une recette maison, les deux ayant book_id et
+            // store_id à null. C'est ce qui permet au panneau latéral du détail de
+            // regrouper « aussi de ce site » et « autres recettes maison » séparément.
+            IPostgrestTable<Recipe> q = _supabaseClient.From<Recipe>().Select("id,book_id,store_id,rating,created_at,url");
             q = ApplyRatingFilter(q, rating);
 
             var res = await q.Get(cancellationToken: ct);

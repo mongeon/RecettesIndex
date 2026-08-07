@@ -9,7 +9,7 @@ public interface IRecipeService
     public Task<Result<Recipe>> CreateAsync(Recipe recipe, CancellationToken ct = default);
     public Task<Result<Recipe>> UpdateAsync(Recipe recipe, CancellationToken ct = default);
     public Task<Result<bool>> DeleteAsync(int id, CancellationToken ct = default);
-    // Lightweight summaries (id, book_id, store_id, rating, created_at only — no joins)
+    // Lightweight summaries (id, book_id, store_id, rating, created_at, url only — no joins)
     public Task<Result<IReadOnlyList<Recipe>>> GetRecipeSummariesAsync(int? rating = null, CancellationToken ct = default);
     // Fetch full recipe objects for a specific set of IDs
     public Task<Result<IReadOnlyList<Recipe>>> GetRecipesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default);

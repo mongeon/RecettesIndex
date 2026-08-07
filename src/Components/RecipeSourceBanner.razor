@@ -1,0 +1,142 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+
+@*
+    Le bandeau de source (blocs 1d, 2a, 2b).
+
+    Un seul gabarit à trois zones — icône · bloc « d'où ça vient » · zone de droite —
+    dont seul le *contenu* change selon le type de source. Même hauteur, même position,
+    aucune mise en page conditionnelle : c'est la réponse à « et si la recette ne vient
+    pas d'un livre ? ». Les quatre cas sont exhaustifs (voir RecipeSource.Classify), donc
+    le bandeau ne peut pas se retrouver vide.
+*@
+
+<section class="source-banner">
+    <div class="source-icon @IconToneClass">
+        <MudIcon Icon="@SourceIcon" />
+    </div>
+
+    <div class="source-body">
+        <div class="source-eyebrow">@Eyebrow</div>
+        <div class="source-title">@Title</div>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <div class="source-sub">@Subtitle</div>
+        }
+    </div>
+
+    <div class="source-right">
+        @switch (Kind)
+        {
+            case RecipeSourceKind.Book:
+                <div class="source-page">
+                    <div class="source-page-number">@(Recipe.BookPage?.ToString() ?? "—")</div>
+                    <div class="source-page-label">Page</div>
+                </div>
+                break;
+
+            case RecipeSourceKind.Store when Store is not null:
+                <a class="source-action source-action-teal" href="@($"/stores/{Store.Id}")">
+                    Voir le commerce ›
+                </a>
+                break;
+
+            case RecipeSourceKind.Web:
+                <a class="source-action source-action-accent"
+                   href="@Recipe.Url"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    Ouvrir le lien ↗
+                </a>
+                break;
+
+            case RecipeSourceKind.Home when IsAuthenticated:
+                <button type="button" class="source-action source-action-outline" @onclick="OnAssociateBook">
+                    Associer à un livre
+                </button>
+                break;
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Recipe Recipe { get; set; } = default!;
+
+    /// <summary>The book the recipe comes from, already loaded with its authors.</summary>
+    [Parameter] public Book? Book { get; set; }
+
+    [Parameter] public Store? Store { get; set; }
+
+    /// <summary>
+    /// How many recipes sit at this same source, this one included — the « 12 recettes de
+    /// ce livre » of the subtitle. Zero means the count is unknown and is simply not shown.
+    /// </summary>
+    [Parameter] public int SourceTotal { get; set; }
+
+    /// <summary>Gates the only write the banner offers, on a home recipe.</summary>
+    [Parameter] public bool IsAuthenticated { get; set; }
+
+    [Parameter] public EventCallback OnAssociateBook { get; set; }
+
+    private RecipeSourceKind Kind => RecipeSource.Classify(Recipe);
+
+    private string SourceIcon => Kind switch
+    {
+        RecipeSourceKind.Book => Icons.Material.Outlined.MenuBook,
+        RecipeSourceKind.Store => Icons.Material.Outlined.Storefront,
+        RecipeSourceKind.Web => Icons.Material.Outlined.Language,
+        _ => Icons.Material.Outlined.Home
+    };
+
+    /// <summary>
+    /// Only the two sources that are places of their own get a brand tint; the web link and
+    /// the home recipe stay on the neutral field colour, so the tint keeps meaning something.
+    /// </summary>
+    private string IconToneClass => Kind switch
+    {
+        RecipeSourceKind.Book => "source-icon-accent",
+        RecipeSourceKind.Store => "source-icon-teal",
+        _ => "source-icon-neutral"
+    };
+
+    private string Eyebrow => Kind switch
+    {
+        RecipeSourceKind.Book => "Dans quel livre",
+        RecipeSourceKind.Store => "Où on l'achète",
+        RecipeSourceKind.Web => "Trouvée en ligne",
+        _ => "D'où elle vient"
+    };
+
+    private string Title => Kind switch
+    {
+        RecipeSourceKind.Book => Book?.Name ?? "Livre inconnu",
+        RecipeSourceKind.Store => Store?.Name ?? "Commerce inconnu",
+        RecipeSourceKind.Web => RecipeSource.SplitUrl(Recipe.Url).Domain,
+        _ => "Recette maison"
+    };
+
+    private string Subtitle => Kind switch
+    {
+        RecipeSourceKind.Book => Join(AuthorLine, CountLabel("de ce livre")),
+        RecipeSourceKind.Store => Join(Store?.Address, CountLabel("de ce commerce")),
+        RecipeSourceKind.Web => RecipeSource.SplitUrl(Recipe.Url).Path,
+        _ => Join($"Ajoutée le {Recipe.CreationDate.ToString("d MMMM yyyy")}", "aucun livre associé")
+    };
+
+    private string? AuthorLine =>
+        Book?.Authors is { Count: > 0 } authors
+            ? string.Join(" et ", authors.Select(a => a.FullName))
+            : null;
+
+    private string? CountLabel(string suffix) => SourceTotal switch
+    {
+        <= 0 => null,
+        1 => $"1 recette {suffix}",
+        _ => $"{SourceTotal} recettes {suffix}"
+    };
+
+    /// <summary>Joins the parts that are actually there, so no subtitle ever starts with « · ».</summary>
+    private static string Join(params string?[] parts) =>
+        string.Join(" · ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+}
