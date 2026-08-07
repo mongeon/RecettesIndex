@@ -37,16 +37,17 @@
         <MudText Typo="Typo.h6" Class="ml-2 d-none d-sm-flex" Style="font-weight: 700; letter-spacing: -0.5px;">Mes Recettes</MudText>
         <MudSpacer />
 
-        <MudTextField T="string" @bind-Value="_globalSearchTerm"
-                      Placeholder="Rechercher une recette... (Ctrl+K)"
-                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                      Margin="Margin.Dense" Variant="Variant.Outlined" Clearable="true"
-                      Immediate="true" OnKeyUp="OnGlobalSearchKeyUp"
-                      Class="global-search d-none d-md-flex mr-3"
-                      aria-label="Rechercher une recette" />
+        @* Un déclencheur, pas un champ : la saisie se fait dans la palette. Un vrai
+           champ ici obligerait à taper deux fois, ou à recopier le terme. *@
+        <button type="button" class="global-search d-none d-md-flex mr-3" @onclick="OpenPalette"
+                aria-label="Rechercher une recette">
+            <MudIcon Icon="@Icons.Material.Outlined.Search" Class="global-search-icon" />
+            <span class="global-search-text">Rechercher une recette, un livre, un auteur…</span>
+            <span class="global-search-kbd">⌘K</span>
+        </button>
         <MudTooltip Text="Rechercher une recette">
             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Inherit"
-                           Class="d-flex d-md-none" OnClick="@(() => NavigationManager.NavigateTo("/recipes"))" />
+                           Class="d-flex d-md-none" OnClick="OpenPalette" />
         </MudTooltip>
 
         <MudTooltip Text="Basculer en mode sombre">
@@ -115,12 +116,15 @@
     </MudMainContent>
 </MudLayout>
 
+<CommandPalette @ref="_palette" />
+
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode;
-    private string _globalSearchTerm = string.Empty;
     private string _currentPath = string.Empty;
     private ErrorBoundary? _errorBoundary;
+    private CommandPalette? _palette;
+    private DotNetObjectReference<MainLayout>? _selfRef;
     
     // Define light and dark themes.
     //
@@ -308,7 +312,21 @@
             // Load user's theme preference from local storage
             var storedTheme = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "recipes-theme-preference");
             _isDarkMode = storedTheme == "dark";
+
+            _selfRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("recettesShortcuts.register", _selfRef);
+
             StateHasChanged();
+        }
+    }
+
+    /// <summary>Ouvre la palette depuis ⌘K. Appelée par le script de index.html.</summary>
+    [JSInvokable]
+    public async Task OpenPalette()
+    {
+        if (_palette is not null)
+        {
+            await _palette.OpenAsync();
         }
     }
 
@@ -341,16 +359,6 @@
         _isDarkMode = !_isDarkMode;
         // Save the user's preference to local storage
         await JSRuntime.InvokeVoidAsync("localStorage.setItem", "recipes-theme-preference", _isDarkMode ? "dark" : "light");
-    }
-
-    private void OnGlobalSearchKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_globalSearchTerm))
-        {
-            var term = _globalSearchTerm.Trim();
-            _globalSearchTerm = string.Empty;
-            NavigationManager.NavigateTo($"/recipes?search={Uri.EscapeDataString(term)}");
-        }
     }
 
     private async Task ShowSignInDialog()
@@ -395,5 +403,6 @@
         AuthService.AuthStateChanged -= OnAuthStateChanged;
         AuthService.SessionExpired -= OnSessionExpired;
         NavigationManager.LocationChanged -= OnLocationChanged;
+        _selfRef?.Dispose();
     }
 }

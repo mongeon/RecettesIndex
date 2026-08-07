@@ -1,0 +1,283 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
+@using Microsoft.AspNetCore.Components.Web
+@inject IRecipeService RecipeService
+@inject NavigationManager NavigationManager
+
+@*
+    Palette de recherche instantanée (bloc 1c du handoff).
+
+    Le cœur du repérage rapide : ouvrable de n'importe où, elle répond à
+    « c'était où ? » sans qu'on ouvre la moindre fiche — chaque ligne porte déjà
+    la source et le numéro de page.
+*@
+
+@if (_open)
+{
+    <div class="palette-scrim" @onclick="Close"></div>
+    <div class="palette" role="dialog" aria-modal="true" aria-label="Recherche">
+        <div class="palette-field">
+            <MudIcon Icon="@Icons.Material.Outlined.Search" Class="palette-field-icon" />
+            <input @ref="_input"
+                   class="palette-input"
+                   type="text"
+                   placeholder="Rechercher une recette, un livre, un auteur…"
+                   value="@_query"
+                   @oninput="OnInput"
+                   @onkeydown="OnKeyDown"
+                   @onkeydown:preventDefault="_preventDefault"
+                   aria-label="Rechercher" />
+            <span class="palette-esc">ESC</span>
+        </div>
+
+        <div class="palette-results">
+            @if (_recipes.Count > 0)
+            {
+                <div class="palette-group">Recettes · @_recipes.Count</div>
+                @for (var r = 0; r < _recipes.Count; r++)
+                {
+                    var hit = _recipes[r];
+                    var index = r;
+                    <button type="button"
+                            class="@RowClass(index)"
+                            @onclick="() => Activate(hit)"
+                            @onmouseenter="() => _selected = index">
+                        <span class="palette-pizzas">
+                            @for (var i = 1; i <= 5; i++)
+                            {
+                                <MudIcon Icon="@(i <= hit.Rating ? Icons.Material.Filled.LocalPizza : Icons.Material.Outlined.LocalPizza)"
+                                         Class="@(i <= hit.Rating ? "palette-pizza palette-pizza-on" : "palette-pizza")" />
+                            }
+                        </span>
+                        <span class="palette-name">@hit.Label</span>
+                        <span class="palette-source">@hit.Secondary</span>
+                        @if (hit.Page is int page)
+                        {
+                            <span class="palette-page">p. @(page)</span>
+                        }
+                    </button>
+                }
+            }
+
+            @if (_books.Count > 0)
+            {
+                <div class="palette-group">Livres · @_books.Count</div>
+                @for (var b = 0; b < _books.Count; b++)
+                {
+                    var hit = _books[b];
+                    var index = _recipes.Count + b;
+                    <button type="button"
+                            class="@RowClass(index)"
+                            @onclick="() => Activate(hit)"
+                            @onmouseenter="() => _selected = index">
+                        <MudIcon Icon="@Icons.Material.Outlined.MenuBook" Class="palette-book-icon" />
+                        <span class="palette-name">@hit.Label</span>
+                        <span class="palette-source">@hit.Secondary</span>
+                    </button>
+                }
+            }
+
+            @* Le groupe ACTIONS évite le cul-de-sac : une recherche sans résultat
+               devient le point de départ d'un ajout, sans quitter la palette. *@
+            @if (!string.IsNullOrWhiteSpace(_query))
+            {
+                <div class="palette-group">Actions</div>
+                <button type="button"
+                        class="@RowClass(_hitCount)"
+                        @onclick="CreateFromQuery"
+                        @onmouseenter="() => _selected = _hitCount">
+                    <MudIcon Icon="@Icons.Material.Outlined.AddCircle" Class="palette-create-icon" />
+                    <span class="palette-name">Créer «&nbsp;@_query&nbsp;»</span>
+                </button>
+            }
+
+            @if (_hitCount == 0 && !string.IsNullOrWhiteSpace(_query))
+            {
+                <div class="palette-empty">Aucun résultat pour «&nbsp;@_query&nbsp;»</div>
+            }
+
+            @if (string.IsNullOrWhiteSpace(_query))
+            {
+                <div class="palette-empty">Tapez pour chercher dans vos recettes, livres, auteurs et magasins.</div>
+            }
+        </div>
+
+        <div class="palette-foot">
+            <span><span class="palette-key">↑↓</span> naviguer</span>
+            <span><span class="palette-key">⏎</span> ouvrir</span>
+            <span><span class="palette-key">ESC</span> fermer</span>
+            <span class="palette-foot-note">Accents et fautes de frappe tolérés</span>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _open;
+    private string _query = string.Empty;
+    private int _selected;
+    private bool _preventDefault;
+    private ElementReference _input;
+    private bool _focusPending;
+
+    private IReadOnlyList<SearchHit> _recipes = [];
+    private IReadOnlyList<SearchHit> _books = [];
+
+    private List<Recipe> _allRecipes = [];
+    private List<Book> _allBooks = [];
+    private List<Store> _allStores = [];
+    private bool _loaded;
+
+    private int _hitCount => _recipes.Count + _books.Count;
+
+    /// <summary>Total rows including the "Créer …" action, which is always last.</summary>
+    private int _rowCount => _hitCount + (string.IsNullOrWhiteSpace(_query) ? 0 : 1);
+
+    /// <summary>
+    /// Opens the palette, optionally seeded with a query already typed elsewhere.
+    /// </summary>
+    public async Task OpenAsync(string? initialQuery = null)
+    {
+        _open = true;
+        _query = initialQuery ?? string.Empty;
+        _selected = 0;
+        _focusPending = true;
+
+        await EnsureLoadedAsync();
+        Rank();
+        StateHasChanged();
+    }
+
+    public void Close()
+    {
+        _open = false;
+        _query = string.Empty;
+        _recipes = [];
+        _books = [];
+        _selected = 0;
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusPending && _open)
+        {
+            _focusPending = false;
+            await _input.FocusAsync();
+        }
+    }
+
+    /// <summary>
+    /// Loads the collections once per session. They are small and already cached by the
+    /// services, so the palette filters in memory instead of querying on each keystroke.
+    /// </summary>
+    private async Task EnsureLoadedAsync()
+    {
+        if (_loaded)
+        {
+            return;
+        }
+
+        // SearchAsync plafonne la taille de page à MaxPageSize : on pagine jusqu'au bout
+        // plutôt que de tronquer silencieusement la recherche au-delà de cette limite.
+        _allRecipes = [];
+        var page = 1;
+        while (true)
+        {
+            var result = await RecipeService.SearchAsync(
+                null, null, null, null, null, page, PaginationConstants.MaxPageSize,
+                RecipeSortConstants.Name, false);
+
+            if (!result.IsSuccess)
+            {
+                break;
+            }
+
+            _allRecipes.AddRange(result.Value.Items);
+            if (_allRecipes.Count >= result.Value.Total || result.Value.Items.Count == 0)
+            {
+                break;
+            }
+            page++;
+        }
+        _allBooks = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
+        _allStores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
+        _loaded = true;
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? string.Empty;
+        _selected = 0;
+        Rank();
+    }
+
+    private void Rank()
+    {
+        _recipes = RecipeSearchService.SearchRecipes(_query, _allRecipes, _allBooks, _allStores);
+        _books = RecipeSearchService.SearchBooks(_query, _allBooks, _allRecipes);
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        // Les flèches déplacent la sélection au lieu de promener le curseur dans le
+        // champ ; c'est le seul cas où l'on confisque la touche.
+        _preventDefault = e.Key is "ArrowDown" or "ArrowUp";
+
+        switch (e.Key)
+        {
+            case "Escape":
+                Close();
+                break;
+
+            case "ArrowDown" when _rowCount > 0:
+                _selected = (_selected + 1) % _rowCount;
+                break;
+
+            case "ArrowUp" when _rowCount > 0:
+                _selected = (_selected - 1 + _rowCount) % _rowCount;
+                break;
+
+            case "Enter":
+                await ActivateSelectedAsync();
+                break;
+        }
+    }
+
+    private async Task ActivateSelectedAsync()
+    {
+        if (_selected < _recipes.Count)
+        {
+            Activate(_recipes[_selected]);
+        }
+        else if (_selected < _hitCount)
+        {
+            Activate(_books[_selected - _recipes.Count]);
+        }
+        else if (!string.IsNullOrWhiteSpace(_query))
+        {
+            await CreateFromQuery();
+        }
+    }
+
+    private string RowClass(int index)
+        => index == _selected ? "palette-row palette-row-on" : "palette-row";
+
+    private void Activate(SearchHit hit)
+    {
+        var url = hit.Kind == SearchHitKind.Recipe ? $"/recipes/{hit.Id}" : $"/books/{hit.Id}";
+        Close();
+        NavigationManager.NavigateTo(url);
+    }
+
+    private Task CreateFromQuery()
+    {
+        // La palette ne connaît pas la boîte d'ajout : elle passe le terme saisi à
+        // l'index, qui sait l'ouvrir. Une dépendance de moins.
+        var term = _query;
+        Close();
+        NavigationManager.NavigateTo($"/recipes?nouvelle={Uri.EscapeDataString(term)}");
+        return Task.CompletedTask;
+    }
+}
