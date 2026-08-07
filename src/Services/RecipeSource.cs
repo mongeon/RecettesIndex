@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using RecettesIndex.Models;
 
 namespace RecettesIndex.Services;
@@ -59,11 +60,8 @@ public static class RecipeSource
     /// at the site root. Both are empty for a blank URL.
     /// </returns>
     /// <remarks>
-    /// A link pasted from an address bar often arrives without a scheme, which
-    /// <see cref="Uri"/> refuses to read as absolute; one is added before parsing. Inner
-    /// whitespace disqualifies the string first, because the parser would otherwise accept
-    /// free text as a host. Anything unparseable is handed back whole rather than dropped —
-    /// showing a strange title beats showing nothing where the source belongs.
+    /// Anything unparseable is handed back whole rather than dropped — showing a strange
+    /// title beats showing nothing where the source belongs.
     /// </remarks>
     public static (string Domain, string Path) SplitUrl(string? url)
     {
@@ -73,11 +71,7 @@ public static class RecipeSource
         }
 
         var trimmed = url.Trim();
-        var candidate = trimmed.Contains("://", StringComparison.Ordinal) ? trimmed : $"https://{trimmed}";
-
-        if (trimmed.Any(char.IsWhiteSpace)
-            || !Uri.TryCreate(candidate, UriKind.Absolute, out var uri)
-            || string.IsNullOrEmpty(uri.Host))
+        if (!TryParse(trimmed, out var uri))
         {
             return (trimmed, string.Empty);
         }
@@ -93,6 +87,61 @@ public static class RecipeSource
         }
 
         return (domain, path);
+    }
+
+    /// <summary>
+    /// Returns the stored URL in a form safe to put in an <c>href</c>, or null when there is
+    /// nothing safe to link to.
+    /// </summary>
+    /// <remarks>
+    /// Two reasons this cannot be the raw column value. A URL stored without a scheme —
+    /// « ricardocuisine.com/… », which is exactly what pasting from an address bar produces —
+    /// is read by the browser as a path relative to the app, so the link would land back on
+    /// our own 404 instead of the recipe. And a stored <c>javascript:</c> URL would otherwise
+    /// become a clickable script; only http and https get through here.
+    /// </remarks>
+    public static string? ExternalHref(string? url)
+    {
+        if (!TryParse(url, out var uri))
+        {
+            return null;
+        }
+
+        return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps
+            ? uri.AbsoluteUri
+            : null;
+    }
+
+    /// <summary>
+    /// Parses a stored URL the way the whole page reads it, so the title, the domain
+    /// comparison and the link can never disagree about what the string means.
+    /// </summary>
+    /// <remarks>
+    /// A link pasted from an address bar often arrives without a scheme, which
+    /// <see cref="Uri"/> refuses to read as absolute; one is added before parsing. Inner
+    /// whitespace disqualifies the string first, because the parser would otherwise accept
+    /// free text as a host.
+    /// </remarks>
+    private static bool TryParse(string? url, [NotNullWhen(true)] out Uri? uri)
+    {
+        uri = null;
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return false;
+        }
+
+        var trimmed = url.Trim();
+        if (trimmed.Any(char.IsWhiteSpace))
+        {
+            return false;
+        }
+
+        // Le crible « :// » ne porte aucune lettre : la casse du schéma n'entre pas en
+        // jeu, HTTPS://exemple.com est reconnu comme ayant déjà son schéma.
+        var candidate = trimmed.Contains("://", StringComparison.Ordinal) ? trimmed : $"https://{trimmed}";
+
+        return Uri.TryCreate(candidate, UriKind.Absolute, out uri) && !string.IsNullOrEmpty(uri.Host);
     }
 
     /// <summary>

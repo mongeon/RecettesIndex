@@ -187,6 +187,26 @@ public class RecipeDetailsPageTests : BunitContext
     }
 
     [Fact]
+    public void WebRecipeStoredWithoutScheme_StillLinksOutside()
+    {
+        // Tel quel, « ricardocuisine.com/… » serait lu par le navigateur comme un chemin
+        // relatif à l'app : le bouton renverrait sur notre propre 404.
+        var recipe = new Recipe
+        {
+            Id = 1,
+            Name = "Tarte au sucre",
+            Url = "ricardocuisine.com/recettes/123"
+        };
+
+        ArrangeAlone(recipe);
+
+        var cut = Render<RecipeDetails>(parameters => parameters.Add(p => p.Id, recipe.Id));
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("href=\"https://ricardocuisine.com/recettes/123\"", cut.Markup));
+    }
+
+    [Fact]
     public void HomeRecipe_ShowsHomeBanner_SoTheBannerIsNeverAbsent()
     {
         var recipe = new Recipe { Id = 1, Name = "Sauce à spaghetti de mémé" };

@@ -127,6 +127,51 @@ public class RecipeSourceTests
 
     #endregion
 
+    #region ExternalHref
+
+    [Fact]
+    public void ExternalHref_SchemelessUrl_GetsAnAbsoluteOne()
+    {
+        // Sans schéma, le navigateur lirait l'adresse comme un chemin relatif à l'app et
+        // atterrirait sur notre propre 404 au lieu du site.
+        var href = RecipeSource.ExternalHref("ricardocuisine.com/recettes/123");
+
+        Assert.Equal("https://ricardocuisine.com/recettes/123", href);
+    }
+
+    [Fact]
+    public void ExternalHref_KeepsAnExistingScheme()
+    {
+        var href = RecipeSource.ExternalHref("http://ricardocuisine.com/recettes/123");
+
+        Assert.Equal("http://ricardocuisine.com/recettes/123", href);
+    }
+
+    [Fact]
+    public void ExternalHref_UppercaseScheme_IsRecognizedAsAlreadyHavingOne()
+    {
+        // Le crible « :// » ne porte aucune lettre, donc la casse du schéma n'entre pas en jeu.
+        var href = RecipeSource.ExternalHref("HTTPS://ricardocuisine.com/recettes/123");
+
+        Assert.Equal("https://ricardocuisine.com/recettes/123", href);
+    }
+
+    [Fact]
+    public void ExternalHref_NonHttpScheme_ReturnsNull()
+    {
+        Assert.Null(RecipeSource.ExternalHref("javascript://x/%0aalert(1)"));
+        Assert.Null(RecipeSource.ExternalHref("ftp://example.com/recette.txt"));
+    }
+
+    [Fact]
+    public void ExternalHref_Unparseable_ReturnsNull()
+    {
+        Assert.Null(RecipeSource.ExternalHref("pas une url du tout"));
+        Assert.Null(RecipeSource.ExternalHref(null));
+    }
+
+    #endregion
+
     #region Domain
 
     [Fact]
