@@ -262,15 +262,12 @@
             await LoadRecipes();
             await LoadFilterCounts();
             await ReadQueryParameters();
-            
-            if (isCardView)
-            {
-                await LoadCardViewData();
-            }
-            else
-            {
-                isLoading = false;
-            }
+
+            // Les deux vues lisent la même liste depuis le remplacement du MudTable.
+            // La branche « liste » se contentait auparavant de lever le voile de
+            // chargement, parce que le tableau allait chercher ses données lui-même
+            // via ServerData ; sans lui, plus personne ne les chargeait.
+            await LoadCardViewData();
         }
         catch (Exception ex)
         {
