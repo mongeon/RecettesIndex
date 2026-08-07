@@ -69,3 +69,70 @@
 .recipe-table tbody tr.rating-0-row:hover {
     background-color: rgba(117, 117, 117, 0.12) !important;
 }
+
+/* =============================================
+   EN-TÊTE DE CONTENU (bloc 1a)
+   ============================================= */
+.page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    color: var(--mud-palette-text-primary);
+}
+
+.page-subtitle {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.page-head-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Les deux boutons vivent dans un même cadre : c'est un choix entre deux états,
+   pas deux actions indépendantes. */
+.view-toggle {
+    display: inline-flex;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.view-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--mud-palette-text-secondary);
+    cursor: pointer;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+.view-toggle-btn:hover {
+    background-color: var(--app-field);
+}
+
+.view-toggle-on {
+    background-color: var(--app-accent-soft);
+    color: var(--mud-palette-primary);
+}
+
+::deep .view-toggle-btn .mud-icon-root {
+    font-size: 19px;
+}

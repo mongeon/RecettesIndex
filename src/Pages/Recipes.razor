@@ -20,22 +20,49 @@
 <PageTitle>Recettes</PageTitle>
 
 <MudPaper Class="pa-4">
-    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <!-- En-tête de contenu (bloc 1a) : ce que la page contient à gauche,
+         comment on la regarde à droite. -->
+    <div class="page-head">
         <div>
-            <MudText Typo="Typo.h4">Recettes</MudText>
-            <MudBreadcrumbs Items="breadcrumbs" Class="mt-2" />
+            <h1 class="page-title">Recettes</h1>
+            <div class="page-subtitle">@CollectionSummary</div>
         </div>
-        
-        <!-- View Toggle Button -->
-        <MudTooltip Text="@(isCardView ? "Passer en vue liste" : "Passer en vue grille")">
-            <MudToggleIconButton @bind-Toggled="isCardView"
-                                Icon="@Icons.Material.Filled.ViewList"
-                                ToggledIcon="@Icons.Material.Filled.ViewModule"
-                                Color="Color.Primary"
-                                Size="Size.Large" />
-        </MudTooltip>
-    </MudStack>
-    
+
+        <div class="page-head-controls">
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true">
+                <ActivatorContent>
+                    <span class="filter-pill">
+                        <span class="filter-pill-label">Trié par :</span>
+                        <span class="filter-pill-value">@SortLabelText</span>
+                        <MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Class="filter-pill-chevron" />
+                    </span>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudMenuItem OnClick="@(() => SetSort(RecipeSortConstants.CreatedAt))">Ajout récent</MudMenuItem>
+                    <MudMenuItem OnClick="@(() => SetSort(RecipeSortConstants.Name))">Nom</MudMenuItem>
+                    <MudMenuItem OnClick="@(() => SetSort(RecipeSortConstants.Rating))">Note</MudMenuItem>
+                </ChildContent>
+            </MudMenu>
+
+            <div class="view-toggle" role="group" aria-label="Affichage">
+                <button type="button"
+                        class="@(isCardView ? "view-toggle-btn" : "view-toggle-btn view-toggle-on")"
+                        aria-pressed="@(!isCardView)"
+                        title="Vue liste"
+                        @onclick="@(() => isCardView = false)">
+                    <MudIcon Icon="@Icons.Material.Outlined.ViewList" />
+                </button>
+                <button type="button"
+                        class="@(isCardView ? "view-toggle-btn view-toggle-on" : "view-toggle-btn")"
+                        aria-pressed="@isCardView"
+                        title="Vue grille"
+                        @onclick="@(() => isCardView = true)">
+                    <MudIcon Icon="@Icons.Material.Outlined.GridView" />
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Barre de filtres unique : remplace les puces rapides, le panneau
          « Filtres Avancés » et la rangée de puces d'état actif. -->
     <RecipeFilterBar SearchTerm="@Filters.SearchTerm"
@@ -72,7 +99,7 @@
     {
         <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
     }
-    else if (isCardView && currentRecipes.Count == 0)
+    else if (currentRecipes.Count == 0)
     {
         <!-- Empty State -->
         <EmptyState Icon="@Icons.Material.Filled.RestaurantMenu"
@@ -108,14 +135,14 @@
         }
         else
         {
-            <!-- Table View -->
-            <RecipeTableView Books="@books"
+            <!-- Liste dense -->
+            <RecipeListView Recipes="@currentRecipes"
+                            Books="@books"
                             Stores="@stores"
-                            IsAuthenticated="@AuthService.IsAuthenticated"
-                            LoadServerData="LoadServerData"
-                            OnEditRecipe="ShowEditDialog"
-                            OnDeleteRecipe="DeleteRecipe"
-                            @ref="tableViewRef" />
+                            TotalCount="@filteredTotal"
+                            HasMore="@(currentRecipes.Count < filteredTotal)"
+                            LoadMoreStep="@pageSize"
+                            OnLoadMore="LoadMoreAsync" />
         }
     }
     
@@ -128,16 +155,56 @@
 </MudPaper>
 
 @code {
-    private RecipeTableView? tableViewRef;
     private List<Book> books = [];
     private List<Author> authors = [];
     private List<Store> stores = [];
-    private List<BreadcrumbItem> breadcrumbs =>
-    [
-        new BreadcrumbItem("Accueil", href: ""),
-        new BreadcrumbItem("Recettes", href: "/recipes", disabled: true)
-    ];
-    
+    // Tri courant : la liste et la grille partagent le même ordre.
+    private string sortColumn = RecipeSortConstants.CreatedAt;
+    private bool sortDescending = true;
+
+    /// <summary>« 42 recettes · 9 livres · 4 magasins » — ce que contient la collection.</summary>
+    private string CollectionSummary
+    {
+        get
+        {
+            var parts = new List<string> { $"{totalCount} recette{(totalCount > 1 ? "s" : "")}" };
+            if (books.Count > 0) parts.Add($"{books.Count} livre{(books.Count > 1 ? "s" : "")}");
+            if (stores.Count > 0) parts.Add($"{stores.Count} magasin{(stores.Count > 1 ? "s" : "")}");
+            return string.Join(" · ", parts);
+        }
+    }
+
+    private string SortLabelText => sortColumn switch
+    {
+        RecipeSortConstants.Name => "Nom",
+        RecipeSortConstants.Rating => "Note",
+        _ => "Ajout récent"
+    };
+
+    private async Task SetSort(string column)
+    {
+        if (sortColumn == column)
+        {
+            return;
+        }
+
+        sortColumn = column;
+        // Le nom se lit de A à Z ; une date ou une note se lisent du plus fort au plus faible.
+        sortDescending = column != RecipeSortConstants.Name;
+        currentPage = 1;
+        await LoadCardViewData();
+    }
+
+    /// <summary>
+    /// Ajoute la page suivante à celles déjà affichées, au lieu de remplacer la liste :
+    /// c'est ce que promet « Charger 20 de plus ».
+    /// </summary>
+    private async Task LoadMoreAsync()
+    {
+        currentPage++;
+        await LoadCardViewData(append: true);
+    }
+
     // All filter-related state is encapsulated in RecipeFilterState
     private RecipeFilterState Filters { get; } = new();
 
@@ -441,9 +508,15 @@
         }
     }
     
-    private async Task LoadCardViewData()
+    /// <param name="append">
+    /// True quand « Charger 20 de plus » demande la page suivante : les résultats
+    /// s'ajoutent à ceux déjà affichés au lieu de les remplacer.
+    /// </param>
+    private async Task LoadCardViewData(bool append = false)
     {
-        isLoading = true;
+        // Le squelette de chargement remplacerait la liste entière ; en mode « charger
+        // plus », ce qui est déjà lu doit rester à l'écran.
+        isLoading = !append;
         errorMessage = null;
         try
         {
@@ -453,7 +526,7 @@
             int? authorId = Filters.GetAuthorIdFilter();
 
             var result = await RecipeService.SearchAsync(
-                Filters.SearchTerm, rating, bookId, storeId, authorId, currentPage, pageSize, "created_at", true,
+                Filters.SearchTerm, rating, bookId, storeId, authorId, currentPage, pageSize, sortColumn, sortDescending,
                 etiquetteIds: Filters.SelectedEtiquetteIds);
 
             if (result.IsSuccess)
@@ -474,7 +547,14 @@
                     total = items.Count;
                 }
                 
-                currentRecipes = items;
+                if (append)
+                {
+                    currentRecipes.AddRange(items);
+                }
+                else
+                {
+                    currentRecipes = items;
+                }
                 filteredTotal = total;
                 totalPages = (int)Math.Ceiling(total / (double)pageSize);
             }
@@ -500,83 +580,12 @@
         }
     }
     
-    private async Task<TableData<Recipe>> LoadServerData(TableState state, CancellationToken token)
-    {
-        var page = state.Page + 1;
-        var pageSize = state.PageSize;
-        
-        int? rating = null;
-        if (Filters.QuickFilterUnrated)
-        {
-            // Handle unrated in post-processing
-        }
-        else if (Filters.QuickFilterRating.HasValue)
-        {
-            if (Filters.QuickFilterRating.Value == 4)
-            {
-                // Handle 4+ in post-processing
-            }
-            else
-            {
-                rating = Filters.QuickFilterRating.Value;
-            }
-        }
-        else if (Filters.RatingFilter != "all" && !string.IsNullOrWhiteSpace(Filters.RatingFilter))
-        {
-            rating = int.TryParse(Filters.RatingFilter, out var r) ? r : null;
-        }
-
-        int? bookId = Filters.GetBookIdFilter();
-        int? storeId = Filters.GetStoreIdFilter();
-        int? authorId = Filters.GetAuthorIdFilter();
-
-        var sortLabel = state.SortLabel;
-        var sortDescending = state.SortDirection == SortDirection.Descending;
-
-        var result = await RecipeService.SearchAsync(Filters.SearchTerm, rating, bookId, storeId, authorId, page, pageSize, sortLabel, sortDescending,
-            etiquetteIds: Filters.SelectedEtiquetteIds, ct: token);
-        if (!result.IsSuccess)
-        {
-            return new TableData<Recipe> { Items = Array.Empty<Recipe>(), TotalItems = 0 };
-        }
-
-        var items = result.Value.Items;
-        var total = result.Value.Total;
-
-        if (Filters.QuickFilterUnrated)
-        {
-            items = items.Where(r => r.Rating == 0 || r.Rating < 1).ToList();
-            total = items.Count;
-        }
-        else if (Filters.QuickFilterRating == 4)
-        {
-            items = items.Where(r => r.Rating >= 4).ToList();
-            total = items.Count;
-        }
-
-        if (Filters.ShowRecentRecipes)
-        {
-            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-UIConstants.RecentRecipeDaysThreshold);
-            items = items.Where(r => r.CreationDate >= thirtyDaysAgo).ToList();
-            total = items.Count;
-        }
-
-        if (Filters.ShowFavorites)
-        {
-            items = items.Where(r => favoriteRecipeIds.Contains(r.Id)).ToList();
-            total = items.Count;
-        }
-        
-        return new TableData<Recipe> { Items = items, TotalItems = total };
-    }
-    
-    private async Task Reload()
-    {
-        if (tableViewRef is not null)
-        {
-            await tableViewRef.ReloadServerData();
-        }
-    }
+    /// <summary>
+    /// Les deux vues lisent désormais la même liste : la grille et la liste dense ne
+    /// diffèrent que par leur rendu. Conservé comme point d'entrée distinct parce que
+    /// les appelants raisonnent encore en « recharger la vue courante ».
+    /// </summary>
+    private Task Reload() => LoadCardViewData();
     
     #endregion
     
