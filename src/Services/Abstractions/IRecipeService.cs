@@ -4,7 +4,7 @@ namespace RecettesIndex.Services.Abstractions;
 
 public interface IRecipeService
 {
-    public Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? storeId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, CancellationToken ct = default);
+    public Task<Result<(IReadOnlyList<Recipe> Items, int Total)>> SearchAsync(string? term, int? rating, int? bookId, int? storeId, int? authorId, int page, int pageSize, string? sortLabel = null, bool sortDescending = false, IReadOnlyCollection<int>? etiquetteIds = null, CancellationToken ct = default);
     public Task<Result<Recipe>> GetByIdAsync(int id, CancellationToken ct = default);
     public Task<Result<Recipe>> CreateAsync(Recipe recipe, CancellationToken ct = default);
     public Task<Result<Recipe>> UpdateAsync(Recipe recipe, CancellationToken ct = default);

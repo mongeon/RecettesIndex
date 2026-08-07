@@ -315,6 +315,44 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
         }
     }
 
+    public async Task<List<int>> GetRecipeIdsByEtiquetteIdsAsync(IReadOnlyCollection<int> etiquetteIds, CancellationToken ct = default)
+    {
+        if (etiquetteIds.Count == 0)
+        {
+            return [];
+        }
+
+        try
+        {
+            // One request for every selected tag's attachments, then keep the recipes that
+            // appear as many times as there are tags — those are the ones carrying all of
+            // them. Grouping client-side avoids a HAVING count(*) that PostgREST cannot
+            // express through this client.
+            var res = await _supabaseClient.From<RecipeEtiquette>()
+                .Filter("etiquette_id", Operator.In, etiquetteIds.ToList())
+                .Get(cancellationToken: ct);
+
+            var rows = res.Models ?? [];
+            var wanted = etiquetteIds.Distinct().Count();
+
+            return rows
+                .GroupBy(x => x.RecipeId)
+                .Where(g => g.Select(x => x.EtiquetteId).Distinct().Count() == wanted)
+                .Select(g => g.Key)
+                .ToList();
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogError(ex, "Network error while fetching recipes by tag IDs");
+            throw new ServiceException("Network error. Please check your connection", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Unexpected error while fetching recipes by tag IDs");
+            throw new ServiceException("An unexpected error occurred while fetching recipes", ex);
+        }
+    }
+
     public async Task<List<int>> GetStoreIdsByNameAsync(string term, CancellationToken ct = default)
     {
         try

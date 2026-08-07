@@ -39,7 +39,8 @@ public class RecipeDetailsPageTests : BunitContext
 
         _recipeService.SearchAsync(
                 Arg.Any<string?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
-                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<bool>(),
+                Arg.Any<IReadOnlyCollection<int>?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Result<(IReadOnlyList<Recipe> Items, int Total)>.Success((Array.Empty<Recipe>(), 0))));
 
         var cut = Render<RecipeDetails>(parameters => parameters.Add(p => p.Id, 999));
