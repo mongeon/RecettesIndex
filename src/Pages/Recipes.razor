@@ -29,20 +29,15 @@
         </div>
 
         <div class="page-head-controls">
-            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true">
-                <ActivatorContent>
-                    <span class="filter-pill">
-                        <span class="filter-pill-label">Trié par :</span>
-                        <span class="filter-pill-value">@SortLabelText</span>
-                        <MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Class="filter-pill-chevron" />
-                    </span>
-                </ActivatorContent>
-                <ChildContent>
-                    <MudMenuItem OnClick="@(() => SetSort(RecipeSortConstants.CreatedAt))">Ajout récent</MudMenuItem>
-                    <MudMenuItem OnClick="@(() => SetSort(RecipeSortConstants.Name))">Nom</MudMenuItem>
-                    <MudMenuItem OnClick="@(() => SetSort(RecipeSortConstants.Rating))">Note</MudMenuItem>
-                </ChildContent>
-            </MudMenu>
+            @* Même composant que les filtres : le tri est un choix parmi une liste,
+               exactement comme « Livre » ou « Note ». *@
+            <RecipeFilterMenu Label="Trié par"
+                              SelectedLabel="@SortLabelText"
+                              SelectedValue="@sortColumn"
+                              IsActive="true"
+                              AlignRight="true"
+                              Options="@SortOptions"
+                              OnSelected="@(v => SetSort(v ?? RecipeSortConstants.CreatedAt))" />
 
             <div class="view-toggle" role="group" aria-label="Affichage">
                 <button type="button"
@@ -168,6 +163,13 @@
             return string.Join(" · ", parts);
         }
     }
+
+    private static readonly List<RecipeFilterMenu.Option> SortOptions = new()
+    {
+        new(RecipeSortConstants.CreatedAt, "Ajout récent", null),
+        new(RecipeSortConstants.Name, "Nom", null),
+        new(RecipeSortConstants.Rating, "Note", null)
+    };
 
     private string SortLabelText => sortColumn switch
     {

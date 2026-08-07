@@ -1,40 +1,56 @@
 @using MudBlazor
 
 @*
-    Une puce-menu de la barre de filtres (bloc 1a).
+    Une puce-menu de la barre de filtres (bloc 1a), et le sélecteur de tri.
 
-    MudSelect apporte son propre habillage de champ — étiquette flottante, trait de
-    soulignement, hauteur imposée — qui ne donne pas la pastille de 34px du design.
-    MudMenu fournit le comportement (ouverture, fermeture au clic extérieur, clavier)
-    et laisse l'activateur entièrement à notre main, d'où ce composant.
+    Menu autonome plutôt que MudMenu. Deux raisons :
+
+    - MudSelect apporte son propre habillage de champ — étiquette flottante,
+      soulignement, hauteur imposée — qui ne donne pas la pastille de 34px du design.
+    - MudMenu rend son contenu dans le MudPopoverProvider via son interop JavaScript,
+      et son activateur personnalisé ne s'ouvrait pas ici. Un menu positionné par CSS
+      n'a besoin d'aucun JavaScript : il s'ouvre tant que Blazor rend, point.
+
+    La superposition transparente derrière la liste capte le clic extérieur, ce que
+    MudMenu offrait gratuitement.
 *@
 
-<MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Dense="true">
-    <ActivatorContent>
-        <span class="@(IsActive ? "filter-pill filter-pill-on" : "filter-pill")">
-            <span class="filter-pill-label">@Label@(IsActive ? " :" : "")</span>
-            @if (IsActive && !string.IsNullOrEmpty(SelectedLabel))
-            {
-                <span class="filter-pill-value">@SelectedLabel</span>
-            }
-            <MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Class="filter-pill-chevron" />
-        </span>
-    </ActivatorContent>
-    <ChildContent>
-        @foreach (var option in Options)
+<div class="filter-menu">
+    <button type="button"
+            class="@(IsActive ? "filter-pill filter-pill-on" : "filter-pill")"
+            aria-haspopup="listbox"
+            aria-expanded="@_open"
+            @onclick="Toggle">
+        <span class="filter-pill-label">@Label@(IsActive ? " :" : "")</span>
+        @if (IsActive && !string.IsNullOrEmpty(SelectedLabel))
         {
-            <MudMenuItem OnClick="@(() => OnSelected.InvokeAsync(option.Value))">
-                <span class="filter-menu-item">
+            <span class="filter-pill-value">@SelectedLabel</span>
+        }
+        <MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Class="filter-pill-chevron" />
+    </button>
+
+    @if (_open)
+    {
+        <div class="filter-menu-scrim" @onclick="Close"></div>
+        <div class="@(AlignRight ? "filter-menu-list filter-menu-list-right" : "filter-menu-list")"
+             role="listbox">
+            @foreach (var option in Options)
+            {
+                <button type="button"
+                        class="filter-menu-option"
+                        role="option"
+                        aria-selected="@(option.Value == SelectedValue)"
+                        @onclick="() => Select(option.Value)">
                     <span>@option.Label</span>
                     @if (option.Count.HasValue)
                     {
                         <span class="filter-menu-count">@option.Count</span>
                     }
-                </span>
-            </MudMenuItem>
-        }
-    </ChildContent>
-</MudMenu>
+                </button>
+            }
+        </div>
+    }
+</div>
 
 @code {
     /// <summary>An entry of the menu. A null <paramref name="Value"/> clears the filter.</summary>
@@ -49,7 +65,25 @@
     /// <summary>What the filter is currently set to, shown instead of nothing when active.</summary>
     [Parameter] public string? SelectedLabel { get; set; }
 
+    /// <summary>Current value, used to mark the selected option for assistive tech.</summary>
+    [Parameter] public string? SelectedValue { get; set; }
+
     [Parameter, EditorRequired] public bool IsActive { get; set; }
     [Parameter, EditorRequired] public List<Option> Options { get; set; } = [];
     [Parameter, EditorRequired] public EventCallback<string?> OnSelected { get; set; }
+
+    /// <summary>Anchors the list to the right edge — for menus sitting near the window edge.</summary>
+    [Parameter] public bool AlignRight { get; set; }
+
+    private bool _open;
+
+    private void Toggle() => _open = !_open;
+
+    private void Close() => _open = false;
+
+    private async Task Select(string? value)
+    {
+        _open = false;
+        await OnSelected.InvokeAsync(value);
+    }
 }

@@ -26,24 +26,28 @@
         <RecipeFilterMenu Label="Livre"
                           SelectedLabel="@SelectedBookLabel"
                           IsActive="@IsActive(BookFilter)"
+                          SelectedValue="@BookFilter"
                           Options="@BookOptions"
                           OnSelected="OnBookChanged" />
 
         <RecipeFilterMenu Label="Magasin"
                           SelectedLabel="@SelectedStoreLabel"
                           IsActive="@IsActive(StoreFilter)"
+                          SelectedValue="@StoreFilter"
                           Options="@StoreOptions"
                           OnSelected="OnStoreChanged" />
 
         <RecipeFilterMenu Label="Auteur"
                           SelectedLabel="@SelectedAuthorLabel"
                           IsActive="@IsActive(AuthorFilter)"
+                          SelectedValue="@AuthorFilter"
                           Options="@AuthorOptions"
                           OnSelected="OnAuthorChanged" />
 
         <RecipeFilterMenu Label="Note"
                           SelectedLabel="@SelectedRatingLabel"
                           IsActive="@IsActive(RatingFilter)"
+                          SelectedValue="@RatingFilter"
                           Options="@RatingOptions"
                           OnSelected="OnRatingChanged" />
 
@@ -146,10 +150,13 @@
         <div class="sheet-label">Source</div>
         <div class="sheet-sources">
             <RecipeFilterMenu Label="Livre" SelectedLabel="@SelectedBookLabel" IsActive="@IsActive(BookFilter)"
+                          SelectedValue="@BookFilter"
                               Options="@BookOptions" OnSelected="OnBookChanged" />
             <RecipeFilterMenu Label="Magasin" SelectedLabel="@SelectedStoreLabel" IsActive="@IsActive(StoreFilter)"
+                          SelectedValue="@StoreFilter"
                               Options="@StoreOptions" OnSelected="OnStoreChanged" />
             <RecipeFilterMenu Label="Auteur" SelectedLabel="@SelectedAuthorLabel" IsActive="@IsActive(AuthorFilter)"
+                          SelectedValue="@AuthorFilter"
                               Options="@AuthorOptions" OnSelected="OnAuthorChanged" />
         </div>
 
