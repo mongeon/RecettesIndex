@@ -477,6 +477,198 @@
 }
 
 /* =============================================
+   BARRE DE FILTRES DES RECETTES (bloc 1a)
+   Une seule carte remplace les trois étages précédents. Styles globaux plutôt
+   qu'isolés : le contenu des MudMenu est rendu dans le MudPopoverProvider à la
+   racine du document, hors de l'arbre du composant.
+   ============================================= */
+.filter-bar {
+    padding: 10px;
+    border-radius: 11px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+}
+
+.filter-bar-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Le champ prend la place restante mais ne descend jamais sous 280px : en dessous,
+   il passe à la ligne au lieu de comprimer les puces. */
+.filter-field {
+    flex: 1 1 280px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background-color: var(--app-field);
+}
+
+.filter-field-icon {
+    font-size: 18px;
+    color: var(--mud-palette-text-secondary);
+    flex: 0 0 auto;
+}
+
+.filter-field-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--mud-palette-text-primary);
+}
+
+.filter-field-input::placeholder {
+    color: var(--mud-palette-text-secondary);
+    font-weight: 400;
+}
+
+.filter-field-input:focus-visible {
+    outline: none;
+}
+
+/* Le compteur est la confirmation que le filtre a pris : il n'y a pas de bouton
+   « appliquer », donc c'est lui qui accuse réception de la frappe. */
+.filter-field-count {
+    flex: 0 0 auto;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--mud-palette-text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: transparent;
+    color: var(--mud-palette-text-secondary);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    max-width: 260px;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1),
+                border-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+.filter-pill:hover {
+    background-color: var(--app-field);
+}
+
+.filter-pill-on {
+    background-color: var(--app-accent-soft);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary);
+}
+
+.filter-pill-label {
+    flex: 0 0 auto;
+}
+
+.filter-pill-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-pill-chevron {
+    font-size: 17px !important;
+    flex: 0 0 auto;
+}
+
+.filter-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+}
+
+.filter-menu-count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--mud-palette-text-disabled);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Poussé à droite : c'est une sortie de secours, pas un filtre de plus. */
+.filter-reset {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    padding: 0 6px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--mud-palette-primary);
+    cursor: pointer;
+}
+
+.filter-reset:hover {
+    text-decoration: underline;
+}
+
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: transparent;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1),
+                border-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+.tag-chip:hover {
+    background-color: var(--app-field);
+}
+
+.tag-chip-on {
+    background-color: var(--app-accent-soft);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary);
+}
+
+.tag-chip-count {
+    font-size: 11.5px;
+    color: var(--mud-palette-text-disabled);
+    font-variant-numeric: tabular-nums;
+}
+
+.tag-chip-on .tag-chip-count {
+    color: inherit;
+    opacity: 0.75;
+}
+
+/* =============================================
    PAGINATION LABEL
    ============================================= */
 .pagination-info {
