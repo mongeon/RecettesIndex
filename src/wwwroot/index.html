@@ -82,11 +82,22 @@
                 if (window.__recettesShortcutBound) { return; }
                 window.__recettesShortcutBound = true;
                 document.addEventListener('keydown', function (e) {
-                    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+                    // e.code vise la touche physique : e.key seul dépend de la
+                    // disposition du clavier, et « K » n'est pas au même endroit
+                    // en AZERTY ou en canadien multilingue.
+                    var isK = e.code === 'KeyK' || e.key === 'k' || e.key === 'K';
+                    if ((e.metaKey || e.ctrlKey) && isK) {
                         e.preventDefault();
                         dotNetRef.invokeMethodAsync('OpenPalette');
                     }
                 });
+            },
+            // Windows et Linux pressent Ctrl : afficher ⌘ leur montre un symbole
+            // qu'ils n'ont pas sur leur clavier, quand il ne s'affiche pas en carré.
+            isApple: function () {
+                var p = (navigator.userAgentData && navigator.userAgentData.platform)
+                    || navigator.platform || '';
+                return /mac|iphone|ipad|ipod/i.test(p);
             }
         };
     </script>
