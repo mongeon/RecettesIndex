@@ -1,0 +1,168 @@
+/* Bandeau de source (blocs 1d, 2a, 2b).
+   Les sélecteurs visant un composant MudBlazor passent par ::deep : la classe posée
+   sur un MudIcon atterrit sur son élément racine, qui ne porte pas l'attribut de
+   portée du composant parent. */
+
+.source-banner {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+}
+
+.source-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .source-icon ::deep .mud-icon-root {
+        font-size: 22px;
+    }
+
+/* Le corail et le turquoise sont ici des *fonds* ; l'encre de l'icône passe par les
+   jetons d'encre, qui tiennent le 3:1 des éléments graphiques dans les deux thèmes. */
+.source-icon-accent {
+    background-color: var(--app-accent-soft);
+    color: var(--app-accent-ink);
+}
+
+.source-icon-teal {
+    background-color: var(--app-teal-soft);
+    color: var(--app-teal-ink);
+}
+
+.source-icon-neutral {
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+}
+
+.source-body {
+    min-width: 0;
+}
+
+.source-eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+}
+
+.source-title {
+    font-size: 16.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--mud-palette-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Le chemin d'une URL est souvent plus long que la carte : il se coupe plutôt que
+   de pousser la zone de droite hors de l'écran. */
+.source-sub {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.source-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Le numéro de page est la seule information que l'on vient chercher les yeux fermés :
+   il est traité en chiffre d'affichage, pas en ligne de texte. */
+.source-page {
+    text-align: center;
+    padding-left: 16px;
+    border-left: 1px solid var(--mud-palette-lines-default);
+}
+
+.source-page-number {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    color: var(--app-accent-ink);
+}
+
+.source-page-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+}
+
+.source-action {
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: none;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+    .source-action:hover {
+        background-color: var(--app-field);
+    }
+
+.source-action-teal {
+    color: var(--app-teal-ink);
+}
+
+.source-action-accent {
+    color: var(--app-accent-ink);
+}
+
+.source-action-outline {
+    color: var(--mud-palette-text-primary);
+    border-color: var(--mud-palette-lines-default);
+}
+
+/* Sous 640px la zone de droite passe sous le bloc et s'aligne à gauche : garder trois
+   colonnes ferait tomber le titre du livre à deux ou trois caractères visibles. */
+@media (max-width: 639px) {
+    .source-banner {
+        grid-template-columns: 44px 1fr;
+        row-gap: 12px;
+    }
+
+    .source-right {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+
+    .source-page {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding-left: 0;
+        border-left: none;
+    }
+
+    .source-page-number {
+        font-size: 24px;
+    }
+}

@@ -352,7 +352,7 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
     }
 
     /// <summary>
-    /// Retrieves lightweight recipe summaries (id, book_id, store_id, rating, created_at) for all recipes.
+    /// Retrieves lightweight recipe summaries (id, book_id, store_id, rating, created_at, url) for all recipes.
     /// Intended for count computations and random selection — Book and Store navigation properties will be null.
     /// </summary>
     public async Task<Result<IReadOnlyList<Recipe>>> GetRecipeSummariesAsync(int? rating = null, CancellationToken ct = default)

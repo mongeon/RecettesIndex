@@ -16,7 +16,6 @@
 @implements IDisposable
 
 <PageTitle>Recette - @(recipe?.Name ?? "Chargement...")</PageTitle>
-<MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
 
 @if (loading)
 {
@@ -27,18 +26,7 @@
 }
 else if (recipe == null)
 {
-    @if (isNotFound)
-    {
-        <EmptyState Icon="@Icons.Material.Filled.RestaurantMenu"
-                    IconColor="Color.Secondary"
-                    Title="Recette introuvable"
-                    Message="Cette recette n'existe pas ou n'est plus disponible."
-                    ShowAction="true"
-                    ActionText="Retour aux recettes"
-                    ActionIcon="@Icons.Material.Filled.ArrowBack"
-                    OnActionClick="GoBackToRecipes" />
-    }
-    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    @if (!isNotFound && !string.IsNullOrWhiteSpace(errorMessage))
     {
         <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-4">@errorMessage</MudAlert>
     }
@@ -56,249 +44,158 @@ else if (recipe == null)
 }
 else
 {
-    <HeroSection Title="@recipe.Name" 
-                 Subtitle="@GetAdditionalInfo()"
-                 AdditionalInfo=""
-                 Icon="@Icons.Material.Filled.Restaurant">
-        <RightContent>
-            <MudStack Spacing="3" AlignItems="AlignItems.Center">
-                <!-- Favorite Toggle -->
-                <div>
-                    <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.95;" Class="mb-2" Align="Align.Center">
-                        Favori
-                    </MudText>
-                    <MudTooltip Text="@(favoriteRecipeIds.Contains(recipe.Id) ? "Retirer des favoris" : "Ajouter aux favoris")">
-                        <MudIconButton Icon="@(favoriteRecipeIds.Contains(recipe.Id) ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)"
-                                       Color="@(favoriteRecipeIds.Contains(recipe.Id) ? Color.Error : Color.Default)"
-                                       Size="Size.Large"
-                                       OnClick="@(() => ToggleFavorite(recipe))"
-                                       Style="background-color: var(--mud-palette-surface); box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 50%;" />
-                    </MudTooltip>
-                </div>
-                
-                <!-- Rating -->
+    @* Le fil d'Ariane remplace le bandeau corail dégradé de 200px : une ligne de 13px
+       suffit à dire où l'on est et à offrir le retour. *@
+    <nav class="detail-crumbs" aria-label="Fil d'Ariane">
+        <a class="detail-crumb-back" href="/recipes">← Recettes</a>
+        @if (!string.IsNullOrEmpty(SourceCrumb))
+        {
+            <span class="detail-crumb-sep">·</span>
+            <span class="detail-crumb-current">@SourceCrumb</span>
+        }
+    </nav>
+
+    <header class="detail-head">
+        <div class="detail-head-main">
+            <h1 class="detail-title">@recipe.Name</h1>
+
+            <div class="detail-meta">
                 @if (recipe.Rating > 0)
                 {
-                    <div>
-                        <MudText Typo="Typo.subtitle2" Color="Color.Surface" Style="opacity: 0.95;" Class="mb-2" Align="Align.Center">
-                            Évaluation
-                        </MudText>
-                        <PizzaRating ReadOnly="true" Value="@recipe.Rating" />
-                    </div>
+                    <PizzaRating ReadOnly="true" Value="@recipe.Rating" Size="Size.Small" />
                 }
-            </MudStack>
-        </RightContent>
-    </HeroSection>
+                <span class="detail-meta-text">@RatingLine</span>
 
-    <ActionBar BackUrl="/recipes" 
-               BackText="Retour aux recettes"
-               ShowEditButton="true"
-               ShowPrintButton="true"
-               PrintUrl="@($"/recipes/{Id}/print")"
-               IsAuthenticated="@AuthService.IsAuthenticated"
-               OnEditClick="@OpenEditDialog" />
-
-    <MudGrid>
-        <MudItem xs="12">
-            <MudCard Elevation="3">
-                <MudCardContent>
-                    <MudTabs Rounded="true" Elevation="2" ApplyEffectsToContainer="true">
-                        <MudTabPanel Text="Détails" Icon="@Icons.Material.Filled.Info">
-                            <MudGrid>
-                                @* Les étiquettes arrivent imbriquées avec la recette. Elles
-                                   sont affichées ici en attendant la refonte du détail :
-                                   pouvoir en poser sans pouvoir les relire n'aurait pas de sens. *@
-                                @if (recipe.Etiquettes.Count > 0)
-                                {
-                                    <MudItem xs="12">
-                                        <MudStack Row Spacing="1" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center">
-                                            <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" />
-                                            @foreach (var tag in recipe.Etiquettes)
-                                            {
-                                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
-                                                         Href="@($"/recipes?tags={tag.Id}")">
-                                                    @tag.Name
-                                                </MudChip>
-                                            }
-                                        </MudStack>
-                                    </MudItem>
-                                }
-                                <MudItem xs="12" md="6">
-                                    @if (!string.IsNullOrEmpty(recipe.Notes))
-                                    {
-                                        <MudPaper Elevation="0" Class="pa-4 mud-background-gray rounded-lg">
-                                            <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.Notes" Class="mr-2" />Notes</MudText>
-                                            <MudText Typo="Typo.body1" Style="white-space: pre-line">@recipe.Notes</MudText>
-                                        </MudPaper>
-                                    }
-                                    else
-                                    {
-                                        <MudAlert Severity="Severity.Info" Class="mt-3">Aucune note pour cette recette.</MudAlert>
-                                    }
-                                </MudItem>
-                                <MudItem xs="12" md="6">
-                                    <MudPaper Elevation="0" Class="pa-4 rounded-lg">
-                                        <MudText Typo="Typo.subtitle1"><MudIcon Icon="@Icons.Material.Filled.Book" Class="mr-2" />Informations sur la source</MudText>
-                                        @if (book != null)
-                                        {
-                                            <MudList Dense="true" T="Recipe">
-                                                <MudListItem Icon="@Icons.Material.Filled.MenuBook">
-                                                    <MudText>Livre: <MudLink Href="@($"/books/{book.Id}")">@book.Name</MudLink></MudText>
-                                                </MudListItem>
-                                                
-                                                @if (recipe.BookPage != null)
-                                                {
-                                                    <MudListItem Icon="@Icons.Material.Filled.BookmarkBorder">
-                                                        <MudText>Page: @recipe.BookPage</MudText>
-                                                    </MudListItem>
-                                                }
-                                                
-                                                @if (book.Authors != null && book.Authors.Count > 0)
-                                                {
-                                                    <MudListItem Icon="@Icons.Material.Filled.Person">
-                                                        <MudText>
-                                                            Auteur(s):
-                                                            @foreach (var author in book.Authors)
-                                                            {
-                                                                <MudLink Href="@($"/authors/{author.Id}")" Class="mr-2">@author.Name @author.LastName</MudLink>
-                                                            }
-                                                        </MudText>
-                                                    </MudListItem>
-                                                }
-                                            </MudList>
-                                        }
-                                        else if (store != null)
-                                        {
-                                            <MudList Dense="true" T="Recipe">
-                                                <MudListItem Icon="@Icons.Material.Filled.Storefront">
-                                                    <MudText>Magasin: <MudLink Href="@($"/stores/{store.Id}")">@store.Name</MudLink></MudText>
-                                                </MudListItem>
-                                                
-                                                @if (!string.IsNullOrWhiteSpace(store.Address))
-                                                {
-                                                    <MudListItem Icon="@Icons.Material.Filled.LocationOn">
-                                                        <MudText>Adresse: @store.Address</MudText>
-                                                    </MudListItem>
-                                                }
-                                                
-                                                @if (!string.IsNullOrWhiteSpace(store.Phone))
-                                                {
-                                                    <MudListItem Icon="@Icons.Material.Filled.Phone">
-                                                        <MudText>Téléphone: <MudLink Href="@($"tel:{store.Phone}")">@store.Phone</MudLink></MudText>
-                                                    </MudListItem>
-                                                }
-                                                
-                                                @if (!string.IsNullOrWhiteSpace(store.Website))
-                                                {
-                                                    <MudListItem Icon="@Icons.Material.Filled.Language">
-                                                        <MudText>Site Web: <MudLink Href="@store.Website" Target="_blank">Visiter</MudLink></MudText>
-                                                    </MudListItem>
-                                                }
-                                            </MudList>
-                                        }
-                                        else if (recipe.IsFromUrl && !string.IsNullOrWhiteSpace(recipe.Url))
-                                        {
-                                            <MudList Dense="true" T="Recipe">
-                                                <MudListItem Icon="@Icons.Material.Filled.Language">
-                                                    <MudText>Source: <MudLink Href="@recipe.Url" Target="_blank">Voir la recette sur le web</MudLink></MudText>
-                                                </MudListItem>
-                                            </MudList>
-                                        }
-                                        else
-                                        {
-                                            <MudAlert Severity="Severity.Info">
-                                                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                                                    <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" />
-                                                    <MudText Typo="Typo.body2">Recette maison (aucune source associée)</MudText>
-                                                </MudStack>
-                                            </MudAlert>
-                                        }
-                                    </MudPaper>
-                                </MudItem>
-                            </MudGrid>
-                        </MudTabPanel>
-                    </MudTabs>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        
-        <!-- Related Recipes Section -->
-        @if (relatedRecipes.Any())
-        {
-            <MudItem xs="12" Class="mt-4">
-                <MudText Typo="Typo.h5" Class="mb-3">
-                    <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Class="mr-2" />
-                    Recettes Similaires
-                </MudText>
-                <MudGrid Spacing="3">
-                    @foreach (var relatedRecipe in relatedRecipes)
-                    {
-                        <MudItem xs="12" sm="6" md="4" lg="2">
-                            <RecipeCard Recipe="@relatedRecipe"
-                                       Book="@relatedRecipe.Book"
-                                       Store="@relatedRecipe.Store"
-                                       IsFavorite="@favoriteRecipeIds.Contains(relatedRecipe.Id)"
-                                       OnToggleFavorite="@ToggleFavorite" />
-                        </MudItem>
-                    }
-                </MudGrid>
-                
-                @if (HasMoreRelatedRecipes())
+                @foreach (var tag in recipe.Etiquettes)
                 {
-                    <div class="d-flex justify-center mt-4">
-                        <MudButton Variant="Variant.Outlined" 
-                                  Color="Color.Primary"
-                                  StartIcon="@Icons.Material.Filled.ArrowForward"
-                                  Href="@GetMoreRecipesUrl()">
-                            Voir plus de recettes similaires
-                        </MudButton>
-                    </div>
+                    <a class="detail-tag" href="@($"/recipes?tags={tag.Id}")">@tag.Name</a>
                 }
-            </MudItem>
-        }
-    </MudGrid>
+            </div>
+        </div>
+
+        <div class="detail-actions">
+            <button type="button"
+                    class="detail-action detail-action-accent"
+                    aria-pressed="@IsFavorite"
+                    @onclick="@(() => ToggleFavorite(recipe))">
+                <MudIcon Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)" />
+                <span>Favori</span>
+            </button>
+
+            <a class="detail-action" href="@($"/recipes/{Id}/print")">
+                <MudIcon Icon="@Icons.Material.Outlined.Print" />
+                <span>Imprimer</span>
+            </a>
+
+            @if (AuthService.IsAuthenticated)
+            {
+                <button type="button" class="detail-action detail-action-filled" @onclick="OpenEditDialog">
+                    <MudIcon Icon="@Icons.Material.Outlined.Edit" />
+                    <span>Modifier</span>
+                </button>
+            }
+        </div>
+    </header>
+
+    <RecipeSourceBanner Recipe="@recipe"
+                        Book="@book"
+                        Store="@store"
+                        SourceTotal="@sourceTotal"
+                        IsAuthenticated="@AuthService.IsAuthenticated"
+                        OnAssociateBook="@OpenEditDialog" />
+
+    <div class="detail-columns">
+        <section class="detail-notes">
+            <div class="detail-notes-label">Mes notes</div>
+            @if (!string.IsNullOrWhiteSpace(recipe.Notes))
+            {
+                <p class="detail-notes-body">@recipe.Notes</p>
+            }
+            else
+            {
+                <p class="detail-notes-empty">Aucune note pour cette recette.</p>
+            }
+        </section>
+
+        <RecipeSourcePanel Title="@panelTitle"
+                           Items="@panelItems"
+                           Tags="@panelTags"
+                           LinkText="@panelLinkText"
+                           LinkHref="@panelLinkHref"
+                           EmptyMessage="@panelEmptyMessage" />
+    </div>
 }
 
 @code {
-    [Parameter] 
+    /// <summary>How many neighbours the panel fetches before keeping the best few.</summary>
+    private const int PanelPoolSize = 25;
+
+    /// <summary>How many rows the panel shows. Beyond that it stops being a glance.</summary>
+    private const int PanelRowCount = 5;
+
+    [Parameter]
     public int Id { get; set; }
-    
+
     private Recipe? recipe;
     private Book? book;
     private Store? store;
     private bool loading = true;
     private bool isNotFound;
     private string? errorMessage;
-    private List<Recipe> relatedRecipes = new();
     private List<int> favoriteRecipeIds = new();
     private CancellationTokenSource? _loadCts;
-    private List<BreadcrumbItem> breadcrumbs =
-    [
-        new BreadcrumbItem("Accueil", href: "/" ),
-        new BreadcrumbItem("Recettes", href: "/recipes"),
-        new BreadcrumbItem("Détails", href: null, disabled: true)
-    ];
+
+    // ── Contexte de la source (bandeau + panneau latéral) ─────────────────────
+    private int sourceTotal;
+    private string panelTitle = string.Empty;
+    private List<RecipeSourcePanel.Item> panelItems = new();
+    private List<Etiquette>? panelTags;
+    private string? panelLinkText;
+    private string? panelLinkHref;
+    private string panelEmptyMessage = "Rien d'autre pour l'instant.";
+
+    private bool IsFavorite => recipe is not null && favoriteRecipeIds.Contains(recipe.Id);
+
+    private RecipeSourceKind SourceKind =>
+        recipe is null ? RecipeSourceKind.Home : RecipeSource.Classify(recipe);
+
+    /// <summary>The second half of the breadcrumb — the place this recipe lives.</summary>
+    private string SourceCrumb => SourceKind switch
+    {
+        RecipeSourceKind.Book => book?.Name ?? string.Empty,
+        RecipeSourceKind.Store => store?.Name ?? string.Empty,
+        RecipeSourceKind.Web => RecipeSource.SplitUrl(recipe?.Url).Domain,
+        _ => "Recette maison"
+    };
+
+    private string RatingLine
+    {
+        get
+        {
+            var added = $"ajoutée le {recipe?.CreationDate.ToString("d MMMM yyyy")}";
+            return recipe is { Rating: > 0 } ? $"{recipe.Rating} / 5 · {added}" : $"Pas encore notée · {added}";
+        }
+    }
 
     protected override void OnInitialized()
     {
         AuthService.AuthStateChanged += OnAuthStateChanged;
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
-        // Load favorites from localStorage
         favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
-        
+
         await LoadRecipeData();
     }
-    
+
     protected override async Task OnParametersSetAsync()
     {
-        // This is called when the route parameters change (e.g., navigating from recipe 1 to recipe 2)
-        // We need to reload the data when the Id changes
+        // Called when the route parameter changes (navigating from recipe 1 to recipe 2),
+        // which has to reload everything, side panel included.
         await LoadRecipeData();
     }
-    
+
     private async Task LoadRecipeData()
     {
         _loadCts?.Cancel();
@@ -312,9 +209,9 @@ else
         recipe = null;
         book = null;
         store = null;
-        relatedRecipes = new List<Recipe>();
-        
-        try 
+        ResetSourceContext();
+
+        try
         {
             var recipeResult = await RecipeService.GetByIdAsync(Id, ct);
             if (!recipeResult.IsSuccess || recipeResult.Value == null)
@@ -336,18 +233,9 @@ else
             recipe = recipeResult.Value;
             book = recipe.Book;
             store = recipe.Store;
-            
-            if (recipe != null)
-            {
-                // Update the breadcrumbs with recipe name
-                breadcrumbs[2] = new BreadcrumbItem(recipe.Name, href: null, disabled: true);
-                
-                // Load related recipes
-                await LoadRelatedRecipes(ct);
-                
-                // Track this recipe in recent recipes
-                await LocalStorage.AddRecentRecipeAsync(recipe.Id, recipe.Name);
-            }
+
+            await LoadSourceContext(ct);
+            await LocalStorage.AddRecentRecipeAsync(recipe.Id, recipe.Name);
         }
         catch (OperationCanceledException)
         {
@@ -363,220 +251,303 @@ else
             loading = false;
         }
     }
-    
-    private async Task LoadRelatedRecipes(CancellationToken ct)
+
+    private void ResetSourceContext()
     {
-        if (recipe == null) return;
-        
+        sourceTotal = 0;
+        panelTitle = string.Empty;
+        panelItems = new List<RecipeSourcePanel.Item>();
+        panelTags = null;
+        panelLinkText = null;
+        panelLinkHref = null;
+        panelEmptyMessage = "Rien d'autre pour l'instant.";
+    }
+
+    /// <summary>
+    /// Fills the source banner's count and the side panel's rows.
+    /// </summary>
+    /// <remarks>
+    /// Never lets the panel stay empty when something can be listed: a single-recipe book or
+    /// a lone home recipe falls back to the recipes sharing a tag. The failure of any of
+    /// these queries degrades the panel, never the page — the recipe itself is already there.
+    /// </remarks>
+    private async Task LoadSourceContext(CancellationToken ct)
+    {
+        if (recipe is null)
+        {
+            return;
+        }
+
         try
         {
-            // Build a candidate pool from targeted queries (same book, same store,
-            // same authors) instead of loading every recipe and filtering client-side.
-            const int candidatePoolSize = 25;
-            var candidates = new Dictionary<int, Recipe>();
-
-            async Task AddCandidatesAsync(int? bookId, int? storeId, int? authorId)
+            switch (SourceKind)
             {
-                var result = await RecipeService.SearchAsync(null, null, bookId, storeId, authorId, 1, candidatePoolSize, ct: ct);
-                if (result.IsSuccess)
-                {
-                    foreach (var candidate in result.Value.Items)
-                    {
-                        candidates.TryAdd(candidate.Id, candidate);
-                    }
-                }
+                case RecipeSourceKind.Book:
+                    await LoadBookContext(ct);
+                    break;
+                case RecipeSourceKind.Store:
+                    await LoadStoreContext(ct);
+                    break;
+                case RecipeSourceKind.Web:
+                    await LoadWebContext(ct);
+                    break;
+                default:
+                    await LoadHomeContext(ct);
+                    break;
             }
 
-            if (recipe.BookId.HasValue)
+            if (panelItems.Count == 0)
             {
-                await AddCandidatesAsync(recipe.BookId, null, null);
+                await LoadTagContext(ct);
             }
-            if (recipe.StoreId.HasValue)
-            {
-                await AddCandidatesAsync(null, recipe.StoreId, null);
-            }
-            foreach (var authorId in book?.Authors?.Select(a => a.Id) ?? Enumerable.Empty<int>())
-            {
-                await AddCandidatesAsync(null, null, authorId);
-            }
-
-            // Calculate similarity scores
-            relatedRecipes = candidates.Values
-                .Where(r => r.Id != recipe.Id) // Exclude current recipe
-                .Select(r => new
-                {
-                    Recipe = r,
-                    Score = CalculateSimilarityScore(r)
-                })
-                .Where(x => x.Score > 0) // Only include recipes with some similarity
-                .OrderByDescending(x => x.Score)
-                .Take(6)
-                .Select(x => x.Recipe)
-                .ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading related recipes for {RecipeId}", Id);
-            relatedRecipes = new List<Recipe>();
+            Logger.LogError(ex, "Error loading source context for recipe {RecipeId}", Id);
         }
     }
-    
-    private int CalculateSimilarityScore(Recipe candidate)
+
+    private async Task LoadBookContext(CancellationToken ct)
     {
-        if (recipe == null) return 0;
-        
-        int score = 0;
-        
-        // Same book (highest priority) - 100 points
-        if (candidate.BookId.HasValue && candidate.BookId == recipe.BookId)
+        panelTitle = "Aussi dans ce livre";
+        panelEmptyMessage = "C'est la seule recette de ce livre pour l'instant.";
+
+        var result = await RecipeService.SearchAsync(
+            term: null, rating: null, bookId: recipe!.BookId, storeId: null, authorId: null,
+            page: 1, pageSize: PanelPoolSize,
+            sortLabel: RecipeSortConstants.Name, sortDescending: false, ct: ct);
+
+        if (!result.IsSuccess)
         {
-            score += 100;
+            return;
         }
-        
-        // Same store (highest priority) - 100 points
-        if (candidate.StoreId.HasValue && candidate.StoreId == recipe.StoreId)
+
+        sourceTotal = result.Value.Total;
+        panelItems = result.Value.Items
+            .Where(r => r.Id != recipe.Id)
+            .Take(PanelRowCount)
+            .Select(r => new RecipeSourcePanel.Item(r.Id, r.Name, r.BookPage.HasValue ? $"p. {r.BookPage}" : "—"))
+            .ToList();
+
+        if (book is not null && sourceTotal > 1)
         {
-            score += 100;
+            panelLinkText = $"Voir les {sourceTotal} recettes →";
+            panelLinkHref = $"/books/{book.Id}";
         }
-        
-        // Same author (medium priority) - 50 points
-        if (book != null && candidate.Book != null)
+    }
+
+    private async Task LoadStoreContext(CancellationToken ct)
+    {
+        panelTitle = "Aussi de ce commerce";
+        panelEmptyMessage = "C'est la seule recette de ce commerce pour l'instant.";
+
+        var result = await RecipeService.SearchAsync(
+            term: null, rating: null, bookId: null, storeId: recipe!.StoreId, authorId: null,
+            page: 1, pageSize: PanelPoolSize,
+            sortLabel: RecipeSortConstants.Rating, sortDescending: true, ct: ct);
+
+        if (!result.IsSuccess)
         {
-            var currentAuthorIds = book.Authors?.Select(a => a.Id).ToHashSet() ?? new HashSet<int>();
-            var candidateAuthorIds = candidate.Book.Authors?.Select(a => a.Id).ToHashSet() ?? new HashSet<int>();
-            
-            if (currentAuthorIds.Any() && candidateAuthorIds.Any() && currentAuthorIds.Overlaps(candidateAuthorIds))
+            return;
+        }
+
+        sourceTotal = result.Value.Total;
+        panelItems = result.Value.Items
+            .Where(r => r.Id != recipe.Id)
+            .Take(PanelRowCount)
+            .Select(r => new RecipeSourcePanel.Item(r.Id, r.Name, RatingMeta(r.Rating)))
+            .ToList();
+
+        if (store is not null)
+        {
+            panelLinkText = "Voir le commerce →";
+            panelLinkHref = $"/stores/{store.Id}";
+        }
+    }
+
+    private async Task LoadWebContext(CancellationToken ct)
+    {
+        panelTitle = "Aussi de ce site";
+        panelEmptyMessage = "C'est la seule recette prise sur ce site pour l'instant.";
+
+        var domain = RecipeSource.Domain(recipe!.Url);
+        // Aucun filtre de la page Recettes ne reproduit « même domaine » : le panneau se
+        // passe donc de lien de bas de carte plutôt que d'en offrir un qui retomberait
+        // sur la liste complète.
+        await LoadFromSummaries(
+            ct,
+            match: r => RecipeSource.Domain(r.Url) == domain,
+            rank: r => r.Rating);
+    }
+
+    private async Task LoadHomeContext(CancellationToken ct)
+    {
+        panelTitle = "Autres recettes maison · mieux notées";
+        panelEmptyMessage = "C'est la seule recette maison pour l'instant.";
+
+        await LoadFromSummaries(
+            ct,
+            match: r => !r.BookId.HasValue && !r.StoreId.HasValue && !r.IsFromUrl,
+            rank: r => r.Rating);
+    }
+
+    /// <summary>
+    /// Builds the panel from the lightweight summaries, for the two groupings the search API
+    /// cannot express: « same site » and « home recipes », both of which are defined by the
+    /// <em>absence</em> of a book and a store.
+    /// </summary>
+    private async Task LoadFromSummaries(
+        CancellationToken ct,
+        Func<Recipe, bool> match,
+        Func<Recipe, int> rank)
+    {
+        var summariesResult = await RecipeService.GetRecipeSummariesAsync(null, ct);
+        if (!summariesResult.IsSuccess)
+        {
+            return;
+        }
+
+        var peers = summariesResult.Value.Where(match).ToList();
+        sourceTotal = peers.Count;
+
+        var top = peers
+            .Where(r => r.Id != recipe!.Id)
+            .OrderByDescending(rank)
+            .ThenByDescending(r => r.CreationDate)
+            .Take(PanelRowCount)
+            .ToList();
+
+        if (top.Count == 0)
+        {
+            return;
+        }
+
+        // Les résumés n'ont pas le nom des recettes ; il faut une seconde requête, mais
+        // seulement pour les quelques lignes retenues.
+        var namesResult = await RecipeService.GetRecipesByIdsAsync(top.Select(r => r.Id).ToList(), ct);
+        if (!namesResult.IsSuccess)
+        {
+            return;
+        }
+
+        var byId = namesResult.Value.ToDictionary(r => r.Id);
+        panelItems = top
+            .Where(r => byId.ContainsKey(r.Id))
+            .Select(r => new RecipeSourcePanel.Item(r.Id, byId[r.Id].Name, RatingMeta(r.Rating)))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Last resort: the recipes sharing a tag with this one, so the panel is never empty
+    /// when the recipe is alone at its source.
+    /// </summary>
+    /// <remarks>
+    /// One query per tag, unioned. The filter bar reads several tags as a narrowing AND,
+    /// which is the right reading there and the wrong one here: a fallback that intersects
+    /// would come back empty exactly when it is needed.
+    /// </remarks>
+    private async Task LoadTagContext(CancellationToken ct)
+    {
+        if (recipe is null || recipe.Etiquettes.Count == 0)
+        {
+            return;
+        }
+
+        var found = new Dictionary<int, Recipe>();
+
+        foreach (var tag in recipe.Etiquettes)
+        {
+            var result = await RecipeService.SearchAsync(
+                term: null, rating: null, bookId: null, storeId: null, authorId: null,
+                page: 1, pageSize: PanelPoolSize,
+                sortLabel: RecipeSortConstants.Rating, sortDescending: true,
+                etiquetteIds: [tag.Id], ct: ct);
+
+            if (!result.IsSuccess)
             {
-                score += 50;
+                continue;
+            }
+
+            foreach (var candidate in result.Value.Items.Where(r => r.Id != recipe.Id))
+            {
+                found.TryAdd(candidate.Id, candidate);
+            }
+
+            if (found.Count >= PanelRowCount)
+            {
+                break;
             }
         }
-        
-        // Similar rating (low priority) - 10-20 points
-        if (recipe.Rating > 0 && candidate.Rating > 0)
+
+        if (found.Count == 0)
         {
-            var ratingDifference = Math.Abs(recipe.Rating - candidate.Rating);
-            
-            if (ratingDifference == 0)
-            {
-                score += 20; // Exact same rating
-            }
-            else if (ratingDifference == 1)
-            {
-                score += 10; // One star difference
-            }
-            // No points for 2+ star difference
+            return;
         }
-        
-        return score;
+
+        panelTitle = "Mêmes étiquettes";
+        panelTags = recipe.Etiquettes;
+        panelLinkText = null;
+        panelLinkHref = null;
+        panelItems = found.Values
+            .OrderByDescending(r => r.Rating)
+            .Take(PanelRowCount)
+            .Select(r => new RecipeSourcePanel.Item(r.Id, r.Name, RatingMeta(r.Rating)))
+            .ToList();
     }
-    
-    private bool HasMoreRelatedRecipes()
+
+    private static string RatingMeta(int rating) => rating switch
     {
-        // Check if there are potentially more related recipes
-        // For now, show button if we have 6 recipes (indicating there might be more)
-        return relatedRecipes.Count >= 6 && (recipe?.BookId != null || recipe?.StoreId != null);
-    }
-    
-    private string GetMoreRecipesUrl()
-    {
-        // Link to recipes page filtered by same book or store
-        if (recipe?.BookId != null)
-        {
-            return $"/recipes?bookId={recipe.BookId}";
-        }
-        else if (recipe?.StoreId != null)
-        {
-            return $"/recipes?storeId={recipe.StoreId}";
-        }
-        
-        return "/recipes";
-    }
-    
-    private void NavigateToRecipe(int recipeId)
-    {
-        NavigationManager.NavigateTo($"/recipes/{recipeId}");
-    }
+        <= 0 => "—",
+        1 => "1 pizza",
+        _ => $"{rating} pizzas"
+    };
 
     private Task GoBackToRecipes()
     {
         NavigationManager.NavigateTo("/recipes");
         return Task.CompletedTask;
     }
-    
-    private async Task HandleViewRelatedRecipe(Recipe relatedRecipe)
-    {
-        // Navigate to the related recipe
-        NavigationManager.NavigateTo($"/recipes/{relatedRecipe.Id}");
-        await Task.CompletedTask;
-    }
-    
-    private async Task HandlePrintRelatedRecipe(Recipe relatedRecipe)
-    {
-        // Navigate to print view
-        NavigationManager.NavigateTo($"/recipes/{relatedRecipe.Id}/print");
-        await Task.CompletedTask;
-    }
-    
+
     private async Task ToggleFavorite(Recipe recipeToToggle)
     {
         await LocalStorage.ToggleFavoriteAsync(recipeToToggle.Id);
-        
-        // Refresh favorites list
+
         favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
-        
+
         StateHasChanged();
-        
-        // Show toast notification
+
         var isFavorite = favoriteRecipeIds.Contains(recipeToToggle.Id);
         Snackbar.Add(
             isFavorite ? $"'{recipeToToggle.Name}' ajouté aux favoris ❤️" : $"'{recipeToToggle.Name}' retiré des favoris",
             isFavorite ? Severity.Success : Severity.Info
         );
     }
-    
+
     private async Task OpenEditDialog()
     {
         if (recipe != null)
         {
             var parameters = new DialogParameters();
             parameters.Add("RecipeToEdit", recipe);
-            
+
             var dialogOptions = new MudBlazor.DialogOptions { CloseButton = true, BackdropClick = false };
             var dialog = await DialogService.ShowAsync<EditRecipeDialog>("Modifier la recette", parameters, dialogOptions);
             var result = await dialog.Result;
-            
-            if (result is not null && !result.Canceled && result.Data is Recipe updatedRecipe)
+
+            if (result is not null && !result.Canceled && result.Data is Recipe)
             {
-                // Refresh the recipe data
-                recipe = updatedRecipe;
+                // Rechargement complet plutôt que réutilisation de la recette renvoyée :
+                // la source a pu changer — associer un livre est justement l'action que
+                // propose le bandeau d'une recette maison — et le bandeau comme le panneau
+                // ont besoin du livre et du commerce joints, que le dialogue ne rapporte pas.
+                await LoadRecipeData();
                 StateHasChanged();
             }
         }
-    }
-
-    private string GetAdditionalInfo()
-    {
-        var info = new List<string>();
-        
-        if (book != null)
-        {
-            info.Add($"Livre: {book.Name}");
-            
-            if (recipe?.BookPage != null)
-            {
-                info.Add($"Page: {recipe.BookPage}");
-            }
-        }
-        else if (store != null)
-        {
-            info.Add($"Magasin: {store.Name}");
-        }
-        else if (recipe?.IsFromUrl == true)
-        {
-            info.Add("Recette en ligne");
-        }
-
-        return string.Join(" • ", info);
     }
 
     private void OnAuthStateChanged()

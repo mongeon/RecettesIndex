@@ -1,0 +1,208 @@
+/* Détail d'une recette (blocs 1d, 2a, 2b, 2c).
+   Les sélecteurs visant un composant MudBlazor passent par ::deep : la classe posée
+   sur un MudIcon atterrit sur son élément racine, qui ne porte pas l'attribut de
+   portée du composant parent. */
+
+.detail-crumbs {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary);
+    margin-bottom: 12px;
+}
+
+.detail-crumb-back {
+    color: var(--mud-palette-text-secondary);
+    text-decoration: none;
+}
+
+    .detail-crumb-back:hover {
+        color: var(--app-accent-ink);
+    }
+
+.detail-crumb-sep {
+    color: var(--mud-palette-text-disabled);
+}
+
+.detail-crumb-current {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.detail-head-main {
+    min-width: 0;
+}
+
+/* Le titre passe en encre foncée : il était en corail, ce qui est à la fois illisible
+   (2,8:1) et redondant avec sa position en haut de page. */
+.detail-title {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--mud-palette-text-primary);
+}
+
+.detail-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.detail-meta-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--mud-palette-text-secondary);
+}
+
+.detail-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+    .detail-tag:hover {
+        color: var(--mud-palette-text-primary);
+    }
+
+.detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.detail-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 9px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: transparent;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+    .detail-action ::deep .mud-icon-root {
+        font-size: 18px;
+    }
+
+    .detail-action:hover {
+        background-color: var(--app-field);
+    }
+
+.detail-action-accent {
+    color: var(--app-accent-ink);
+}
+
+/* Le corail plein porte du texte blanc : c'est le seul endroit de la page où il sert
+   de fond, et --mud-palette-primary est déjà l'encre corail conforme du thème. */
+.detail-action-filled {
+    background-color: var(--mud-palette-primary);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+    .detail-action-filled:hover {
+        background-color: var(--mud-palette-primary-darken);
+    }
+
+.detail-columns {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+/* 66ch : au-delà, l'œil perd la ligne suivante en revenant à la marge. */
+.detail-notes {
+    flex: 1;
+    min-width: 0;
+    max-width: 66ch;
+}
+
+.detail-notes-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+    margin-bottom: 8px;
+}
+
+.detail-notes-body {
+    margin: 0;
+    font-size: 16.5px;
+    line-height: 1.75;
+    color: var(--mud-palette-text-primary);
+    white-space: pre-line;
+}
+
+.detail-notes-empty {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--mud-palette-text-disabled);
+}
+
+@media (max-width: 899px) {
+    .detail-columns {
+        flex-direction: column;
+    }
+
+    .detail-notes {
+        max-width: none;
+        width: 100%;
+    }
+}
+
+/* Sous 640px les actions passent sous le titre : trois boutons de 36px et un titre de
+   30px ne tiennent pas sur une ligne de téléphone. */
+@media (max-width: 639px) {
+    .detail-head {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .detail-title {
+        font-size: 24px;
+    }
+
+    .detail-actions {
+        width: 100%;
+    }
+
+    .detail-action {
+        flex: 1;
+        justify-content: center;
+        padding: 0 10px;
+    }
+}

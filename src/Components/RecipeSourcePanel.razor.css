@@ -1,0 +1,116 @@
+/* Panneau latéral « du même endroit » (bloc 2c). */
+
+.source-panel {
+    width: 260px;
+    flex: 0 0 260px;
+    padding: 16px;
+    border-radius: 12px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    align-self: flex-start;
+}
+
+.source-panel-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    line-height: 1.45;
+    color: var(--mud-palette-text-disabled);
+}
+
+.source-panel-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.source-panel-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+    .source-panel-tag:hover {
+        color: var(--mud-palette-text-primary);
+    }
+
+.source-panel-rows {
+    margin-top: 8px;
+}
+
+/* Le nom prend la place restante et se coupe ; la méta garde sa largeur, parce que
+   c'est elle qu'on balaie du regard d'une ligne à l'autre. */
+.source-panel-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--app-line-soft);
+    text-decoration: none;
+    color: inherit;
+}
+
+    .source-panel-row:last-child {
+        border-bottom: none;
+    }
+
+.source-panel-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--mud-palette-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.source-panel-row:hover .source-panel-name {
+    color: var(--app-accent-ink);
+}
+
+.source-panel-meta {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--mud-palette-text-disabled);
+}
+
+.source-panel-empty {
+    margin: 10px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--mud-palette-text-secondary);
+}
+
+.source-panel-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--app-accent-ink);
+    text-decoration: none;
+}
+
+    .source-panel-link:hover {
+        text-decoration: underline;
+    }
+
+/* En dessous de 900px le panneau passe sous les notes et cesse d'être une colonne :
+   à cette largeur, 260px figés lui feraient occuper le tiers de l'écran. */
+@media (max-width: 899px) {
+    .source-panel {
+        width: auto;
+        flex: 1 1 auto;
+    }
+}
