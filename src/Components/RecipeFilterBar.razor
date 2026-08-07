@@ -72,6 +72,95 @@
     </div>
 }
 
+@*
+    Mobile (bloc 1e) : la barre cède la place à une rangée de puces défilante dont la
+    première ouvre une feuille du bas. Empiler quatre menus et une rangée d'étiquettes
+    sur 390px pousserait la liste hors de l'écran avant qu'on ait vu une recette.
+*@
+<div class="filter-mobile">
+    <button type="button" class="filter-sheet-open" @onclick="() => _sheetOpen = true">
+        <MudIcon Icon="@Icons.Material.Outlined.Tune" Class="filter-sheet-open-icon" />
+        <span>Filtres</span>
+        @if (ActiveCount > 0)
+        {
+            <span class="filter-sheet-badge">@ActiveCount</span>
+        }
+    </button>
+
+    @foreach (var tag in Etiquettes)
+    {
+        var isOn = SelectedEtiquetteIds.Contains(tag.Id);
+        <button type="button"
+                class="@(isOn ? "tag-chip tag-chip-on" : "tag-chip")"
+                aria-pressed="@isOn"
+                @onclick="() => OnEtiquetteToggled.InvokeAsync(tag.Id)">
+            @tag.Name
+        </button>
+    }
+</div>
+
+@if (_sheetOpen)
+{
+    <div class="sheet-scrim" @onclick="() => _sheetOpen = false"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Filtres">
+        <div class="sheet-handle"></div>
+
+        <div class="sheet-head">
+            <span class="sheet-title">Filtres</span>
+            @if (HasActiveFilters)
+            {
+                <button type="button" class="filter-reset" @onclick="OnClearAllFilters">Réinitialiser</button>
+            }
+        </div>
+
+        <div class="sheet-label">Note minimale</div>
+        <div class="sheet-ratings">
+            @foreach (var (value, label) in RatingShortcuts)
+            {
+                <button type="button"
+                        class="@(RatingFilter == value || (value is null && !IsActive(RatingFilter)) ? "sheet-rating sheet-rating-on" : "sheet-rating")"
+                        @onclick="() => OnRatingChanged.InvokeAsync(value)">
+                    @label
+                </button>
+            }
+        </div>
+
+        @if (Etiquettes.Count > 0)
+        {
+            <div class="sheet-label">Étiquettes</div>
+            <div class="tag-row">
+                @foreach (var tag in Etiquettes)
+                {
+                    var isOn = SelectedEtiquetteIds.Contains(tag.Id);
+                    <button type="button"
+                            class="@(isOn ? "tag-chip tag-chip-on" : "tag-chip")"
+                            aria-pressed="@isOn"
+                            @onclick="() => OnEtiquetteToggled.InvokeAsync(tag.Id)">
+                        <span>@tag.Name</span>
+                        <span class="tag-chip-count">@EtiquetteCounts.GetValueOrDefault(tag.Id, 0)</span>
+                    </button>
+                }
+            </div>
+        }
+
+        <div class="sheet-label">Source</div>
+        <div class="sheet-sources">
+            <RecipeFilterMenu Label="Livre" SelectedLabel="@SelectedBookLabel" IsActive="@IsActive(BookFilter)"
+                              Options="@BookOptions" OnSelected="OnBookChanged" />
+            <RecipeFilterMenu Label="Magasin" SelectedLabel="@SelectedStoreLabel" IsActive="@IsActive(StoreFilter)"
+                              Options="@StoreOptions" OnSelected="OnStoreChanged" />
+            <RecipeFilterMenu Label="Auteur" SelectedLabel="@SelectedAuthorLabel" IsActive="@IsActive(AuthorFilter)"
+                              Options="@AuthorOptions" OnSelected="OnAuthorChanged" />
+        </div>
+
+        @* Le compteur suit la sélection en direct : le bouton confirme ce qu'on obtiendra
+           avant de refermer, il ne déclenche pas le filtrage. *@
+        <button type="button" class="sheet-apply" @onclick="() => _sheetOpen = false">
+            Voir @(ResultCount == 1 ? "la recette" : $"les {ResultCount} recettes")
+        </button>
+    </div>
+}
+
 @code {
     [Parameter, EditorRequired] public string SearchTerm { get; set; } = string.Empty;
     [Parameter, EditorRequired] public string? RatingFilter { get; set; }
@@ -105,7 +194,28 @@
     [Parameter, EditorRequired] public EventCallback<int> OnEtiquetteToggled { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClearAllFilters { get; set; }
 
+    private bool _sheetOpen;
+
     private string ResultCountLabel => ResultCount == 1 ? "1 résultat" : $"{ResultCount} résultats";
+
+    /// <summary>Nombre de filtres posés, affiché sur la puce « Filtres » en mobile.</summary>
+    private int ActiveCount =>
+        (IsActive(RatingFilter) ? 1 : 0)
+        + (IsActive(BookFilter) ? 1 : 0)
+        + (IsActive(StoreFilter) ? 1 : 0)
+        + (IsActive(AuthorFilter) ? 1 : 0)
+        + SelectedEtiquetteIds.Count;
+
+    /// <summary>
+    /// Raccourcis de note de la feuille mobile. Une valeur nulle remet le filtre à zéro.
+    /// </summary>
+    private static readonly (string? Value, string Label)[] RatingShortcuts =
+    [
+        (null, "Toutes"),
+        ("4", "4+"),
+        ("5", "5"),
+        ("0", "Non év.")
+    ];
 
     private static bool IsActive(string? value) => !string.IsNullOrWhiteSpace(value) && value != "all";
 
