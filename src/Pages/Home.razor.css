@@ -52,6 +52,13 @@
         border-color: var(--app-accent-ink);
     }
 
+    /* Au clavier, le survol ne dit rien : sans état de focus, on ne sait pas où l'on est. */
+    .home-search:focus-visible {
+        outline: 2px solid var(--app-accent-ink);
+        outline-offset: 2px;
+        border-color: var(--app-accent-ink);
+    }
+
     .home-search ::deep .home-search-icon {
         font-size: 22px;
         color: var(--app-accent-ink);
@@ -98,9 +105,15 @@
     text-decoration: none;
 }
 
-    .home-tag:hover {
+    .home-tag:hover,
+    .home-tag:focus-visible {
         border-color: var(--app-accent-ink);
         color: var(--app-accent-ink);
+    }
+
+    .home-tag:focus-visible {
+        outline: 2px solid var(--app-accent-ink);
+        outline-offset: 2px;
     }
 
 .home-loading {
@@ -201,6 +214,19 @@
     .home-row-rate ::deep .mud-rating-item {
         padding: 1px;
     }
+
+/* Une panne de chargement, dite comme telle. */
+.home-failed {
+    margin: 0;
+    width: 100%;
+    max-width: 1000px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+}
 
 .home-card-empty {
     margin: 8px 0 0;
