@@ -1,317 +1,209 @@
 @using MudBlazor
 @using RecettesIndex.Models
+@using RecettesIndex.Components
+@using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
 @using Microsoft.Extensions.Logging
 @inject IRecipeService RecipeService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IEtiquetteService EtiquetteService
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
 @inject ILogger<AddRecipeDialog> Logger
 
-<MudDialog>
+@*
+    La boîte d'ajout (bloc 4a).
+
+    Elle ne dessine plus rien elle-même : le corps est RecipeForm, partagé avec la boîte
+    de modification. Ce qui lui reste en propre est ce qui n'a de sens qu'à l'ajout —
+    « Enregistrer et ajouter une autre », qui garde la source pour saisir un livre entier
+    d'un coup sans rouvrir la boîte cinq fois.
+*@
+
+<MudDialog Class="rform-dialog">
     <DialogContent>
-        <MudForm @ref="_form">
-        <MudTextField @bind-Value="recipe.Name"
-                      Label="Nom"
-                      Required="true"
-                      RequiredError="Le nom de la recette est requis."
-                      AutoFocus="true"
-                      Variant="Variant.Outlined"
-                      Class="mb-3" />
-        
-        <MudText Typo="Typo.body2" Style="font-weight: 600;" Class="mt-2 mb-1">Évaluation (1-5 pizzas)</MudText>
-        <PizzaRating @bind-Value="recipe.Rating" ReadOnly="false" />
-        
-        <MudTextField @bind-Value="recipe.Notes" 
-                      Label="Notes" 
-                      Variant="Variant.Outlined" 
-                      Class="mb-3" 
-                      Lines="3" />
-        
-        <!-- Source Selection Toggle -->
-        <MudText Typo="Typo.subtitle2" Class="mb-2">Source de la recette:</MudText>
-        <MudRadioGroup T="string" 
-                       @bind-Value="sourceType"
-                       Class="mb-3">
-            <MudRadio T="string" Value="@("book")" Color="Color.Primary" Class="mb-2">
-                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" />
-                    <span>Livre de recettes</span>
-                </MudStack>
-            </MudRadio>
-            <MudRadio T="string" Value="@("store")" Color="Color.Secondary" Class="mb-2">
-                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" />
-                    <span>Magasin/Restaurant</span>
-                </MudStack>
-            </MudRadio>
-            <MudRadio T="string" Value="@("url")" Color="Color.Tertiary" Class="mb-2">
-                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" />
-                    <span>Site Web</span>
-                </MudStack>
-            </MudRadio>
-            <MudRadio T="string" Value="@("none")" Color="Color.Default">
-                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" />
-                    <span>Aucune source</span>
-                </MudStack>
-            </MudRadio>
-        </MudRadioGroup>
-        
-        <!-- Book Selection (shown when sourceType is "book") -->
-        @if (sourceType == "book")
-        {
-            <MudPaper Class="pa-3 mb-3" Elevation="1" Style="background-color: var(--mud-palette-surface);" @key="@($"book-{sourceType}")">
-                <MudStack Spacing="2">
-                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">
-                        <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Class="mr-1" />
-                        Informations du livre
-                    </MudText>
-                    <MudSelect T="Book" 
-                               Label="Livre *" 
-                               @bind-Value="selectedBook" 
-                               Variant="Variant.Outlined"
-                               ToStringFunc="@(b => b?.Name ?? "Sélectionner un livre...")">
-                        @foreach (var book in books)
-                        {
-                            <MudSelectItem T="Book" Value="@book">@book.Name</MudSelectItem>
-                        }
-                    </MudSelect>
-                    <MudNumericField @bind-Value="recipe.BookPage" 
-                                     Label="Page du livre" 
-                                     Variant="Variant.Outlined" 
-                                     Min="1" />
-                </MudStack>
-            </MudPaper>
-        }
-        
-        <!-- Store Selection (shown when sourceType is "store") -->
-        @if (sourceType == "store")
-        {
-            <MudPaper Class="pa-3 mb-3" Elevation="1" Style="background-color: var(--mud-palette-surface);" @key="@($"store-{sourceType}")">
-                <MudStack Spacing="2">
-                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
-                        <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" Class="mr-1" />
-                        Informations du magasin/restaurant
-                    </MudText>
-                    <MudSelect T="Store" 
-                               Label="Magasin ou Restaurant *" 
-                               @bind-Value="selectedStore" 
-                               Variant="Variant.Outlined"
-                               ToStringFunc="@(s => s?.Name ?? "Sélectionner un magasin...")">
-                        @foreach (var store in stores)
-                        {
-                            <MudSelectItem T="Store" Value="@store">
-                                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                                    <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" />
-                                    <span>@store.Name</span>
-                                </MudStack>
-                            </MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudStack>
-            </MudPaper>
-        }
-        
-        <!-- URL Selection (shown when sourceType is "url") -->
-        @if (sourceType == "url")
-        {
-            <MudPaper Class="pa-3 mb-3" Elevation="1" Style="background-color: var(--mud-palette-surface);" @key="@($"url-{sourceType}")">
-                <MudStack Spacing="2">
-                    <MudText Typo="Typo.subtitle2" Color="Color.Tertiary">
-                        <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" Class="mr-1" />
-                        Informations du site web
-                    </MudText>
-                    <MudTextField @bind-Value="recipe.Url"
-                                  Label="URL du site web *"
-                                  Variant="Variant.Outlined"
-                                  Validation="@(new System.ComponentModel.DataAnnotations.UrlAttribute() { ErrorMessage = "Veuillez saisir une URL valide (https://...)." })"
-                                  Placeholder="https://example.com/recipe" />
-                </MudStack>
-            </MudPaper>
-        }
+        <div class="rform-shell" @onkeydown="OnKeyDown">
+            <RecipeForm Model="@_model" Books="@_books" Stores="@_stores" />
 
-        <MudStack Spacing="2" Class="mt-2">
-            <MudText Typo="Typo.subtitle2">
-                <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" Class="mr-1" />
-                Étiquettes
-            </MudText>
-            <EtiquettePicker @bind-SelectedIds="selectedEtiquetteIds" />
-        </MudStack>
-
-        </MudForm>
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
-        }
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-2">@_error</MudAlert>
+            }
+        </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" 
-                   Color="Color.Secondary" 
-                   Variant="Variant.Text" 
-                   Disabled="@isSaving">
-            Annuler
-        </MudButton>
-        <MudButton OnClick="AddRecipeAsync" 
-                   Color="Color.Primary" 
-                   Variant="Variant.Filled" 
-                   Disabled="@isSaving"
-                   StartIcon="@Icons.Material.Filled.Add">
-            @if (isSaving)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                <span class="ml-2">Ajout...</span>
-            }
-            else
-            {
-                <span>Ajouter</span>
-            }
-        </MudButton>
+        <div class="rform-foot">
+            <span class="rform-foot-hint">@ShortcutHint pour enregistrer</span>
+            <div class="rform-foot-actions">
+                <button type="button" class="rform-btn" disabled="@_saving" @onclick="Cancel">Annuler</button>
+                <button type="button" class="rform-btn rform-btn-outline" disabled="@_saving"
+                        @onclick="@(() => SaveAsync(keepGoing: true))">
+                    Enregistrer et ajouter une autre
+                </button>
+                <button type="button" class="rform-btn rform-btn-filled" disabled="@_saving"
+                        @onclick="@(() => SaveAsync(keepGoing: false))">
+                    @(_saving ? "Enregistrement…" : "Enregistrer")
+                </button>
+            </div>
+        </div>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter]
     public required IMudDialogInstance MudDialog { get; set; }
-    
-    private MudForm _form = default!;
-    private readonly Recipe recipe = new() 
-    { 
-        CreationDate = DateTime.UtcNow
-    };
-    private string? errorMessage;
-    private List<Book> books = [];
-    private List<Store> stores = [];
-    private Book? selectedBook;
-    private Store? selectedStore;
-    private string sourceType = "none";
-    private bool isSaving = false;
-    private HashSet<int> selectedEtiquetteIds = [];
+
+    /// <summary>
+    /// Preselects a source. Lets « Ajouter de ce livre » open the dialog already pointed at
+    /// the right book instead of making the user find it again.
+    /// </summary>
+    [Parameter] public Book? PresetBook { get; set; }
+
+    [Parameter] public Store? PresetStore { get; set; }
+
+    private RecipeFormModel _model = new();
+    private RecipeFormModel _pristine = new();
+    private List<Book> _books = [];
+    private List<Store> _stores = [];
+    private string? _error;
+    private bool _saving;
+    private bool _addedAny;
+    private Recipe? _last;
+
+    /// <summary>
+    /// « ⌘⏎ » ou « Ctrl+Entrée » selon la plateforme. Le même appel JS que le raccourci
+    /// ⌘K de la barre du haut : afficher ⌘ à un utilisateur Windows lui montre un symbole
+    /// absent de son clavier, quand il ne s'affiche pas carrément en carré.
+    /// </summary>
+    private bool _isApplePlatform;
+
+    private string ShortcutHint => _isApplePlatform ? "⌘⏎" : "Ctrl+Entrée";
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Load books and stores with caching
-            books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
-            stores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
+            _books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
+            _stores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading books and stores");
-            books = [];
-            stores = [];
-        }
-    }
-
-    private async Task AddRecipeAsync()
-    {
-        errorMessage = null;
-        isSaving = true;
-        
-        await _form.ValidateAsync();
-        if (!_form.IsValid)
-        {
-            isSaving = false;
-            return;
         }
 
         try
         {
-            // Set source references based on selection
-            if (sourceType == "book")
-            {
-                if (selectedBook == null)
-                {
-                    errorMessage = "Veuillez sélectionner un livre.";
-                    isSaving = false;
-                    return;
-                }
-                recipe.BookId = selectedBook.Id;
-                recipe.StoreId = null;
-                recipe.Url = null;
-            }
-            else if (sourceType == "store")
-            {
-                if (selectedStore == null)
-                {
-                    errorMessage = "Veuillez sélectionner un magasin ou restaurant.";
-                    isSaving = false;
-                    return;
-                }
-                recipe.StoreId = selectedStore.Id;
-                recipe.BookId = null;
-                recipe.BookPage = null;
-                recipe.Url = null;
-            }
-            else if (sourceType == "url")
-            {
-                if (string.IsNullOrWhiteSpace(recipe.Url))
-                {
-                    errorMessage = "Veuillez saisir l'URL du site web.";
-                    isSaving = false;
-                    return;
-                }
-                recipe.BookId = null;
-                recipe.StoreId = null;
-                recipe.BookPage = null;
-            }
-            else
-            {
-                recipe.BookId = null;
-                recipe.StoreId = null;
-                recipe.BookPage = null;
-                recipe.Url = null;
-            }
-            
-            // Use service layer for creation
-            var result = await RecipeService.CreateAsync(recipe);
-            
-            if (result.IsSuccess)
-            {
-                // L'identifiant n'existe qu'après l'insertion : les étiquettes ne
-                // peuvent être rattachées qu'ici.
-                if (selectedEtiquetteIds.Count > 0 && result.Value is not null)
-                {
-                    var tags = await EtiquetteService.SetForRecipeAsync(result.Value.Id, selectedEtiquetteIds);
-                    if (!tags.IsSuccess)
-                    {
-                        Snackbar.Add(tags.ErrorMessage ?? "Les étiquettes n'ont pas pu être enregistrées.", Severity.Warning);
-                    }
-                }
+            _isApplePlatform = await JSRuntime.InvokeAsync<bool>("recettesShortcuts.isApple");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not read the platform for the save shortcut hint");
+        }
 
-                Snackbar.Add("Recette ajoutée avec succès!", Severity.Success);
-                MudDialog.Close(DialogResult.Ok(result.Value));
-            }
-            else
+        if (PresetBook is not null)
+        {
+            _model.Source = RecipeSourceKind.Book;
+            _model.Book = PresetBook;
+        }
+        else if (PresetStore is not null)
+        {
+            _model.Source = RecipeSourceKind.Store;
+            _model.Store = PresetStore;
+        }
+
+        _pristine = _model.Clone();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && (e.CtrlKey || e.MetaKey))
+        {
+            await SaveAsync(keepGoing: false);
+        }
+    }
+
+    private async Task SaveAsync(bool keepGoing)
+    {
+        _error = _model.Validate();
+        if (_error is not null)
+        {
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var recipe = new Recipe { CreationDate = DateTime.UtcNow };
+            _model.ApplyTo(recipe);
+
+            var result = await RecipeService.CreateAsync(recipe);
+            if (!result.IsSuccess || result.Value is null)
             {
-                errorMessage = result.ErrorMessage ?? "Échec lors de l'ajout de la recette.";
-                Snackbar.Add(errorMessage, Severity.Error);
+                _error = result.ErrorMessage ?? "Échec lors de l'ajout de la recette.";
+                Snackbar.Add(_error, Severity.Error);
+                return;
             }
+
+            await AttachAsideAsync(result.Value.Id);
+
+            _addedAny = true;
+            _last = result.Value;
+            Snackbar.Add($"« {result.Value.Name} » ajoutée.", Severity.Success);
+
+            if (keepGoing)
+            {
+                // La source reste en place : c'est tout l'intérêt du bouton.
+                _model.ResetForNext();
+                _pristine = _model.Clone();
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Unexpected error adding recipe");
-            errorMessage = $"Une erreur inattendue s'est produite: {ex.Message}";
-            Snackbar.Add(errorMessage, Severity.Error);
+            _error = "Une erreur inattendue s'est produite.";
+            Snackbar.Add(_error, Severity.Error);
         }
         finally
         {
-            isSaving = false;
+            _saving = false;
         }
     }
-    
-    private bool HasUnsavedChanges() =>
-        !string.IsNullOrWhiteSpace(recipe.Name)
-        || !string.IsNullOrWhiteSpace(recipe.Notes)
-        || !string.IsNullOrWhiteSpace(recipe.Url)
-        || recipe.Rating > 0
-        || sourceType != "none";
+
+    /// <summary>
+    /// Writes what only exists once the recipe has an ID: its tags, and its place among
+    /// the favourites. Neither failure loses the recipe, so neither is reported as one.
+    /// </summary>
+    private async Task AttachAsideAsync(int recipeId)
+    {
+        if (_model.EtiquetteIds.Count > 0)
+        {
+            var tags = await EtiquetteService.SetForRecipeAsync(recipeId, _model.EtiquetteIds);
+            if (!tags.IsSuccess)
+            {
+                Snackbar.Add(tags.ErrorMessage ?? "Les étiquettes n'ont pas pu être enregistrées.", Severity.Warning);
+            }
+        }
+
+        if (_model.IsFavorite)
+        {
+            try
+            {
+                await LocalStorage.ToggleFavoriteAsync(recipeId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Could not mark recipe {RecipeId} as a favourite", recipeId);
+            }
+        }
+    }
 
     private async Task Cancel()
     {
-        if (HasUnsavedChanges())
+        if (_model.DiffersFrom(_pristine))
         {
             bool? confirm = await DialogService.ShowMessageBoxAsync(
                 "Modifications non sauvegardées",
@@ -323,6 +215,15 @@
                 return;
             }
         }
+
+        // Enchaîner plusieurs recettes puis fermer doit quand même rafraîchir la liste
+        // derrière : la boîte a bel et bien écrit quelque chose.
+        if (_addedAny)
+        {
+            MudDialog.Close(DialogResult.Ok(_last));
+            return;
+        }
+
         MudDialog.Cancel();
     }
 }

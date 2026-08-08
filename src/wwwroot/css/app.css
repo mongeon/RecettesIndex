@@ -1152,3 +1152,392 @@
     text-align: center;
     margin-top: 6px;
 }
+
+/* =============================================
+   FORMULAIRE DE RECETTE (blocs 4a et 4b)
+   Styles globaux plutôt qu'isolés : la boîte est rendue par le MudDialogProvider,
+   hors du sous-arbre du composant, et l'attribut de portée n'y suit pas.
+   ============================================= */
+
+.mud-dialog.rform-dialog {
+    /* Deux classes : app.css est chargé AVANT MudBlazor.css, donc une seule perdrait
+       contre .mud-dialog-width-sm à égalité de spécificité. */
+    max-width: 660px;
+}
+
+.rform {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-top: 4px;
+}
+
+.rform-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rform-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+}
+
+/* La précision « optionnel » ne crie pas : c'est une permission, pas un titre. */
+.rform-label-soft {
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--mud-palette-text-secondary);
+}
+
+.rform-input,
+.rform-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    height: 44px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+    .rform-input:focus,
+    .rform-textarea:focus {
+        outline: none;
+        border-color: var(--app-accent-ink);
+    }
+
+    .rform-input::placeholder,
+    .rform-textarea::placeholder {
+        color: var(--mud-palette-text-disabled);
+        font-weight: 600;
+    }
+
+.rform-input-lg {
+    font-size: 16px;
+}
+
+.rform-textarea {
+    height: auto;
+    min-height: 74px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+/* ── Sélecteur segmenté ──────────────────────────────────────────────────── */
+
+.rform-seg {
+    display: flex;
+    gap: 6px;
+}
+
+.rform-seg-btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 6px;
+    border-radius: 9px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: transparent;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+    .rform-seg-btn .mud-icon-root {
+        font-size: 18px;
+    }
+
+    .rform-seg-btn:hover {
+        background-color: var(--app-field);
+    }
+
+.rform-seg-btn-on {
+    background-color: var(--mud-palette-primary);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+    .rform-seg-btn-on:hover {
+        background-color: var(--mud-palette-primary-darken);
+    }
+
+/* ── Rangée de source ────────────────────────────────────────────────────── */
+
+.rform-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.rform-grow {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Le champ de page est étroit et préfixé : « p. » dit ce qu'on attend sans libellé. */
+.rform-page {
+    flex: 0 0 104px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+    padding-left: 10px;
+    border-radius: 10px;
+    background-color: var(--app-field);
+}
+
+.rform-page-prefix {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--mud-palette-text-disabled);
+}
+
+    .rform-page .rform-input {
+        padding-left: 0;
+        background: none;
+        font-variant-numeric: tabular-nums;
+    }
+
+.rform-hint,
+.rform-note,
+.rform-error {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.rform-hint {
+    color: var(--mud-palette-text-disabled);
+}
+
+/* Bordure pointillée : la case est bien là, elle n'attend simplement rien. */
+.rform-note {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed var(--mud-palette-lines-default);
+    color: var(--mud-palette-text-secondary);
+}
+
+.rform-error {
+    color: var(--mud-palette-error);
+}
+
+/* ── Autocomplétion de source ────────────────────────────────────────────── */
+
+.rform-pick {
+    position: relative;
+}
+
+.rform-pick-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1399;
+}
+
+.rform-pick-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 1400;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 5px;
+    border-radius: 10px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.rform-pick-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--mud-palette-text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+    .rform-pick-option:hover {
+        background-color: var(--app-field);
+    }
+
+.rform-pick-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rform-pick-meta {
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--mud-palette-text-disabled);
+}
+
+/* L'entrée de création est en turquoise : c'est une action, pas un résultat de plus. */
+.rform-pick-create {
+    color: var(--app-teal-ink);
+}
+
+    .rform-pick-create .mud-icon-root {
+        font-size: 18px;
+    }
+
+.rform-pick-empty {
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--mud-palette-text-disabled);
+}
+
+/* ── Note et favori ──────────────────────────────────────────────────────── */
+
+.rform-rating {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.rform-rating-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--mud-palette-text-secondary);
+}
+
+.rform-fav {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    margin-left: auto;
+    border-radius: 9px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background: none;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+    .rform-fav .mud-icon-root {
+        font-size: 18px;
+    }
+
+.rform-fav-on {
+    color: var(--app-accent-ink);
+    border-color: var(--app-accent-ink);
+}
+
+/* ── Pied ────────────────────────────────────────────────────────────────── */
+
+.rform-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+}
+
+.rform-foot-hint {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--mud-palette-text-disabled);
+}
+
+.rform-foot-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rform-btn {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: none;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+    .rform-btn:hover:not(:disabled) {
+        background-color: var(--app-field);
+    }
+
+    .rform-btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+    }
+
+.rform-btn-outline {
+    border-color: var(--mud-palette-lines-default);
+    color: var(--mud-palette-text-primary);
+}
+
+.rform-btn-filled {
+    background-color: var(--mud-palette-primary);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+    .rform-btn-filled:hover:not(:disabled) {
+        background-color: var(--mud-palette-primary-darken);
+    }
+
+/* Sur téléphone, le pied passe en colonne et les boutons prennent la largeur : trois
+   boutons dont un long libellé ne tiennent pas sur 390px. */
+@media (max-width: 599px) {
+    .rform-foot {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rform-foot-hint {
+        display: none;
+    }
+
+    .rform-foot-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .rform-seg-btn span {
+        display: none;
+    }
+}

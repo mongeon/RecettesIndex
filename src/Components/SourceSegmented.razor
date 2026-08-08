@@ -1,0 +1,50 @@
+@using MudBlazor
+@using RecettesIndex.Services
+
+@*
+    Le sélecteur segmenté « d'où ça vient » (bloc 4a).
+
+    Quatre boutons plutôt qu'une liste déroulante ou quatre boutons radio empilés : les
+    quatre cas sont visibles d'un coup d'œil, un seul clic suffit, et la rangée de champs
+    qui suit change avec le choix — on n'affiche jamais un numéro de page pour une
+    recette maison.
+*@
+
+<div class="rform-seg" role="radiogroup" aria-label="D'où ça vient">
+    @foreach (var kind in RecipeFormModel.SourceOrder)
+    {
+        <button type="button"
+                class="@(kind == Value ? "rform-seg-btn rform-seg-btn-on" : "rform-seg-btn")"
+                role="radio"
+                aria-checked="@(kind == Value)"
+                @onclick="() => Select(kind)">
+            <MudIcon Icon="@IconFor(kind)" />
+            <span>@LabelFor(kind)</span>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RecipeSourceKind Value { get; set; }
+
+    [Parameter] public EventCallback<RecipeSourceKind> ValueChanged { get; set; }
+
+    private Task Select(RecipeSourceKind kind) =>
+        kind == Value ? Task.CompletedTask : ValueChanged.InvokeAsync(kind);
+
+    private static string LabelFor(RecipeSourceKind kind) => kind switch
+    {
+        RecipeSourceKind.Book => "Livre",
+        RecipeSourceKind.Store => "Magasin",
+        RecipeSourceKind.Web => "Lien",
+        _ => "Maison"
+    };
+
+    private static string IconFor(RecipeSourceKind kind) => kind switch
+    {
+        RecipeSourceKind.Book => Icons.Material.Outlined.MenuBook,
+        RecipeSourceKind.Store => Icons.Material.Outlined.Storefront,
+        RecipeSourceKind.Web => Icons.Material.Outlined.Language,
+        _ => Icons.Material.Outlined.Home
+    };
+}

@@ -1,0 +1,234 @@
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
+@using Microsoft.Extensions.Logging
+@inject IBookService BookService
+@inject IStoreService StoreService
+@inject ILogger<RecipeForm> Logger
+
+@*
+    Le corps du formulaire de recette (blocs 4a et 4b), partagé par la boîte d'ajout et
+    celle de modification.
+
+    Une seule colonne, dans l'ordre où l'on parle d'une recette : le nom, d'où ça vient,
+    ce qu'on en pense. Les deux boîtes rendaient auparavant leur propre copie de tout
+    ça — mêmes champs, même logique de source, deux endroits où la corriger.
+
+    Le formulaire n'enregistre pas la recette : il remplit le Model, et la boîte
+    l'enregistre. Il écrit en revanche les livres et les commerces créés à la volée,
+    puisque leur identifiant doit exister avant que la recette n'y pointe.
+*@
+
+<div class="rform">
+    <div class="rform-group">
+        <label class="rform-label" for="rform-name">Nom de la recette</label>
+        <input id="rform-name"
+               type="text"
+               class="rform-input rform-input-lg"
+               value="@Model.Name"
+               autocomplete="off"
+               @oninput="@(e => Model.Name = e.Value?.ToString() ?? string.Empty)" />
+    </div>
+
+    <div class="rform-group">
+        <div class="rform-label">D'où ça vient</div>
+        <SourceSegmented Value="@Model.Source" ValueChanged="@OnSourceChanged" />
+
+        @switch (Model.Source)
+        {
+            case RecipeSourceKind.Book:
+                <div class="rform-row">
+                    <div class="rform-grow">
+                        <SourcePicker Options="@BookOptions"
+                                      SelectedId="@Model.Book?.Id"
+                                      SelectedName="@Model.Book?.Name"
+                                      Placeholder="Chercher un livre…"
+                                      CreateLabel="Créer le livre"
+                                      OnSelected="@OnBookSelected"
+                                      OnCreate="@CreateBookAsync" />
+                    </div>
+                    <div class="rform-page">
+                        <span class="rform-page-prefix">p.</span>
+                        <input type="number"
+                               class="rform-input"
+                               min="1"
+                               aria-label="Numéro de page"
+                               value="@Model.BookPage"
+                               @oninput="OnPageInput" />
+                    </div>
+                </div>
+                <p class="rform-hint">L'auteur est repris du livre — rien à saisir.</p>
+                break;
+
+            case RecipeSourceKind.Store:
+                <SourcePicker Options="@StoreOptions"
+                              SelectedId="@Model.Store?.Id"
+                              SelectedName="@Model.Store?.Name"
+                              Placeholder="Chercher un commerce…"
+                              CreateLabel="Créer le commerce"
+                              OnSelected="@OnStoreSelected"
+                              OnCreate="@CreateStoreAsync" />
+                break;
+
+            case RecipeSourceKind.Web:
+                <input type="url"
+                       class="rform-input"
+                       placeholder="ricardocuisine.com/recettes/…"
+                       aria-label="Adresse du lien"
+                       value="@Model.Url"
+                       @oninput="@(e => Model.Url = e.Value?.ToString())" />
+                <p class="rform-hint">Le nom du site est déduit de l'adresse — rien à saisir.</p>
+                break;
+
+            default:
+                <p class="rform-note">Recette maison — rien d'autre à saisir.</p>
+                break;
+        }
+
+        @if (!string.IsNullOrEmpty(_sourceError))
+        {
+            <p class="rform-error">@_sourceError</p>
+        }
+    </div>
+
+    <div class="rform-group">
+        <div class="rform-label">
+            Votre note
+            <span class="rform-label-soft">· optionnel, à remplir après l'avoir cuisinée</span>
+        </div>
+        <div class="rform-rating">
+            <PizzaRating Value="@Model.Rating" ReadOnly="false" Size="Size.Large"
+                         ValueChanged="@(v => Model.Rating = v)" />
+            <span class="rform-rating-value">@(Model.Rating > 0 ? $"{Model.Rating} / 5" : "—")</span>
+            <button type="button"
+                    class="@(Model.IsFavorite ? "rform-fav rform-fav-on" : "rform-fav")"
+                    aria-pressed="@Model.IsFavorite"
+                    @onclick="@(() => Model.IsFavorite = !Model.IsFavorite)">
+                <MudIcon Icon="@(Model.IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)" />
+                <span>Favori</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="rform-group">
+        <div class="rform-label">Étiquettes</div>
+        <EtiquettePicker @bind-SelectedIds="Model.EtiquetteIds" />
+    </div>
+
+    <div class="rform-group">
+        <label class="rform-label" for="rform-notes">Notes</label>
+        <textarea id="rform-notes"
+                  class="rform-textarea"
+                  value="@Model.Notes"
+                  @oninput="@(e => Model.Notes = e.Value?.ToString())"></textarea>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RecipeFormModel Model { get; set; } = new();
+
+    /// <summary>Books already in the collection, for the autocomplete.</summary>
+    [Parameter] public List<Book> Books { get; set; } = [];
+
+    [Parameter] public List<Store> Stores { get; set; } = [];
+
+    /// <summary>Raised when a book or a store is created here, so the dialog can refresh its lists.</summary>
+    [Parameter] public EventCallback OnSourcesChanged { get; set; }
+
+    private string? _sourceError;
+
+    private List<SourcePicker.Option> BookOptions => Books
+        .Select(b => new SourcePicker.Option(b.Id, b.Name, AuthorLine(b)))
+        .ToList();
+
+    private List<SourcePicker.Option> StoreOptions => Stores
+        .Select(s => new SourcePicker.Option(s.Id, s.Name, s.Address ?? string.Empty))
+        .ToList();
+
+    private static string AuthorLine(Book book) =>
+        book.Authors is { Count: > 0 } authors
+            ? string.Join(" et ", authors.Select(a => a.FullName))
+            : string.Empty;
+
+    /// <summary>
+    /// Changing the source keeps what the user typed for the others: switching to « maison »
+    /// to check something and back must not lose the book that was already picked.
+    /// </summary>
+    private void OnSourceChanged(RecipeSourceKind kind)
+    {
+        _sourceError = null;
+        Model.Source = kind;
+    }
+
+    private void OnPageInput(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        Model.BookPage = int.TryParse(raw, out var page) && page > 0 ? page : null;
+    }
+
+    private void OnBookSelected(SourcePicker.Option option)
+    {
+        _sourceError = null;
+        Model.Book = Books.FirstOrDefault(b => b.Id == option.Id);
+    }
+
+    private void OnStoreSelected(SourcePicker.Option option)
+    {
+        _sourceError = null;
+        Model.Store = Stores.FirstOrDefault(s => s.Id == option.Id);
+    }
+
+    /// <summary>
+    /// Creates the book the user just typed and selects it, without leaving the dialog.
+    /// </summary>
+    /// <remarks>
+    /// No author is asked for: it can be added later from the book's own page, and asking
+    /// here would reintroduce exactly the detour this entry exists to remove.
+    /// </remarks>
+    private async Task CreateBookAsync(string name)
+    {
+        _sourceError = null;
+        try
+        {
+            var result = await BookService.CreateAsync(new Book { Name = name }, []);
+            if (!result.IsSuccess || result.Value is null)
+            {
+                _sourceError = result.ErrorMessage ?? "Le livre n'a pas pu être créé.";
+                return;
+            }
+
+            Books.Add(result.Value);
+            Model.Book = result.Value;
+            await OnSourcesChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating book {Name} from the recipe form", name);
+            _sourceError = "Le livre n'a pas pu être créé.";
+        }
+    }
+
+    private async Task CreateStoreAsync(string name)
+    {
+        _sourceError = null;
+        try
+        {
+            var result = await StoreService.CreateAsync(new Store { Name = name });
+            if (!result.IsSuccess || result.Value is null)
+            {
+                _sourceError = result.ErrorMessage ?? "Le commerce n'a pas pu être créé.";
+                return;
+            }
+
+            Stores.Add(result.Value);
+            Model.Store = result.Value;
+            await OnSourcesChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating store {Name} from the recipe form", name);
+            _sourceError = "Le commerce n'a pas pu être créé.";
+        }
+    }
+}
