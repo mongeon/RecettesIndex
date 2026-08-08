@@ -149,6 +149,17 @@
     max-width: 66ch;
 }
 
+/* Le panneau est un rail de droite, et doit s'aligner sur le bord du bandeau qui prend
+   toute la largeur au-dessus. Sans cette marge, il se contente de suivre la colonne des
+   notes — qui s'arrête à 66ch — et flotte au milieu de la page.
+
+   Sélecteur d'élément en plus de la classe : la règle traverse la frontière du composant
+   enfant par ::deep, où elle serait à égalité de spécificité avec celle du panneau
+   lui-même, et l'ordre des fichiers dans le paquet décide alors seul. */
+.detail-columns ::deep aside.source-panel {
+    margin-left: auto;
+}
+
 .detail-notes-label {
     font-size: 11px;
     font-weight: 800;
@@ -181,6 +192,14 @@
     .detail-notes {
         max-width: none;
         width: 100%;
+    }
+
+    /* En colonne, la marge n'a plus rien à pousser ; c'est align-self qui compte, parce
+       que le conteneur aligne ses éléments au début et que le panneau se réduirait
+       sinon à la largeur de son contenu. */
+    .detail-columns ::deep aside.source-panel {
+        margin-left: 0;
+        align-self: stretch;
     }
 }
 
