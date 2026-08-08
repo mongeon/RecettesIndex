@@ -1,799 +1,325 @@
 @page "/"
-@using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Logging
 @using MudBlazor
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
-@using RecettesIndex.Components
 @inject AuthService AuthService
-@inject IDialogService DialogService
-@inject NavigationManager NavigationManager
 @inject IRecipeService RecipeService
-@inject IBookService BookService
-@inject IAuthorService AuthorService
-@inject IStoreService StoreService
+@inject IEtiquetteService EtiquetteService
 @inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@inject PaletteLauncher PaletteLauncher
 @inject ISnackbar Snackbar
 @inject ILogger<Home> Logger
 @implements IDisposable
 
-<PageTitle>Mes Recettes - Votre Collection de Recettes</PageTitle>
+@*
+    L'accueil maigre (bloc 3a).
 
-<!-- Hero Section -->
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-0">
-    <MudPaper Elevation="0" Class="hero-section rounded-lg mb-6 overflow-hidden">
-        <MudContainer Class="py-8 py-md-16">
-            <MudGrid>
-                <MudItem xs="12" sm="10" md="8" lg="6">
-                    <MudText Typo="Typo.h2" Color="Color.Surface" Style="font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.3);" Class="mb-3 position-relative">
-                        Découvrez de Délicieuses Recettes
-                    </MudText>
-                    <MudText Typo="Typo.h6" Color="Color.Surface" Class="mb-4 position-relative" Style="font-size: 1.1rem; opacity: 0.95;">
-                        Votre collection personnelle de trésors culinaires, organisée par livres et auteurs.
-                    </MudText>
-                    
-                    <div class="d-flex flex-column flex-sm-row gap-3 position-relative">
-                        <MudButton Variant="Variant.Filled" 
-                                   Color="Color.Secondary" 
-                                   Size="Size.Large" 
-                                   Href="/recipes"
-                                   StartIcon="@Icons.Material.Filled.MenuBook"
-                                   Style="border-radius: 25px; font-weight: 600;">
-                            Parcourir les Recettes
-                        </MudButton>
-                        @if (AuthService.IsAuthenticated)
-                        {
-                            <MudButton Variant="Variant.Outlined" 
-                                       Color="Color.Surface" 
-                                       Size="Size.Large"
-                                       StartIcon="@Icons.Material.Filled.Add" 
-                                       OnClick="ShowAddRecipeDialog"
-                                       Style="border-radius: 25px; border-color: currentColor; font-weight: 600;">
-                                Ajouter une Recette
-                            </MudButton>
-                        }
-                    </div>
-                </MudItem>
-            </MudGrid>
-        </MudContainer>
-    </MudPaper>
+    L'ancien accueil vendait l'app à quelqu'un qui l'utilise déjà : un bandeau dégradé,
+    quatre compteurs, deux carrousels, et un bouton « Parcourir les Recettes » menant à
+    la page qu'on cherchait justement à atteindre. Rien de tout ça ne répond à « c'était
+    où, cette recette ? ».
 
-    <!-- Stats Cards -->
-    <div class="@(!loadingCounts ? "fade-in" : "")">
-        @if (!string.IsNullOrWhiteSpace(countsErrorMessage))
+    Il ne reste que ce qu'on veut 90 % du temps : de quoi chercher, et trois listes
+    courtes de ce qu'on est en train de faire. Les statistiques déménagent au tableau de
+    bord, dont c'est le sujet.
+*@
+
+<PageTitle>Mes Recettes</PageTitle>
+
+<div class="home">
+    <div class="home-hero">
+        <h1 class="home-title">Qu'est-ce que vous cherchez&nbsp;?</h1>
+
+        @* Un bouton déguisé en champ : la saisie se fait dans la palette, qui sait déjà
+           chercher dans les recettes, les livres et les magasins. Deux champs de
+           recherche voudraient dire deux recherches à tenir d'accord. *@
+        <button type="button" class="home-search" @onclick="OpenPalette">
+            <MudIcon Icon="@Icons.Material.Outlined.Search" Class="home-search-icon" />
+            <span class="home-search-hint">Une recette, un livre, un magasin…</span>
+            <span class="home-search-badge">@ShortcutLabel</span>
+        </button>
+
+        @if (_topTags.Count > 0)
         {
-            <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">@countsErrorMessage</MudAlert>
+            <div class="home-tags">
+                @foreach (var tag in _topTags)
+                {
+                    <a class="home-tag" href="@($"/recipes?tags={tag.Id}")">@tag.Name</a>
+                }
+            </div>
         }
-        <MudGrid Class="mb-6">
-            @if (loadingCounts)
-            {
-                @for (int i = 0; i < 4; i++)
-                {
-                    <MudItem xs="12" sm="6" md="6" lg="3">
-                        <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                            <div class="d-flex justify-center mb-4">
-                                <MudSkeleton SkeletonType="SkeletonType.Circle" Width="48px" Height="48px" />
-                            </div>
-                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="32px" Class="mb-2" />
-                            <MudSkeleton SkeletonType="SkeletonType.Text" Width="120px" Height="20px" />
-                            <MudSpacer />
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="36px" />
-                        </MudPaper>
-                    </MudItem>
-                }
-            }
-            else
-            {
-                <MudItem xs="12" sm="6" md="6" lg="3">
-                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                        <div class="d-flex justify-center mb-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Restaurant" Color="Color.Primary" Size="Size.Large" />
-                        </div>
-                        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalRecipesCount</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Primary">Recettes Totales</MudText>
-                        <MudSpacer />
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" Href="/recipes">Voir Tout</MudButton>
-                    </MudPaper>
-                </MudItem>
-                
-                <MudItem xs="12" sm="6" md="6" lg="3">
-                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                        <div class="d-flex justify-center mb-4">
-                            <MudIcon Icon="@Icons.Material.Filled.AutoStories" Color="Color.Secondary" Size="Size.Large" />
-                        </div>
-                        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">
-                            @totalBooksCount
-                        </MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">Livres de Recettes</MudText>
-                        <MudSpacer />
-                        <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Href="/books">Voir Tout</MudButton>
-                    </MudPaper>
-                </MudItem>
-
-                <MudItem xs="12" sm="6" md="6" lg="3">
-                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                        <div class="d-flex justify-center mb-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Tertiary" Size="Size.Large" />
-                        </div>
-                        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalAuthorsCount</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Tertiary">Auteurs</MudText>
-                        <MudSpacer />
-                        <MudButton Variant="Variant.Text" Color="Color.Tertiary" FullWidth="true" Href="/authors">Voir Tout</MudButton>
-                    </MudPaper>
-                </MudItem>
-
-                <MudItem xs="12" sm="6" md="6" lg="3">
-                    <MudPaper Elevation="0" Outlined="true" Class="pa-4 pa-sm-6 rounded-lg h-100 d-flex flex-column">
-                        <div class="d-flex justify-center mb-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Storefront" Color="Color.Success" Size="Size.Large" />
-                        </div>
-                        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">@totalStoresCount</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Success">Magasins &amp; Restaurants</MudText>
-                        <MudSpacer />
-                        <MudButton Variant="Variant.Text" Color="Color.Success" FullWidth="true" Href="/stores">Voir Tout</MudButton>
-                    </MudPaper>
-                </MudItem>
-            }
-        </MudGrid>
     </div>
 
-    <!-- Newest Recipes Section -->
-    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">
-        <MudIcon Icon="@Icons.Material.Filled.NewReleases" Class="mr-2" /> Nouvelles Recettes
-    </MudText>
-    
-    @if (loadingNewest)
+    @if (_loading)
     {
-        <div class="d-none d-sm-flex overflow-auto pb-4 gap-4 flex-nowrap mb-6 recipe-scroll">
-            @for (int i = 0; i < 5; i++)
-            {
-                <div class="flex-shrink-0" style="width: 320px;">
-                    <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" Class="mb-3" />
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Height="24px" Class="mb-2" />
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Height="16px" />
-                        <div class="d-flex gap-2 mt-3">
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
-                        </div>
-                    </MudPaper>
-                </div>
-            }
+        <div class="home-loading">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
         </div>
-        
-        <!-- Mobile skeleton -->
-        <div class="d-block d-sm-none mb-6">
-            <MudGrid>
-                @for (int i = 0; i < 3; i++)
-                {
-                    <MudItem xs="12">
-                        <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="150px" Class="mb-3" />
-                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="24px" Class="mb-2" />
-                            <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Height="16px" />
-                            <div class="d-flex gap-2 mt-3">
-                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
-                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
-                            </div>
-                        </MudPaper>
-                    </MudItem>
-                }
-            </MudGrid>
-        </div>
-    }
-    else if (!string.IsNullOrWhiteSpace(newestErrorMessage))
-    {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-4">@newestErrorMessage</MudAlert>
-    }
-    else if (newestRecipes.Count == 0)
-    {
-        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">Aucune recette trouvée. Commencez par ajouter votre première recette!</MudAlert>
     }
     else
     {
-        <div class="d-none d-sm-flex overflow-auto pb-4 gap-4 flex-nowrap mb-6 recipe-scroll">
-            @foreach (var recipe in newestRecipes)
-            {
-                var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
-                <div class="flex-shrink-0" style="width: 320px;">
-                    <RecipeCard Recipe="@recipe"
-                               Book="@book"
-                               IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                               OnToggleFavorite="@ToggleFavorite" />
+        <div class="home-cards">
+            <section class="home-card">
+                <div class="home-card-head">
+                    <MudIcon Icon="@Icons.Material.Outlined.History" Class="home-card-icon" />
+                    <span>Consultées récemment</span>
                 </div>
-            }
-        </div>
-
-        <!-- Vertical stacked grid for mobile -->
-        <div class="d-block d-sm-none mb-6">
-            <MudGrid>
-                @foreach (var recipe in newestRecipes)
+                @if (_recent.Count == 0)
                 {
-                    var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
-                    <MudItem xs="12">
-                        <RecipeCard Recipe="@recipe"
-                                   Book="@book"
-                                   IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                                   OnToggleFavorite="@ToggleFavorite" />
-                    </MudItem>
+                    <p class="home-card-empty">Rien encore — la prochaine recette ouverte apparaîtra ici.</p>
                 }
-            </MudGrid>
-        </div>
-    }
+                else
+                {
+                    @foreach (var row in _recent)
+                    {
+                        <a class="home-row" href="@($"/recipes/{row.Id}")">
+                            <span class="home-row-name">@row.Name</span>
+                            <span class="home-row-meta home-row-meta-accent">@row.Meta</span>
+                        </a>
+                    }
+                }
+            </section>
 
-    <!-- Random Recipes Section -->
-    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
-        <MudText Typo="Typo.h4" Color="Color.Secondary">
-            <MudIcon Icon="@Icons.Material.Filled.Shuffle" Class="mr-2" /> Découvrez des Recettes Aléatoires
-        </MudText>
-        
-        <!-- Filter options for random recipes -->
-        <MudStack Row Spacing="2" AlignItems="AlignItems.Center" Class="d-none d-sm-flex">
-            <MudButtonGroup Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small">
-                <MudButton OnClick="() => SetRandomFilter(null)"
-                          Variant="@(randomFilterRating == null ? Variant.Filled : Variant.Outlined)">
-                    Toutes
-                </MudButton>
-                <MudButton OnClick="() => SetRandomFilter(5)"
-                          Variant="@(randomFilterRating == 5 ? Variant.Filled : Variant.Outlined)"
-                          StartIcon="@Icons.Material.Filled.Star">
-                    5⭐
-                </MudButton>
-                <MudButton OnClick="() => SetRandomFilter(4)"
-                          Variant="@(randomFilterRating == 4 ? Variant.Filled : Variant.Outlined)"
-                          StartIcon="@Icons.Material.Filled.Star">
-                    4+⭐
-                </MudButton>
-            </MudButtonGroup>
-            
-            <MudTooltip Text="Priorité des recettes">
-                <MudToggleIconButton Toggled="@smartRandomization"
-                                    ToggledChanged="@(async (bool val) => { smartRandomization = val; await OnSmartRandomizationChanged(val); })"
-                                    Icon="@Icons.Material.Filled.Sort"
-                                    ToggledIcon="@Icons.Material.Filled.AutoAwesome"
-                                    Color="Color.Secondary"
-                                    ToggledColor="Color.Tertiary"
-                                    Size="Size.Small"
-                                    aria-label="@(smartRandomization ? "Désactiver le mode intelligent" : "Activer le mode intelligent")" />
-            </MudTooltip>
-        </MudStack>
-    </MudStack>
-    
-    <!-- Mobile filter chips -->
-    <div class="d-flex d-sm-none mb-3 gap-2 flex-wrap">
-        <MudChip T="string" Size="Size.Small" 
-                 Color="@(randomFilterRating == null ? Color.Secondary : Color.Default)"
-                 OnClick="() => SetRandomFilter(null)"
-                 aria-label="Afficher toutes les recettes">
-            Toutes
-        </MudChip>
-        <MudChip T="string" Size="Size.Small"
-                 Color="@(randomFilterRating == 5 ? Color.Secondary : Color.Default)"
-                 Icon="@Icons.Material.Filled.Star"
-                 OnClick="() => SetRandomFilter(5)"
-                 aria-label="Filtrer les recettes 5 étoiles">
-            5⭐
-        </MudChip>
-        <MudChip T="string" Size="Size.Small"
-                 Color="@(randomFilterRating == 4 ? Color.Secondary : Color.Default)"
-                 Icon="@Icons.Material.Filled.Star"
-                 OnClick="() => SetRandomFilter(4)"
-                 aria-label="Filtrer les recettes 4 étoiles et plus">
-            4+⭐
-        </MudChip>
-        <MudChip T="string" Size="Size.Small"
-                 Color="@(smartRandomization ? Color.Tertiary : Color.Default)"
-                 Icon="@(smartRandomization ? Icons.Material.Filled.AutoAwesome : Icons.Material.Filled.Sort)"
-                 OnClick="async () => { smartRandomization = !smartRandomization; await OnSmartRandomizationChanged(smartRandomization); }"
-                 aria-label="@(smartRandomization ? "Désactiver le mode intelligent" : "Activer le mode intelligent")">
-            Smart
-        </MudChip>
-    </div>
-    
-    @if (loadingRandom)
-    {
-        <!-- Desktop skeleton -->
-        <div class="d-none d-md-flex overflow-auto pb-4 gap-4 flex-nowrap mb-6 recipe-scroll">
-            @for (int i = 0; i < 4; i++)
-            {
-                <div class="flex-shrink-0" style="width: 340px;">
-                    <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" Class="mb-3" />
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Height="24px" Class="mb-2" />
-                        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Height="16px" />
-                        <div class="d-flex gap-2 mt-3">
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
+            <section class="home-card">
+                <div class="home-card-head">
+                    <MudIcon Icon="@Icons.Material.Filled.Favorite" Class="home-card-icon home-card-icon-accent" />
+                    <span>Vos favoris</span>
+                </div>
+                @if (_favorites.Count == 0)
+                {
+                    <p class="home-card-empty">Aucun favori — le cœur sur une fiche de recette en ajoute un.</p>
+                }
+                else
+                {
+                    @foreach (var row in _favorites)
+                    {
+                        <a class="home-row" href="@($"/recipes/{row.Id}")">
+                            <span class="home-row-name">@row.Name</span>
+                            <span class="home-row-meta">@row.Meta</span>
+                        </a>
+                    }
+                }
+            </section>
+
+            <section class="home-card">
+                <div class="home-card-head">
+                    <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Class="home-card-icon home-card-icon-teal" />
+                    <span>À évaluer@(_unratedTotal > 0 ? $" · {_unratedTotal}" : "")</span>
+                </div>
+                @if (_toRate.Count == 0)
+                {
+                    <p class="home-card-empty">Tout est noté.</p>
+                }
+                else
+                {
+                    @foreach (var recipe in _toRate)
+                    {
+                        @* Noter sur place : ouvrir la fiche pour poser une note est le
+                           détour qui fait qu'on ne la pose jamais. *@
+                        <div class="home-row home-row-rate">
+                            <a class="home-row-name" href="@($"/recipes/{recipe.Id}")">@recipe.Name</a>
+                            <PizzaRating Value="0"
+                                         ReadOnly="@(!AuthService.IsAuthenticated)"
+                                         Size="Size.Small"
+                                         ValueChanged="@(v => RateAsync(recipe, v))" />
                         </div>
-                    </MudPaper>
-                </div>
-            }
-        </div>
-        
-        <!-- Mobile skeleton -->
-        <div class="d-block d-md-none mb-6">
-            <MudGrid>
-                @for (int i = 0; i < 3; i++)
-                {
-                    <MudItem xs="12">
-                        <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="150px" Class="mb-3" />
-                            <MudSkeleton SkeletonType="SkeletonType.Text" Height="24px" Class="mb-2" />
-                            <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Height="16px" />
-                            <div class="d-flex gap-2 mt-3">
-                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
-                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="32px" />
-                            </div>
-                        </MudPaper>
-                    </MudItem>
+                    }
                 }
-            </MudGrid>
+            </section>
         </div>
     }
-    else if (!string.IsNullOrWhiteSpace(randomErrorMessage))
-    {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-4">@randomErrorMessage</MudAlert>
-    }
-    else if (randomRecipes.Count == 0)
-    {
-        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">
-            @if (randomFilterRating.HasValue)
-            {
-                <text>Aucune recette @(randomFilterRating == 5 ? "5 étoiles" : "4+ étoiles") trouvée. Essayez un autre filtre!</text>
-            }
-            else
-            {
-                <text>Aucune recette trouvée. Commencez par ajouter votre première recette!</text>
-            }
-        </MudAlert>
-    }
-    else
-    {
-        <!-- Desktop: Horizontal scrollable cards -->
-        <div class="d-none d-md-flex overflow-auto pb-4 gap-4 flex-nowrap mb-6 recipe-scroll @(refreshingRandom ? "fading-out" : "")">
-            @foreach (var recipe in randomRecipes)
-            {
-                var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
-                
-                <div class="flex-shrink-0" style="width: 340px;">
-                    <RecipeCard Recipe="@recipe"
-                               Book="@book"
-                               IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                               OnToggleFavorite="@ToggleFavorite" />
-                </div>
-            }
-            
-            <!-- Refresh button at the end -->
-            <div class="flex-shrink-0 d-flex align-center" style="width: 100px;">
-                <MudTooltip Text="Charger d'autres suggestions">
-                    <MudFab Color="Color.Secondary" 
-                            StartIcon="@Icons.Material.Filled.Refresh" 
-                            Size="Size.Large"
-                            OnClick="RefreshRandomRecipes"
-                            Disabled="@refreshingRandom"
-                            Class="@(refreshingRandom ? "refresh-rotate" : "")"
-                            aria-label="Charger d'autres recettes" />
-                </MudTooltip>
-            </div>
-        </div>
-
-        <!-- Mobile/Tablet: Vertical stacked grid -->
-        <div class="d-block d-md-none mb-6 @(refreshingRandom ? "fading-out" : "")">
-            <MudGrid>
-                @foreach (var recipe in randomRecipes)
-                {
-                    var book = allBooks.FirstOrDefault(b => b.Id == recipe.BookId);
-                    <MudItem xs="12">
-                        <RecipeCard Recipe="@recipe"
-                                   Book="@book"
-                                   IsFavorite="@favoriteRecipeIds.Contains(recipe.Id)"
-                                   OnToggleFavorite="@ToggleFavorite" />
-                    </MudItem>
-                }
-            </MudGrid>
-            
-            <!-- Refresh button below cards on mobile -->
-            <div class="d-flex justify-center mt-3">
-                <MudButton Variant="Variant.Outlined" 
-                          Color="Color.Secondary" 
-                          StartIcon="@Icons.Material.Filled.Refresh"
-                          OnClick="RefreshRandomRecipes"
-                          Disabled="@refreshingRandom"
-                          Class="@(refreshingRandom ? "refresh-rotate" : "")">
-                    Autres Suggestions
-                </MudButton>
-            </div>
-        </div>
-    }
-</MudContainer>
-
+</div>
 
 @code {
-    private List<Recipe> newestRecipes = new();
-    private List<Recipe> randomRecipes = new();
-    private List<Book> allBooks = new();
-    private List<int> favoriteRecipeIds = new();
-    private bool loadingNewest = true;
-    private bool loadingRandom = true;
-    private bool refreshingRandom = false;
-    private bool loadingCounts = true;
-    private string? newestErrorMessage;
-    private string? randomErrorMessage;
-    private string? countsErrorMessage;
-    private int totalRecipesCount = 0;
-    private int totalBooksCount = 0;
-    private int totalAuthorsCount = 0;
-    private int totalStoresCount = 0;
-    
-    // Random recipe filter settings
-    private int? randomFilterRating = null;
-    private bool smartRandomization = true;
+    /// <summary>Rows per card. Beyond five, a short list stops being one.</summary>
+    private const int CardRows = 5;
+
+    /// <summary>Tags offered under the search field.</summary>
+    private const int TagCount = 8;
+
+    private sealed record Row(int Id, string Name, string Meta);
+
+    private List<Row> _recent = [];
+    private List<Row> _favorites = [];
+    private List<Recipe> _toRate = [];
+    private List<Etiquette> _topTags = [];
+    private int _unratedTotal;
+    private bool _loading = true;
+    private bool _isApplePlatform;
+
+    private string ShortcutLabel => _isApplePlatform ? "⌘K" : "Ctrl K";
 
     protected override void OnInitialized()
     {
+        // Les pizzas de « À évaluer » ne sont cliquables que connecté : se connecter
+        // depuis la barre du haut doit les activer sans changer de page.
         AuthService.AuthStateChanged += OnAuthStateChanged;
     }
 
+    private void OnAuthStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => AuthService.AuthStateChanged -= OnAuthStateChanged;
+
     protected override async Task OnInitializedAsync()
     {
-        // Load favorites first
-        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
-        
-        // Load all data sections in parallel
-        await Task.WhenAll(
-            LoadNewestRecipes(),
-            LoadRandomRecipes(),
-            LoadBooks(),
-            LoadCounts());
-    }
-
-    private async Task LoadNewestRecipes()
-    {
-        loadingNewest = true;
-        newestErrorMessage = null;
         try
         {
-            var result = await RecipeService.SearchAsync(null, null, null, null, null, 1, 5, "created_at", true);
-            if (!result.IsSuccess)
-            {
-                newestRecipes = new List<Recipe>();
-                newestErrorMessage = result.ErrorMessage ?? "Impossible de charger les nouvelles recettes.";
-                return;
-            }
-
-            newestRecipes = result.Value.Items.ToList();
+            await LoadAsync();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading newest recipes");
-            newestRecipes = new List<Recipe>();
-            newestErrorMessage = "Impossible de charger les nouvelles recettes.";
+            Logger.LogError(ex, "Error loading the home page");
         }
-        loadingNewest = false;
+        finally
+        {
+            _loading = false;
+        }
     }
 
-    private async Task LoadRandomRecipes()
+    private async Task LoadAsync()
     {
-        loadingRandom = true;
-        randomErrorMessage = null;
+        var summariesResult = await RecipeService.GetRecipeSummariesAsync();
+        // Type explicite : le [] de repli n'a pas de type naturel, var ne lui en donnerait pas.
+        IReadOnlyList<Recipe> summaries = summariesResult.IsSuccess ? summariesResult.Value : [];
+
+        var recentEntries = await LocalStorage.GetRecentRecipesAsync();
+        var favoriteIds = await LocalStorage.GetFavoritesAsync();
+
+        // Le filtre de note du service ne couvre que 1 à 5 ; « pas encore notée » se lit
+        // donc côté client, sur les résumés déjà en main.
+        var unrated = summaries.Where(r => r.Rating <= 0).ToList();
+        _unratedTotal = unrated.Count;
+
+        var wanted = new HashSet<int>(recentEntries.Select(r => r.Id));
+        wanted.UnionWith(favoriteIds.Take(CardRows));
+        var unratedIds = unrated
+            .OrderByDescending(r => r.CreationDate)
+            .Take(CardRows)
+            .Select(r => r.Id)
+            .ToList();
+        wanted.UnionWith(unratedIds);
+
+        // Une seule requête pour les trois cartes : elles se recoupent souvent, et trois
+        // allers-retours pour quinze lignes seraient trois de trop.
+        var byId = new Dictionary<int, Recipe>();
+        if (wanted.Count > 0)
+        {
+            var recipesResult = await RecipeService.GetRecipesByIdsAsync(wanted.ToList());
+            if (recipesResult.IsSuccess)
+            {
+                byId = recipesResult.Value.ToDictionary(r => r.Id);
+            }
+        }
+
+        _recent = recentEntries
+            .Where(entry => byId.ContainsKey(entry.Id))
+            .Take(CardRows)
+            .Select(entry => new Row(entry.Id, byId[entry.Id].Name, PageMeta(byId[entry.Id])))
+            .ToList();
+
+        _favorites = favoriteIds
+            .Where(byId.ContainsKey)
+            .Take(CardRows)
+            .Select(id => new Row(id, byId[id].Name, RatingMeta(byId[id].Rating)))
+            .ToList();
+
+        _toRate = unratedIds
+            .Where(byId.ContainsKey)
+            .Select(id => byId[id])
+            .ToList();
+
+        await LoadTagsAsync();
+    }
+
+    private async Task LoadTagsAsync()
+    {
         try
         {
-            // Fetch lightweight summaries (id, book_id, store_id, rating, created_at) for all recipes.
-            // The rating filter is applied server-side when possible (exact match), or post-filtered
-            // for the "4+" case handled client-side below.
-            var fetchRating = (randomFilterRating.HasValue && randomFilterRating.Value != 4)
-                ? randomFilterRating
-                : null;
-            var summariesResult = await RecipeService.GetRecipeSummariesAsync(fetchRating);
-            if (!summariesResult.IsSuccess)
-            {
-                randomRecipes = new List<Recipe>();
-                randomErrorMessage = summariesResult.ErrorMessage ?? "Impossible de charger les suggestions aléatoires.";
-                return;
-            }
-            var summaries = summariesResult.Value!.ToList();
+            var all = await EtiquetteService.GetAllAsync();
+            var counts = await EtiquetteService.GetRecipeCountsAsync();
 
-            // Apply the "4+ stars" rating filter client-side (not directly expressible as an exact rating).
-            if (randomFilterRating.HasValue && randomFilterRating.Value == 4)
-            {
-                summaries = summaries.Where(r => r.Rating >= 4).ToList();
-            }
-
-            if (summaries.Count == 0)
-            {
-                randomRecipes = new List<Recipe>();
-                return;
-            }
-
-            // Select random summaries using weights (rating, recency, favorites).
-            List<Recipe> selectedSummaries;
-            if (smartRandomization)
-            {
-                selectedSummaries = SelectSmartRandomRecipes(summaries, UIConstants.RandomRecipeCount);
-            }
-            else
-            {
-                selectedSummaries = SelectPureRandomRecipes(summaries, UIConstants.RandomRecipeCount);
-            }
-
-            // Fetch only the full recipe objects for the selected IDs.
-            var selectedIds = selectedSummaries.Select(r => r.Id).ToList();
-            var fullRecipesResult = await RecipeService.GetRecipesByIdsAsync(selectedIds);
-            if (!fullRecipesResult.IsSuccess)
-            {
-                randomRecipes = new List<Recipe>();
-                randomErrorMessage = fullRecipesResult.ErrorMessage ?? "Impossible de charger les suggestions aléatoires.";
-                return;
-            }
-            var fullRecipes = fullRecipesResult.Value!;
-            // Preserve the randomized order from the selection step.
-            randomRecipes = selectedIds
-                .Select(id => fullRecipes.FirstOrDefault(r => r.Id == id))
-                .Where(r => r is not null)
-                .Cast<Recipe>()
+            // Les plus utilisées d'abord : une étiquette portée par une seule recette
+            // n'est pas un raccourci, c'est une ligne de plus à lire.
+            _topTags = all
+                .Where(tag => counts.ContainsKey(tag.Id))
+                .OrderByDescending(tag => counts[tag.Id])
+                .ThenBy(tag => tag.Name)
+                .Take(TagCount)
                 .ToList();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading random recipes with rating filter {Rating} and smart mode {SmartMode}", randomFilterRating, smartRandomization);
-            randomRecipes = new List<Recipe>();
-            randomErrorMessage = "Impossible de charger les suggestions aléatoires.";
+            Logger.LogWarning(ex, "Could not load the frequent tags");
+            _topTags = [];
         }
-        finally
-        {
-            loadingRandom = false;
-        }
-    }
-    
-    /// <summary>
-    /// Selects random recipes using weighted randomization based on rating and recency.
-    /// Higher rated and more recent recipes have higher probability of being selected.
-    /// </summary>
-    private List<Recipe> SelectSmartRandomRecipes(List<Recipe> recipes, int count)
-    {
-        var rnd = new Random();
-        var selected = new List<Recipe>();
-        var availableRecipes = new List<Recipe>(recipes);
-        
-        // Calculate weights for each recipe
-        var weights = new Dictionary<Recipe, double>();
-        var now = DateTime.UtcNow;
-        
-        foreach (var recipe in availableRecipes)
-        {
-            // Rating weight (0-1, normalized to 0.5-1.0 range)
-            var ratingWeight = (recipe.Rating >= 1 && recipe.Rating <= 5)
-                ? (recipe.Rating / 5.0 * 0.5) + 0.5 // Maps 1-5 stars to 0.6-1.0
-                : 0.5; // Unrated or invalid ratings get base weight
-            
-            // Recency weight (recipes from last 90 days get bonus)
-            var daysSinceCreation = (now - recipe.CreationDate).TotalDays;
-            var recencyWeight = daysSinceCreation <= 90 
-                ? 1.0 + (1.0 - (daysSinceCreation / 90.0)) * 0.3 // Up to 30% bonus for recent recipes
-                : 1.0;
-            
-            // Favorite bonus
-            var favoriteWeight = favoriteRecipeIds.Contains(recipe.Id) ? 1.1 : 1.0;
-            
-            // Combined weight
-            weights[recipe] = ratingWeight * recencyWeight * favoriteWeight;
-        }
-        
-        // Total weight for probability calculation
-        var totalWeight = weights.Values.Sum();
-        
-        // Select recipes using weighted random selection
-        var targetCount = Math.Min(count, availableRecipes.Count);
-        for (int i = 0; i < targetCount; i++)
-        {
-            var randomValue = rnd.NextDouble() * totalWeight;
-            var cumulativeWeight = 0.0;
-            Recipe? selectedRecipe = null;
-            
-            foreach (var recipe in availableRecipes.ToList())
-            {
-                cumulativeWeight += weights[recipe];
-                if (randomValue <= cumulativeWeight)
-                {
-                    selectedRecipe = recipe;
-                    break;
-                }
-            }
-            
-            if (selectedRecipe != null)
-            {
-                selected.Add(selectedRecipe);
-                availableRecipes.Remove(selectedRecipe);
-                totalWeight -= weights[selectedRecipe];
-                weights.Remove(selectedRecipe);
-            }
-        }
-        
-        return selected;
-    }
-    
-    /// <summary>
-    /// Selects random recipes using Fisher-Yates shuffle (pure random, no weighting).
-    /// </summary>
-    private List<Recipe> SelectPureRandomRecipes(List<Recipe> recipes, int count)
-    {
-        var rnd = new Random();
-        var targetCount = Math.Min(count, recipes.Count);
-        
-        // Fisher-Yates shuffle in-place
-        for (int i = 0; i < targetCount; i++)
-        {
-            int randomIndex = rnd.Next(i, recipes.Count);
-            // Swap to avoid re-selecting
-            (recipes[randomIndex], recipes[i]) = (recipes[i], recipes[randomIndex]);
-        }
-        
-        // Return the first targetCount items
-        return recipes.Take(targetCount).ToList();
-    }
-    
-    private async Task RefreshRandomRecipes()
-    {
-        refreshingRandom = true;
-        StateHasChanged();
-        
-        // Small delay for fade animation
-        await Task.Delay(UIConstants.AnimationDelay);
-        
-        await LoadRandomRecipes();
-        
-        refreshingRandom = false;
-        StateHasChanged();
-        
-        var filterText = randomFilterRating.HasValue 
-            ? (randomFilterRating == 5 ? "5 étoiles" : "4+ étoiles")
-            : "toutes catégories";
-        var modeText = smartRandomization ? "suggestions intelligentes" : "aléatoires";
-        
-        Snackbar.Add($"Nouvelles {modeText} chargées ({filterText})! 🎲", Severity.Info);
-    }
-    
-    private async Task SetRandomFilter(int? rating)
-    {
-        if (randomFilterRating != rating)
-        {
-            randomFilterRating = rating;
-            await RefreshRandomRecipes();
-        }
-    }
-    
-    private async Task OnSmartRandomizationChanged(bool enabled)
-    {
-        smartRandomization = enabled;
-        await RefreshRandomRecipes();
-        
-        if (enabled)
-        {
-            Snackbar.Add("Mode intelligent activé - priorité aux meilleures recettes récentes ✨", Severity.Info);
-        }
-        else
-        {
-            Snackbar.Add("Mode aléatoire pur activé 🎲", Severity.Info);
-        }
-    }
-    
-    private async Task ToggleFavoriteFromCard(Recipe recipe)
-    {
-        await LocalStorage.ToggleFavoriteAsync(recipe.Id);
-        
-        // Refresh favorites list
-        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
-        
-        StateHasChanged();
-        
-        // Show toast notification
-        var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
-        Snackbar.Add(
-            isFavorite ? $"❤️ Ajouté aux favoris" : $"Retiré des favoris",
-            isFavorite ? Severity.Success : Severity.Info
-        );
     }
 
-    private async Task LoadBooks()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender)
+        {
+            return;
+        }
+
         try
         {
-            allBooks = (await BookService.GetAllAsync()).ToList();
+            _isApplePlatform = await JSRuntime.InvokeAsync<bool>("recettesShortcuts.isApple");
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading books for home page");
-            allBooks = new List<Book>();
+            Logger.LogWarning(ex, "Could not read the platform for the shortcut badge");
         }
     }
 
-    private async Task LoadCounts()
+    private Task OpenPalette() => PaletteLauncher.OpenAsync();
+
+    /// <summary>
+    /// Sets a rating without leaving the page, then drops the row from the list — it is no
+    /// longer waiting for one.
+    /// </summary>
+    private async Task RateAsync(Recipe recipe, int rating)
     {
-        countsErrorMessage = null;
-        try
+        if (rating <= 0 || !AuthService.IsAuthenticated)
         {
-            var recipeCountResult = await RecipeService.SearchAsync(null, null, null, null, null, 1, 1);
-            totalRecipesCount = recipeCountResult.IsSuccess ? recipeCountResult.Value.Total : 0;
-
-            var booksTask = BookService.GetAllAsync();
-            var authorsTask = AuthorService.GetAllAsync();
-            var storesTask = StoreService.GetAllAsync();
-            await Task.WhenAll(booksTask, authorsTask, storesTask);
-
-            totalBooksCount = (await booksTask).Count;
-            totalAuthorsCount = (await authorsTask).Count;
-            totalStoresCount = (await storesTask).Count;
-
-            if (!recipeCountResult.IsSuccess)
-            {
-                countsErrorMessage = recipeCountResult.ErrorMessage ?? "Impossible de charger les statistiques du tableau de bord.";
-            }
+            return;
         }
-        catch (Exception ex)
+
+        var updated = new Recipe
         {
-            Logger.LogError(ex, "Error loading home page counts");
-            totalRecipesCount = 0;
-            totalBooksCount = 0;
-            totalAuthorsCount = 0;
-            countsErrorMessage = "Impossible de charger les statistiques du tableau de bord.";
-        }
-        finally
+            Id = recipe.Id,
+            Name = recipe.Name,
+            Rating = rating,
+            Notes = recipe.Notes,
+            BookId = recipe.BookId,
+            BookPage = recipe.BookPage,
+            StoreId = recipe.StoreId,
+            Url = recipe.Url,
+            CreationDate = recipe.CreationDate
+        };
+
+        var result = await RecipeService.UpdateAsync(updated);
+        if (!result.IsSuccess)
         {
-            loadingCounts = false;
+            Snackbar.Add(result.ErrorMessage ?? "La note n'a pas pu être enregistrée.", Severity.Error);
+            return;
         }
+
+        _toRate.RemoveAll(r => r.Id == recipe.Id);
+        _unratedTotal = Math.Max(0, _unratedTotal - 1);
+        Snackbar.Add($"« {recipe.Name} » notée {rating} / 5.", Severity.Success);
     }
 
-    private void ShowRecipeDetails(Recipe recipe)
-    {
-        // Navigate to the recipe details page
-        var uri = $"/recipes/{recipe.Id}";
-        NavigationManager.NavigateTo(uri);
-    }
-    
-    private void PrintRecipe(Recipe recipe)
-    {
-        NavigationManager.NavigateTo($"/recipes/{recipe.Id}/print");
-    }
-    
-    private async Task ToggleFavorite(Recipe recipe)
-    {
-        await LocalStorage.ToggleFavoriteAsync(recipe.Id);
-        
-        // Refresh favorites list
-        favoriteRecipeIds = await LocalStorage.GetFavoritesAsync();
-        
-        StateHasChanged();
-        
-        // Show toast notification
-        var isFavorite = favoriteRecipeIds.Contains(recipe.Id);
-        Snackbar.Add(
-            isFavorite ? $"'{recipe.Name}' ajouté aux favoris ❤️" : $"'{recipe.Name}' retiré des favoris",
-            isFavorite ? Severity.Success : Severity.Info
-        );
-    }
+    private static string PageMeta(Recipe recipe) =>
+        recipe.BookPage.HasValue ? $"p. {recipe.BookPage}" : string.Empty;
 
-    private async Task ShowAddRecipeDialog()
+    private static string RatingMeta(int rating) => rating switch
     {
-        var options = new MudBlazor.DialogOptions { CloseButton = true, BackdropClick = false, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette", options);
-        var result = await dialog.Result;
-        if (result is not null && !result.Canceled && result.Data is Recipe newRecipe)
-        {
-            // Refresh the recipes lists to include the new recipe
-            await LoadNewestRecipes();
-            await LoadRandomRecipes();
-            await LoadCounts(); // Also refresh the counts
-        }
-    }
-
-    private void OnAuthStateChanged()
-    {
-        _ = InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        AuthService.AuthStateChanged -= OnAuthStateChanged;
-    }
+        <= 0 => "—",
+        1 => "1 pizza",
+        _ => $"{rating} pizzas"
+    };
 }

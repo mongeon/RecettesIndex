@@ -9,6 +9,7 @@
 @inject MudBlazor.ISnackbar Snackbar
 @inject RecettesIndex.Services.Abstractions.IErrorLoggingService ErrorLoggingService
 @inject Microsoft.Extensions.Logging.ILogger<MainLayout> Logger
+@inject RecettesIndex.Services.PaletteLauncher PaletteLauncher
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="@_currentTheme" />
 <MudDialogProvider />
@@ -355,6 +356,7 @@
         AuthService.AuthStateChanged += OnAuthStateChanged;
         AuthService.SessionExpired += OnSessionExpired;
         NavigationManager.LocationChanged += OnLocationChanged;
+        PaletteLauncher.Requested += OpenPalette;
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -421,6 +423,7 @@
         AuthService.AuthStateChanged -= OnAuthStateChanged;
         AuthService.SessionExpired -= OnSessionExpired;
         NavigationManager.LocationChanged -= OnLocationChanged;
+        PaletteLauncher.Requested -= OpenPalette;
         _selfRef?.Dispose();
     }
 }
