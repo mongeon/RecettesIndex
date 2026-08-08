@@ -128,9 +128,16 @@
     gap: 20px;
     width: 100%;
     max-width: 1000px;
+    min-width: 0;
 }
 
+/* min-width: 0 est indispensable, pas décoratif : un élément de grille vaut
+   min-width: auto par défaut, donc il refuse de descendre sous la largeur de son
+   contenu. Avec des noms de recette en white-space: nowrap, la colonne prenait la
+   largeur du plus long nom, la grille débordait de la page, et l'ellipse posée sur
+   .home-row-name ne pouvait jamais s'appliquer faute d'être contrainte. */
 .home-card {
+    min-width: 0;
     padding: 16px 18px;
     border-radius: 12px;
     background-color: var(--mud-palette-surface);
