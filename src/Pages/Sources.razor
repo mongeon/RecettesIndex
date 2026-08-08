@@ -104,10 +104,9 @@
         @* Filtrage et tri passent par une variable locale : la propriété est lue deux
            fois par carte — le test de liste vide, puis la boucle — et referait tout le
            travail à chaque lecture. *@
-        @{
-            var visible = Visible;
-            var panelRecipes = SelectedRecipes;
-        }
+        var visible = Visible;
+        var panelRecipes = SelectedRecipes;
+
         <div class="src-body">
             <div class="src-list">
                 <div class="src-list-head">
