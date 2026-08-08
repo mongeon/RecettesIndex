@@ -40,7 +40,7 @@ public class DashboardInsightsTests
     [InlineData(800, "il y a 2 ans")]
     public void Since_ReadsInWords(int daysAgo, string expected)
     {
-        Assert.Equal(expected, DashboardInsights.Since(Now.AddDays(-daysAgo), Now));
+        Assert.Equal(expected, RelativeTime.Since(Now.AddDays(-daysAgo), Now));
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class DashboardInsightsTests
     {
         // 364 jours donnent 12 mois par la division entière, et 364 / 365 donnerait 0 :
         // sans plancher, la carte annoncerait « il y a 0 ans ».
-        Assert.Equal("il y a 1 an", DashboardInsights.Since(Now.AddDays(-364), Now));
+        Assert.Equal("il y a 1 an", RelativeTime.Since(Now.AddDays(-364), Now));
     }
 
     #endregion

@@ -81,7 +81,7 @@ public static class DashboardInsights
             Unrated: unrated
                 .OrderByDescending(r => r.CreationDate)
                 .Take(RowsPerCard)
-                .Select(r => new UnratedRow(r.Id, r.Name, Since(r.CreationDate, now)))
+                .Select(r => new UnratedRow(r.Id, r.Name, RelativeTime.Since(r.CreationDate, now)))
                 .ToList(),
             UnratedTotal: unrated.Count,
             SleepingBooks: sleeping.Take(RowsPerCard).ToList(),
@@ -133,7 +133,7 @@ public static class DashboardInsights
 
             if ((now - stats.Newest).TotalDays >= SleepingAfterDays)
             {
-                rows.Add((new SleepingBookRow(book.Id, book.Name, stats.Count, Since(stats.Newest, now)), stats.Newest));
+                rows.Add((new SleepingBookRow(book.Id, book.Name, stats.Count, RelativeTime.Since(stats.Newest, now)), stats.Newest));
             }
         }
 
@@ -203,28 +203,5 @@ public static class DashboardInsights
             .OrderByDescending(b => b.AverageRating)
             .ThenByDescending(b => b.RecipeCount)
             .ToList();
-    }
-
-    /// <summary>
-    /// How long ago, in words. « il y a 3 mois » says more at a glance than a date does.
-    /// </summary>
-    public static string Since(DateTime from, DateTime now)
-    {
-        var days = (int)(now.Date - from.Date).TotalDays;
-
-        if (days <= 0) return "aujourd'hui";
-        if (days == 1) return "hier";
-        if (days < 30) return $"il y a {days} jours";
-
-        var months = days / 30;
-        if (months < 12)
-        {
-            return months == 1 ? "il y a 1 mois" : $"il y a {months} mois";
-        }
-
-        // Plancher à un an : 364 jours donnent 12 mois par la division précédente, et
-        // 364 / 365 donnerait « il y a 0 ans ».
-        var years = Math.Max(1, days / 365);
-        return years == 1 ? "il y a 1 an" : $"il y a {years} ans";
     }
 }

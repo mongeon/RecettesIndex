@@ -1,0 +1,556 @@
+/* Sources (bloc 4c).
+   Les sélecteurs visant un composant MudBlazor passent par ::deep : la classe posée
+   sur un MudIcon atterrit sur son élément racine, qui ne porte pas l'attribut de
+   portée du composant parent. */
+
+.src-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.src-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--mud-palette-text-primary);
+}
+
+.src-sub {
+    margin: 4px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary);
+}
+
+/* ── Barre de filtres ────────────────────────────────────────────────────── */
+
+.src-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 11px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    margin-bottom: 16px;
+}
+
+.src-search {
+    flex: 1 1 260px;
+    min-width: 0;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+    .src-search:focus {
+        outline: none;
+        border-color: var(--app-accent-ink);
+    }
+
+    .src-search::placeholder {
+        color: var(--mud-palette-text-disabled);
+    }
+
+.src-pills {
+    display: flex;
+    gap: 6px;
+}
+
+.src-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background: none;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+    .src-pill ::deep .mud-icon-root {
+        font-size: 17px;
+    }
+
+    .src-pill:hover {
+        background-color: var(--app-field);
+    }
+
+    .src-pill:focus-visible {
+        outline: 2px solid var(--app-accent-ink);
+        outline-offset: 2px;
+    }
+
+.src-pill-on {
+    background-color: var(--mud-palette-primary);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+    .src-pill-on:hover {
+        background-color: var(--mud-palette-primary-darken);
+    }
+
+    /* L'icône de type garde sa teinte hors sélection ; sur le corail plein elle
+       reprend l'encre du bouton, sinon elle disparaîtrait dans le fond. */
+    .src-pill-on ::deep .mud-icon-root {
+        color: var(--mud-palette-primary-text);
+    }
+
+.src-pill-count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+}
+
+.src-never {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px dashed var(--mud-palette-lines-default);
+    background: none;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+    .src-never:hover {
+        background-color: var(--app-field);
+    }
+
+.src-never-on {
+    border-style: solid;
+    border-color: var(--app-accent-ink);
+    color: var(--app-accent-ink);
+}
+
+/* Le compteur porte l'encre corail même au repos : c'est le chiffre qui donne envie
+   de cliquer, pas le libellé. */
+.src-never-count {
+    color: var(--app-accent-ink);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Liste et panneau ────────────────────────────────────────────────────── */
+
+.src-loading {
+    display: flex;
+    justify-content: center;
+    padding: 32px 0;
+}
+
+.src-failed {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.src-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+.src-list {
+    flex: 1;
+    min-width: 0;
+    border-radius: 11px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    overflow: hidden;
+}
+
+/* Le gabarit est partagé par l'en-tête et les lignes : c'est ce qui aligne les
+   colonnes sans tableau. */
+.src-list-head,
+.src-row {
+    display: grid;
+    grid-template-columns: 1fr 90px 80px 120px;
+    gap: 12px;
+    align-items: center;
+    padding: 0 14px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.src-list-head {
+    height: 36px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.src-right {
+    text-align: right;
+}
+
+.src-row {
+    min-height: 58px;
+    border: none;
+    border-bottom: 1px solid var(--app-line-soft);
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+    .src-row:last-of-type {
+        border-bottom: none;
+    }
+
+    .src-row:hover {
+        background-color: var(--app-field);
+    }
+
+    .src-row:focus-visible {
+        outline: 2px solid var(--app-accent-ink);
+        outline-offset: -2px;
+    }
+
+.src-row-on {
+    background-color: var(--app-accent-soft);
+}
+
+    .src-row-on:hover {
+        background-color: var(--app-accent-soft);
+    }
+
+.src-cell-source {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+    .src-cell-source ::deep .src-row-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+.src-tone-accent {
+    color: var(--app-accent-ink);
+}
+
+.src-tone-teal {
+    color: var(--app-teal-ink);
+}
+
+.src-tone-neutral {
+    color: var(--mud-palette-text-disabled);
+}
+
+.src-names {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.src-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.src-subtitle {
+    font-size: 12.5px;
+    color: var(--mud-palette-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.src-count {
+    font-size: 15px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--mud-palette-text-primary);
+}
+
+.src-rating {
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--mud-palette-text-secondary);
+}
+
+.src-used {
+    font-size: 12.5px;
+    color: var(--mud-palette-text-disabled);
+    white-space: nowrap;
+}
+
+/* « Jamais » est la raison d'être de la page : il porte l'encre corail. */
+.src-used-never {
+    color: var(--app-accent-ink);
+    font-weight: 700;
+}
+
+.src-empty {
+    margin: 0;
+    padding: 20px 14px;
+    font-size: 13.5px;
+    color: var(--mud-palette-text-disabled);
+}
+
+/* ── Panneau de détail ───────────────────────────────────────────────────── */
+
+.src-panel {
+    flex: 0 0 320px;
+    padding: 18px;
+    border-radius: 11px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    align-self: flex-start;
+}
+
+.src-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.src-panel-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background-color: var(--app-field);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .src-panel-icon ::deep .mud-icon-root {
+        font-size: 20px;
+    }
+
+.src-panel-names {
+    min-width: 0;
+}
+
+.src-panel-name {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: var(--mud-palette-text-primary);
+}
+
+.src-panel-sub {
+    font-size: 12.5px;
+    color: var(--mud-palette-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.src-tiles {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.src-tile {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background-color: var(--app-field);
+}
+
+.src-tile-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+}
+
+.src-tile-value {
+    font-size: 20px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--mud-palette-text-primary);
+}
+
+.src-panel-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+    margin-bottom: 2px;
+}
+
+.src-panel-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--app-line-soft);
+    text-decoration: none;
+    color: inherit;
+}
+
+    .src-panel-row:last-of-type {
+        border-bottom: none;
+    }
+
+.src-panel-row-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--mud-palette-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.src-panel-row:hover .src-panel-row-name {
+    color: var(--app-accent-ink);
+}
+
+.src-panel-row-meta {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--mud-palette-text-disabled);
+}
+
+.src-panel-empty {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--mud-palette-text-disabled);
+}
+
+.src-panel-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.src-btn {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 9px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background: none;
+    color: var(--mud-palette-text-secondary);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.src-btn-filled {
+    flex: 1;
+    background-color: var(--mud-palette-primary);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+    .src-btn-filled:hover {
+        background-color: var(--mud-palette-primary-darken);
+    }
+
+.src-btn-icon {
+    width: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .src-btn-icon:hover {
+        background-color: var(--app-field);
+    }
+
+    .src-btn-icon ::deep .mud-icon-root {
+        font-size: 18px;
+    }
+
+/* Sous 1100px le panneau passe sous la liste : à 320px figés il mangerait la colonne
+   « dernier usage », qui est ce qu'on vient lire. */
+@media (max-width: 1099px) {
+    .src-body {
+        flex-direction: column;
+    }
+
+    .src-panel {
+        flex: 1 1 auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* Sous 768px les trois colonnes chiffrées ne tiennent plus : la ligne repasse en deux
+   étages, le nom au-dessus, les chiffres en dessous. */
+@media (max-width: 767px) {
+    .src-list-head {
+        display: none;
+    }
+
+    .src-row {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "source count"
+            "meta   used";
+        row-gap: 2px;
+        padding: 10px 14px;
+    }
+
+    .src-cell-source {
+        grid-area: source;
+    }
+
+    .src-count {
+        grid-area: count;
+    }
+
+    .src-rating {
+        grid-area: meta;
+        text-align: left;
+        padding-left: 30px;
+    }
+
+    .src-used {
+        grid-area: used;
+    }
+}
