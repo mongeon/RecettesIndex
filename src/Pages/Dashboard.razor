@@ -3,609 +3,320 @@
 @using RecettesIndex.Models
 @using RecettesIndex.Services
 @using RecettesIndex.Services.Abstractions
-@using RecettesIndex.Components
 @using Microsoft.Extensions.Logging
+@inject AuthService AuthService
 @inject IRecipeService RecipeService
-@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 @inject ILogger<Dashboard> Logger
+@implements IDisposable
 
-<PageTitle>Tableau de Bord - Mes Recettes</PageTitle>
+@*
+    Le tableau de bord (bloc 5b).
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4 pa-0" />
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-6">
-        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Style="font-size: 2rem;" />
-        <MudText Typo="Typo.h4">Tableau de Bord</MudText>
-    </MudStack>
-    
-    @if (loading)
+    Quatre questions au lieu de quatre compteurs. « 42 recettes » ne dit rien qu'on ne
+    sache déjà ; « qu'est-ce qui attend une note ? » se répond, et la réponse est
+    cliquable. Chaque ligne mène à la recette ou au livre concerné.
+
+    Contrainte tenue : aucun nouveau champ au modèle. Tout se calcule depuis la date
+    d'ajout, la note, les étiquettes et la source. Une cinquième carte « qu'est-ce qu'on
+    aime et qu'on a oublié » avait été proposée puis retirée parce qu'elle exigeait une
+    date de dernière cuisson — la réintroduire par la bande serait la même erreur.
+*@
+
+<PageTitle>Tableau de bord - Mes Recettes</PageTitle>
+
+<div class="dash">
+    <header class="dash-head">
+        <h1 class="dash-title">Tableau de bord</h1>
+        @if (_view is not null)
+        {
+            <p class="dash-sub">@Summary</p>
+        }
+    </header>
+
+    @if (_loading)
     {
-        <div class="d-flex justify-center my-8">
-            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <div class="dash-loading">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
         </div>
+    }
+    else if (_view is null)
+    {
+        <p class="dash-failed">Le tableau de bord n'a pas pu être chargé. Réessayez plus tard.</p>
     }
     else
     {
-        <!-- Summary Stats Cards -->
-        <MudGrid Class="mb-6">
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="3" Class="pa-4 rounded-lg h-100">
-                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@Icons.Material.Filled.Restaurant" Color="Color.Primary" Size="Size.Large" />
-                        <MudText Typo="Typo.h3" Align="Align.Center">@statistics.TotalRecipes</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Primary">Recettes Totales</MudText>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-            
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="3" Class="pa-4 rounded-lg h-100">
-                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@Icons.Material.Filled.AutoStories" Color="Color.Secondary" Size="Size.Large" />
-                        <MudText Typo="Typo.h3" Align="Align.Center">@statistics.TotalBooks</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">Livres de Recettes</MudText>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-            
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="3" Class="pa-4 rounded-lg h-100">
-                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@Icons.Material.Filled.Storefront" Color="Color.Info" Size="Size.Large" />
-                        <MudText Typo="Typo.h3" Align="Align.Center">@statistics.TotalStores</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Info">Magasins/Restaurants</MudText>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-            
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="3" Class="pa-4 rounded-lg h-100">
-                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Large" />
-                        <MudText Typo="Typo.h3" Align="Align.Center">@statistics.AverageRating.ToString("F1")</MudText>
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Warning">Note Moyenne</MudText>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+        <div class="dash-cards">
 
-        <!-- Charts Section -->
-        <MudGrid Class="mb-6">
-            <!-- Rating Distribution Chart -->
-            <MudItem xs="12" md="6">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
-                    <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.PieChart" Class="mr-2" />
-                        Distribution des Notes
-                    </MudText>
-                    @if (ratingChartData.Any())
+            @* ── 1. Qu'est-ce qui attend une note ? ───────────────────────────── *@
+            <section class="dash-card">
+                <h2 class="dash-question">
+                    Qu'est-ce qui attend une note&nbsp;?
+                    @if (_view.UnratedTotal > 0)
                     {
-                        <MudChart T="double" ChartType="ChartType.Donut" Width="300px" Height="300px"
-                                ChartSeries="@([ratingChartData])" ChartLabels="@ratingChartLabels"
-                                ChartOptions="@(new ChartOptions { ChartPalette = new[] { "#4CAF50", "#2196F3", "#FFC107", "#FF9800", "#F44336" } })">
-                        </MudChart>
+                        <span class="dash-count">@_view.UnratedTotal</span>
                     }
-                    else
+                </h2>
+                <p class="dash-why">Ajoutées mais jamais évaluées. Les pizzas se cliquent ici même.</p>
+
+                @if (_view.Unrated.Count == 0)
+                {
+                    <p class="dash-empty">Tout est noté.</p>
+                }
+                else
+                {
+                    @foreach (var row in _view.Unrated)
                     {
-                        <div class="d-flex flex-column align-center justify-center pa-6" style="min-height: 200px;">
-                            <MudIcon Icon="@Icons.Material.Filled.PieChart" Style="font-size: 48px; opacity: 0.25;" Class="mb-3" />
-                            <MudText Typo="Typo.body1" Align="Align.Center" Style="font-weight: 600;">Aucune note encore</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center" Class="mt-1">Évaluez vos recettes pour voir la distribution.</MudText>
+                        <div class="dash-row">
+                            <a class="dash-row-name" href="@($"/recipes/{row.Id}")">@row.Name</a>
+                            <span class="dash-row-meta">@row.Since</span>
+                            <PizzaRating Value="0"
+                                         ReadOnly="@(!AuthService.IsAuthenticated)"
+                                         Size="Size.Small"
+                                         ValueChanged="@(v => RateAsync(row.Id, row.Name, v))" />
                         </div>
                     }
-                </MudPaper>
-            </MudItem>
+                }
+            </section>
 
-            <!-- Activity Trend Chart -->
-            <MudItem xs="12" md="6">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
-                    <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.ShowChart" Class="mr-2" />
-                        Activité (6 derniers mois)
-                    </MudText>
-                    @if (trendSeries.Any())
+            @* ── 2. Quels livres dorment ? ────────────────────────────────────── *@
+            <section class="dash-card">
+                <h2 class="dash-question">
+                    Quels livres dorment&nbsp;?
+                    @if (_view.SleepingTotal > 0)
                     {
-                        <MudChart T="double" ChartType="ChartType.Line" ChartSeries="@trendSeries" ChartLabels="@trendXAxisLabels" Width="100%" Height="300px"
-                                ChartOptions="@(new LineChartOptions { YAxisLines = true, YAxisTicks = 1, YAxisFormat = "0", YAxisRequireZeroPoint = true })"></MudChart>
+                        <span class="dash-count">@_view.SleepingTotal</span>
                     }
-                    else
+                </h2>
+                <p class="dash-why">Aucune recette ajoutée depuis un an — ou jamais.</p>
+
+                @if (_view.SleepingBooks.Count == 0)
+                {
+                    <p class="dash-empty">Tous les livres ont servi cette année.</p>
+                }
+                else
+                {
+                    @foreach (var row in _view.SleepingBooks)
                     {
-                        <div class="d-flex flex-column align-center justify-center pa-6" style="min-height: 200px;">
-                            <MudIcon Icon="@Icons.Material.Filled.ShowChart" Style="font-size: 48px; opacity: 0.25;" Class="mb-3" />
-                            <MudText Typo="Typo.body1" Align="Align.Center" Style="font-weight: 600;">Pas encore d'activité</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center" Class="mt-1">Ajoutez des recettes pour suivre votre activité.</MudText>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="mt-3" Href="/recipes">Voir les recettes</MudButton>
+                        <a class="dash-row" href="@($"/books/{row.Id}")">
+                            <MudIcon Icon="@Icons.Material.Outlined.MenuBook" Class="dash-row-icon" />
+                            <span class="dash-row-name">@row.Name</span>
+                            <span class="dash-row-meta">@RecipeCountLabel(row.RecipeCount)</span>
+                            <span class="dash-row-meta dash-row-meta-accent">@row.Since</span>
+                        </a>
+                    }
+                    <a class="dash-link" href="/books">Voir tous les livres →</a>
+                }
+            </section>
+
+            @* ── 3. De quoi est faite ma collection ? ─────────────────────────── *@
+            <section class="dash-card">
+                <h2 class="dash-question">De quoi est faite ma collection&nbsp;?</h2>
+                <p class="dash-why">Les étiquettes les plus posées, et ce qu'elles valent.</p>
+
+                @if (_view.Tags.Count == 0)
+                {
+                    <p class="dash-empty">Aucune étiquette posée pour l'instant.</p>
+                }
+                else
+                {
+                    var widest = _view.Tags.Max(t => t.Count);
+                    @foreach (var tag in _view.Tags)
+                    {
+                        <div class="dash-bar-row">
+                            <span class="dash-bar-label">@tag.Name</span>
+                            <span class="dash-bar-track">
+                                <span class="dash-bar-fill" style="@Width(tag.Count, widest)"></span>
+                            </span>
+                            <span class="dash-bar-count">@tag.Count</span>
+                            <span class="dash-bar-note">@AverageLabel(tag.AverageRating)</span>
                         </div>
                     }
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+                }
 
-        <!-- Top Rated Recipes & Recent Activity -->
-        <MudGrid Class="mb-6">
-            <MudItem xs="12" md="6">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
-                    <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.Star" Class="mr-2" />
-                        Meilleures Recettes
-                    </MudText>
-                    
-                    @if (statistics.TopRatedRecipes.Any())
-                    {
-                        <MudList T="string" Dense="true">
-                            @foreach (var recipe in statistics.TopRatedRecipes)
+                @if (_view.UntaggedCount > 0)
+                {
+                    <p class="dash-foot">@RecipeCountLabel(_view.UntaggedCount) sans aucune étiquette.</p>
+                }
+            </section>
+
+            @* ── 4. Est-ce que je note honnêtement ? ──────────────────────────── *@
+            <section class="dash-card">
+                <h2 class="dash-question">Est-ce que je note honnêtement&nbsp;?</h2>
+                <p class="dash-why">La répartition des notes, les non évaluées comprises.</p>
+
+                @{
+                    var tallest = Math.Max(1, _view.Ratings.Max(r => r.Count));
+                }
+                @foreach (var row in _view.Ratings)
+                {
+                    <div class="dash-bar-row">
+                        <span class="dash-bar-label dash-bar-label-short">
+                            @if (row.Rating > 0)
                             {
-                                <MudListItem OnClick="@(() => NavigateToRecipe(recipe.Id))">
-                                    <div class="d-flex justify-space-between align-center">
-                                        <MudText>@recipe.Name</MudText>
-                                        <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
-                                            <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
-                                            <MudText>@recipe.Rating</MudText>
-                                        </MudStack>
-                                    </div>
-                                </MudListItem>
-                            }
-                        </MudList>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-column align-center pa-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Star" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucune recette évaluée. Ajoutez une note à vos recettes pour les voir ici.</MudText>
-                        </div>
-                    }
-                </MudPaper>
-            </MudItem>
-
-            <MudItem xs="12" md="6">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg h-100">
-                    <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mr-2" />
-                        Activité Récente
-                    </MudText>
-                    
-                    <MudList T="string" Dense="true">
-                        <MudListItem>
-                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">Dernière recette ajoutée</MudText>
-                            @if (statistics.MostRecentRecipe != null)
-                            {
-                                <MudLink OnClick="@(() => NavigateToRecipe(statistics.MostRecentRecipe.Id))">
-                                    @statistics.MostRecentRecipe.Name
-                                </MudLink>
-                                <MudText Typo="Typo.caption" Class="ml-2">
-                                    @statistics.MostRecentRecipe.CreationDate.ToString("d MMM yyyy")
-                                </MudText>
+                                @row.Rating
+                                <MudIcon Icon="@Icons.Material.Filled.LocalPizza" Class="dash-bar-pizza" />
                             }
                             else
                             {
-                                <MudText Typo="Typo.body2">Aucune recette</MudText>
+                                <span>—</span>
                             }
-                        </MudListItem>
-                        <MudDivider />
-                        <MudListItem>
-                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Dernier livre ajouté</MudText>
-                            @if (statistics.MostRecentBook != null)
-                            {
-                                <MudLink OnClick="@(() => NavigateToBook(statistics.MostRecentBook.Id))">
-                                    @statistics.MostRecentBook.Name
-                                </MudLink>
-                                <MudText Typo="Typo.caption" Class="ml-2">
-                                    @statistics.MostRecentBook.CreationDate.ToString("d MMM yyyy")
-                                </MudText>
-                            }
-                            else
-                            {
-                                <MudText Typo="Typo.body2">Aucun livre</MudText>
-                            }
-                        </MudListItem>
-                        <MudDivider />
-                        <MudListItem>
-                            <div class="d-flex justify-space-between">
-                                <MudText>Recettes (7 jours)</MudText>
-                                <MudChip T="string" Size="Size.Small" Color="Color.Info">@statistics.RecipesAddedLast7Days</MudChip>
-                            </div>
-                        </MudListItem>
-                        <MudListItem>
-                            <div class="d-flex justify-space-between">
-                                <MudText>Recettes (30 jours)</MudText>
-                                <MudChip T="string" Size="Size.Small" Color="Color.Warning">@statistics.RecipesAddedLast30Days</MudChip>
-                            </div>
-                        </MudListItem>
-                    </MudList>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+                        </span>
+                        <span class="dash-bar-track">
+                            <span class="@(row.Rating >= 3 ? "dash-bar-fill" : "dash-bar-fill dash-bar-fill-muted")"
+                                  style="@Width(row.Count, tallest)"></span>
+                        </span>
+                        <span class="dash-bar-count">@row.Count</span>
+                    </div>
+                }
 
-        <!-- Book, Store, and Author Statistics -->
-        <MudGrid Class="mb-6">
-            <MudItem xs="12" md="4">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-                    <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.AutoStories" Class="mr-2" />
-                        Livres Populaires
-                    </MudText>
-                    
-                    @if (statistics.MostUsedBooks.Any())
+                @if (_view.ReliableBooks.Count > 0)
+                {
+                    <div class="dash-sep"></div>
+                    <div class="dash-label">Les livres qui tiennent leurs promesses</div>
+                    @foreach (var book in _view.ReliableBooks)
                     {
-                        <MudList T="string" Dense="true">
-                            @foreach (var bookStat in statistics.MostUsedBooks.Take(5))
-                            {
-                                <MudListItem OnClick="@(() => NavigateToBook(bookStat.BookId))">
-                                    <div class="d-flex justify-space-between">
-                                        <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@bookStat.BookName</MudText>
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Secondary">@bookStat.RecipeCount</MudChip>
-                                    </div>
-                                </MudListItem>
-                            }
-                        </MudList>
+                        <a class="dash-row" href="@($"/books/{book.Id}")">
+                            <span class="dash-row-name">@book.Name</span>
+                            <span class="dash-row-meta">@RecipeCountLabel(book.RecipeCount)</span>
+                            <span class="dash-row-strong">@AverageLabel(book.AverageRating)</span>
+                        </a>
                     }
-                    else
-                    {
-                        <div class="d-flex flex-column align-center pa-4">
-                            <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucun livre enregistré.</MudText>
-                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" Class="mt-1" Href="/books">Ajouter un livre</MudButton>
-                        </div>
-                    }
-                </MudPaper>
-            </MudItem>
-
-            <MudItem xs="12" md="4">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-                    <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.Storefront" Class="mr-2" />
-                        Magasins Populaires
-                    </MudText>
-                    
-                    @if (statistics.MostUsedStores.Any())
-                    {
-                        <MudList T="string" Dense="true">
-                            @foreach (var storeStat in statistics.MostUsedStores.Take(5))
-                            {
-                                <MudListItem OnClick="@(() => NavigateToStore(storeStat.StoreId))">
-                                    <div class="d-flex justify-space-between">
-                                        <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@storeStat.StoreName</MudText>
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Info">@storeStat.RecipeCount</MudChip>
-                                    </div>
-                                </MudListItem>
-                            }
-                        </MudList>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-column align-center pa-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Storefront" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucun magasin enregistré.</MudText>
-                            <MudButton Variant="Variant.Text" Color="Color.Info" Size="Size.Small" Class="mt-1" Href="/stores">Ajouter un magasin</MudButton>
-                        </div>
-                    }
-                </MudPaper>
-            </MudItem>
-
-            <MudItem xs="12" md="4">
-                <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-                    <MudText Typo="Typo.h5" Class="mb-4">
-                        <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
-                        Auteurs Populaires
-                    </MudText>
-                    
-                    @if (statistics.MostUsedAuthors.Any())
-                    {
-                        <MudList T="string" Dense="true">
-                            @foreach (var authorStat in statistics.MostUsedAuthors.Take(5))
-                            {
-                                <MudListItem OnClick="@(() => NavigateToAuthor(authorStat.AuthorId))">
-                                    <div class="d-flex justify-space-between">
-                                        <MudText Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@authorStat.AuthorName</MudText>
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Tertiary">@authorStat.RecipeCount</MudChip>
-                                    </div>
-                                </MudListItem>
-                            }
-                        </MudList>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-column align-center pa-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="font-size: 40px; opacity: 0.25;" Class="mb-2" />
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">Aucun auteur enregistré.</MudText>
-                            <MudButton Variant="Variant.Text" Color="Color.Tertiary" Size="Size.Small" Class="mt-1" Href="/authors">Ajouter un auteur</MudButton>
-                        </div>
-                    }
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
-
-        <!-- Quick Actions -->
-        <MudPaper Elevation="2" Class="pa-4 rounded-lg">
-            <MudText Typo="Typo.h5" Class="mb-4">Actions Rapides</MudText>
-            <MudStack Row Wrap="Wrap.Wrap" Spacing="2">
-                <MudButton Variant="Variant.Filled" 
-                          Color="Color.Primary" 
-                          StartIcon="@Icons.Material.Filled.Restaurant"
-                          Href="/recipes">
-                    Voir toutes les recettes
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                          Color="Color.Warning" 
-                          StartIcon="@Icons.Material.Filled.Star"
-                          Href="/recipes?filter=5stars">
-                    Recettes 5 étoiles
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                          Color="Color.Secondary" 
-                          StartIcon="@Icons.Material.Filled.AutoStories"
-                          Href="/books">
-                    Gérer les livres
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                          Color="Color.Info" 
-                          StartIcon="@Icons.Material.Filled.Storefront"
-                          Href="/stores">
-                    Gérer les magasins
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                          Color="Color.Tertiary" 
-                          StartIcon="@Icons.Material.Filled.Person"
-                          Href="/authors">
-                    Gérer les auteurs
-                </MudButton>
-            </MudStack>
-        </MudPaper>
+                }
+            </section>
+        </div>
     }
-</MudContainer>
+</div>
 
 @code {
-    private bool loading = true;
-    private readonly List<BreadcrumbItem> breadcrumbs =
-    [
-        new BreadcrumbItem("Accueil", href: ""),
-        new BreadcrumbItem("Tableau de bord", href: "/dashboard", disabled: true)
-    ];
-    private DashboardStatistics statistics = new();
-    
-    // Chart Data
-    private double[] ratingChartData = Array.Empty<double>();
-    private string[] ratingChartLabels = Array.Empty<string>();
-    private List<ChartSeries<double>> trendSeries = new();
-    private string[] trendXAxisLabels = Array.Empty<string>();
+    private DashboardView? _view;
+    private bool _loading = true;
 
-    protected override async Task OnInitializedAsync()
+    private string Summary =>
+        $"{RecipeCountLabel(_view!.TotalRecipes)} · {SourceCountLabel(_view.TotalSources)} · {AddedLabel(_view.AddedThisMonth)}";
+
+    protected override void OnInitialized()
     {
-        await LoadStatistics();
+        // Les pizzas de la première carte ne sont cliquables que connecté.
+        AuthService.AuthStateChanged += OnAuthStateChanged;
     }
 
-    private async Task LoadStatistics()
+    private void OnAuthStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => AuthService.AuthStateChanged -= OnAuthStateChanged;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
     {
-        loading = true;
         try
         {
-            var (recipes, books, authors, stores) = await LoadBaseDataAsync();
-            
-            if (recipes == null)
-            {
-                statistics = new DashboardStatistics();
-                return;
-            }
+            var recipes = await LoadAllRecipesAsync();
+            var books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
+            var stores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
 
-            CalculateBasicStatistics(recipes, books, authors, stores);
-            CalculateRatingStatistics(recipes);
-            CalculateBookStatistics(recipes, books);
-            CalculateStoreStatistics(recipes, stores);
-            CalculateAuthorStatistics(recipes, books, authors);
-            CalculateRecentActivity(recipes, books);
-            await LoadHighlightRecipesAsync(recipes);
-            
-            // Prepare Chart Data
-            PrepareCharts(recipes);
+            _view = DashboardInsights.Build(recipes, books, stores, DateTime.UtcNow);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading dashboard statistics");
-            statistics = new DashboardStatistics();
+            Logger.LogError(ex, "Error loading the dashboard");
         }
         finally
         {
-            loading = false;
+            _loading = false;
         }
     }
 
-    private void PrepareCharts(List<Recipe> recipes)
+    /// <summary>
+    /// Every recipe, tags and book embedded — the four cards each need a different cut of
+    /// the same data, and cutting it here beats four queries that could disagree.
+    /// </summary>
+    /// <remarks>
+    /// SearchAsync caps the page size, so this pages to the end rather than silently
+    /// truncating the collection at that limit — the same loop the ⌘K palette runs.
+    /// </remarks>
+    private async Task<List<Recipe>> LoadAllRecipesAsync()
     {
-        // 1. Rating Donut Chart
-        var ratings = recipes
-            .Where(r => r.Rating > 0)
-            .GroupBy(r => r.Rating)
-            .OrderByDescending(g => g.Key) // 5 stars first
-            .ToList();
-            
-        ratingChartData = ratings.Select(g => (double)g.Count()).ToArray();
-        ratingChartLabels = ratings.Select(g => $"{g.Key}★ ({g.Count()})").ToArray();
+        var all = new List<Recipe>();
+        var page = 1;
 
-        // 2. Trend Line Chart (Last 6 months)
-        var now = DateTime.UtcNow;
-        var last6Months = Enumerable.Range(0, 6)
-            .Select(i => now.AddMonths(-5 + i))
-            .ToList();
-        
-        var monthlyData = last6Months.Select(month => 
-            (double)recipes.Count(r => r.CreationDate.Month == month.Month && r.CreationDate.Year == month.Year)
-        ).ToArray();
-
-        trendSeries = new List<ChartSeries<double>>
+        while (true)
         {
-            new ChartSeries<double> { Name = "Recettes Ajoutées", Data = monthlyData }
-        };
-        trendXAxisLabels = last6Months.Select(d => d.ToString("MMM")).ToArray();
-    }
+            var result = await RecipeService.SearchAsync(
+                null, null, null, null, null, page, PaginationConstants.MaxPageSize,
+                RecipeSortConstants.CreatedAt, true);
 
-    private async Task<(List<Recipe>? recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)> LoadBaseDataAsync()
-    {
-        // Lightweight summaries (id, book_id, store_id, rating, created_at) are
-        // enough for the aggregate statistics; full recipes are fetched separately
-        // for the few highlighted ones.
-        var recipesResult = await RecipeService.GetRecipeSummariesAsync();
-        var books = await RecipeService.GetBooksAsync();
-        var authors = await RecipeService.GetAuthorsAsync();
-        var stores = await RecipeService.GetStoresAsync();
-
-        if (!recipesResult.IsSuccess)
-        {
-            Logger.LogWarning("Failed to load recipes for dashboard: {Error}", recipesResult.ErrorMessage);
-            return (null, books, authors, stores);
-        }
-
-        return (recipesResult.Value.ToList(), books, authors, stores);
-    }
-
-    private void CalculateBasicStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors, IReadOnlyList<Store> stores)
-    {
-        statistics.TotalRecipes = recipes.Count;
-        statistics.TotalBooks = books.Count;
-        statistics.TotalAuthors = authors.Count;
-        statistics.TotalStores = stores.Count;
-    }
-
-    private void CalculateRatingStatistics(List<Recipe> recipes)
-    {
-        var ratedRecipes = recipes.Where(r => r.Rating > 0).ToList();
-        
-        statistics.AverageRating = ratedRecipes.Any() 
-            ? ratedRecipes.Average(r => r.Rating) 
-            : 0;
-
-        statistics.RatingDistribution = ratedRecipes
-            .GroupBy(r => r.Rating)
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        statistics.UnratedCount = recipes.Count(r => r.Rating == 0);
-    }
-
-    private async Task LoadHighlightRecipesAsync(List<Recipe> summaries)
-    {
-        // Summaries have no names; fetch full objects only for the few recipes
-        // that are displayed individually (top rated + most recent).
-        var topRatedIds = summaries
-            .Where(r => r.Rating > 0)
-            .OrderByDescending(r => r.Rating)
-            .ThenByDescending(r => r.CreationDate)
-            .Take(5)
-            .Select(r => r.Id)
-            .ToList();
-
-        var mostRecentId = summaries
-            .OrderByDescending(r => r.CreationDate)
-            .Select(r => (int?)r.Id)
-            .FirstOrDefault();
-
-        var idsToFetch = topRatedIds.ToHashSet();
-        if (mostRecentId.HasValue)
-        {
-            idsToFetch.Add(mostRecentId.Value);
-        }
-
-        if (idsToFetch.Count == 0)
-        {
-            statistics.TopRatedRecipes = new List<Recipe>();
-            statistics.MostRecentRecipe = null;
-            return;
-        }
-
-        var fullRecipesResult = await RecipeService.GetRecipesByIdsAsync(idsToFetch);
-        if (!fullRecipesResult.IsSuccess)
-        {
-            Logger.LogWarning("Failed to load highlighted recipes for dashboard: {Error}", fullRecipesResult.ErrorMessage);
-            statistics.TopRatedRecipes = new List<Recipe>();
-            statistics.MostRecentRecipe = null;
-            return;
-        }
-
-        var recipesById = fullRecipesResult.Value.ToDictionary(r => r.Id);
-        statistics.TopRatedRecipes = topRatedIds
-            .Where(recipesById.ContainsKey)
-            .Select(id => recipesById[id])
-            .ToList();
-        statistics.MostRecentRecipe = mostRecentId.HasValue && recipesById.TryGetValue(mostRecentId.Value, out var recent)
-            ? recent
-            : null;
-    }
-
-    private void CalculateBookStatistics(List<Recipe> recipes, IReadOnlyList<Book> books)
-    {
-        statistics.MostUsedBooks = recipes
-            .Where(r => r.BookId.HasValue)
-            .GroupBy(r => r.BookId!.Value)
-            .Select(g => new BookStatistic
+            if (!result.IsSuccess)
             {
-                BookId = g.Key,
-                BookName = books.FirstOrDefault(b => b.Id == g.Key)?.Name ?? "Unknown",
-                RecipeCount = g.Count()
-            })
-            .OrderByDescending(b => b.RecipeCount)
-            .ToList();
-    }
-
-    private void CalculateStoreStatistics(List<Recipe> recipes, IReadOnlyList<Store> stores)
-    {
-        statistics.MostUsedStores = recipes
-            .Where(r => r.StoreId.HasValue)
-            .GroupBy(r => r.StoreId!.Value)
-            .Select(g => new StoreStatistic
-            {
-                StoreId = g.Key,
-                StoreName = stores.FirstOrDefault(s => s.Id == g.Key)?.Name ?? "Unknown",
-                RecipeCount = g.Count()
-            })
-            .OrderByDescending(s => s.RecipeCount)
-            .ToList();
-    }
-
-    private void CalculateAuthorStatistics(List<Recipe> recipes, IReadOnlyList<Book> books, IReadOnlyList<Author> authors)
-    {
-        var authorRecipeCounts = new Dictionary<int, int>();
-        
-        foreach (var author in authors)
-        {
-            var authorBookIds = books
-                .Where(b => b.Authors.Any(a => a.Id == author.Id))
-                .Select(b => b.Id)
-                .ToHashSet();
-            
-            var count = recipes.Count(r => r.BookId.HasValue && authorBookIds.Contains(r.BookId.Value));
-            if (count > 0)
-            {
-                authorRecipeCounts[author.Id] = count;
+                Logger.LogError("Could not load the recipes for the dashboard: {Error}", result.ErrorMessage);
+                break;
             }
+
+            all.AddRange(result.Value.Items);
+            if (all.Count >= result.Value.Total || result.Value.Items.Count == 0)
+            {
+                break;
+            }
+            page++;
         }
 
-        statistics.MostUsedAuthors = authorRecipeCounts
-            .Select(kvp => new AuthorStatistic
-            {
-                AuthorId = kvp.Key,
-                AuthorName = authors.FirstOrDefault(a => a.Id == kvp.Key)?.FullName ?? "Unknown",
-                RecipeCount = kvp.Value
-            })
-            .OrderByDescending(a => a.RecipeCount)
-            .ToList();
+        return all;
     }
 
-    private void CalculateRecentActivity(List<Recipe> recipes, IReadOnlyList<Book> books)
+    /// <summary>
+    /// Rates a recipe from the list and rebuilds the view, because that one rating moves
+    /// three of the four cards at once.
+    /// </summary>
+    private async Task RateAsync(int recipeId, string name, int rating)
     {
-        // MostRecentRecipe is set in LoadHighlightRecipesAsync (needs the full object)
-        statistics.MostRecentBook = books
-            .OrderByDescending(b => b.CreationDate)
-            .FirstOrDefault();
+        if (rating <= 0 || !AuthService.IsAuthenticated || _view is null)
+        {
+            return;
+        }
 
-        var now = DateTime.UtcNow;
-        statistics.RecipesAddedLast7Days = recipes
-            .Count(r => r.CreationDate >= now.AddDays(-7));
-        
-        statistics.RecipesAddedLast30Days = recipes
-            .Count(r => r.CreationDate >= now.AddDays(-30));
+        var current = await RecipeService.GetByIdAsync(recipeId);
+        if (!current.IsSuccess || current.Value is null)
+        {
+            Snackbar.Add(current.ErrorMessage ?? "La recette n'a pas pu être relue.", Severity.Error);
+            return;
+        }
+
+        var updated = current.Value;
+        updated.Rating = rating;
+
+        var result = await RecipeService.UpdateAsync(updated);
+        if (!result.IsSuccess)
+        {
+            Snackbar.Add(result.ErrorMessage ?? "La note n'a pas pu être enregistrée.", Severity.Error);
+            return;
+        }
+
+        Snackbar.Add($"« {name} » notée {rating} / 5.", Severity.Success);
+
+        // Une note déplace trois des quatre cartes : plutôt que de les rapiécer une à une,
+        // la vue se recalcule entièrement.
+        _loading = true;
+        StateHasChanged();
+        await LoadAsync();
     }
 
-    private void NavigateToRecipe(int id) => NavigationManager.NavigateTo($"/recipes/{id}");
-    private void NavigateToBook(int id) => NavigationManager.NavigateTo($"/books/{id}");
-    private void NavigateToStore(int id) => NavigationManager.NavigateTo($"/stores/{id}");
-    private void NavigateToAuthor(int id) => NavigationManager.NavigateTo($"/authors/{id}");
+    /// <summary>Bar width as a share of the tallest, floored so a lone recipe still shows.</summary>
+    private static string Width(int value, int max) =>
+        $"width: {(max <= 0 ? 0 : Math.Max(value > 0 ? 4 : 0, value * 100 / max))}%";
 
+    private static string RecipeCountLabel(int count) =>
+        count == 1 ? "1 recette" : $"{count} recettes";
+
+    private static string SourceCountLabel(int count) =>
+        count == 1 ? "1 source" : $"{count} sources";
+
+    private static string AddedLabel(int count) => count switch
+    {
+        0 => "aucun ajout ce mois-ci",
+        1 => "1 ajout ce mois-ci",
+        _ => $"{count} ajouts ce mois-ci"
+    };
+
+    private static string AverageLabel(double average) =>
+        average <= 0 ? "—" : average.ToString("0.#");
 }
