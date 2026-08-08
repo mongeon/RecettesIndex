@@ -101,6 +101,13 @@
     }
     else
     {
+        @* Filtrage et tri passent par une variable locale : la propriété est lue deux
+           fois par carte — le test de liste vide, puis la boucle — et referait tout le
+           travail à chaque lecture. *@
+        @{
+            var visible = Visible;
+            var panelRecipes = SelectedRecipes;
+        }
         <div class="src-body">
             <div class="src-list">
                 <div class="src-list-head">
@@ -110,13 +117,13 @@
                     <span class="src-right">Dernier usage</span>
                 </div>
 
-                @if (Visible.Count == 0)
+                @if (visible.Count == 0)
                 {
                     <p class="src-empty">Aucune source ne correspond.</p>
                 }
                 else
                 {
-                    @foreach (var row in Visible)
+                    @foreach (var row in visible)
                     {
                         <button type="button"
                                 class="@(row.Key == _selectedKey ? "src-row src-row-on" : "src-row")"
@@ -169,13 +176,13 @@
                     </div>
 
                     <div class="src-panel-label">Ses recettes</div>
-                    @if (SelectedRecipes.Count == 0)
+                    @if (panelRecipes.Count == 0)
                     {
                         <p class="src-panel-empty">Rien n'en a encore été tiré.</p>
                     }
                     else
                     {
-                        @foreach (var recipe in SelectedRecipes)
+                        @foreach (var recipe in panelRecipes)
                         {
                             <a class="src-panel-row" href="@($"/recipes/{recipe.Id}")">
                                 <span class="src-panel-row-name">@recipe.Name</span>
@@ -223,6 +230,7 @@
 
     private bool _loading = true;
     private bool _failed;
+    private CancellationTokenSource? _loadCts;
 
     private static readonly List<RecipeFilterMenu.Option> SortOptions =
     [
@@ -317,18 +325,31 @@
 
     private void OnAuthStateChanged() => _ = InvokeAsync(StateHasChanged);
 
-    public void Dispose() => AuthService.AuthStateChanged -= OnAuthStateChanged;
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+    }
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
     private async Task LoadAsync()
     {
+        // Le chargement parcourt toute la collection : quitter la page au milieu doit
+        // couper les requêtes restantes, et surtout empêcher un chargement abandonné
+        // d'écrire son résultat par-dessus l'écran suivant.
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var ct = _loadCts.Token;
+
         _loading = true;
         _failed = false;
 
         try
         {
-            var recipes = await LoadAllRecipesAsync();
+            var recipes = await LoadAllRecipesAsync(ct);
             if (recipes is null)
             {
                 _failed = true;
@@ -336,9 +357,9 @@
             }
 
             _recipes = recipes;
-            var books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
-            var stores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
-            _authors = (await RecipeService.GetAuthorsAsync())?.ToList() ?? [];
+            var books = (await RecipeService.GetBooksAsync(ct))?.ToList() ?? [];
+            var stores = (await RecipeService.GetStoresAsync(ct))?.ToList() ?? [];
+            _authors = (await RecipeService.GetAuthorsAsync(ct))?.ToList() ?? [];
 
             _rows = SourceCatalog.Build(_recipes, books, stores);
             _counts = SourceCatalog.Count(_rows);
@@ -355,6 +376,11 @@
                     .Select(a => new RecipeFilterMenu.Option(a.Id.ToString(), a.FullName, null))
             ];
         }
+        catch (OperationCanceledException)
+        {
+            // Remplacé par un chargement plus récent : ne rien écrire, ne rien dire.
+            return;
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading the sources");
@@ -362,7 +388,12 @@
         }
         finally
         {
-            _loading = false;
+            // Le voile reste levé par le chargement qui a pris la relève, pas par celui
+            // qu'on vient d'abandonner.
+            if (!ct.IsCancellationRequested)
+            {
+                _loading = false;
+            }
         }
     }
 
@@ -372,7 +403,7 @@
     /// running this loop — the ⌘K palette and the dashboard do the same — which is the
     /// argument for a shared « all recipes » primitive, once they can be changed together.
     /// </remarks>
-    private async Task<List<Recipe>?> LoadAllRecipesAsync()
+    private async Task<List<Recipe>?> LoadAllRecipesAsync(CancellationToken ct)
     {
         var all = new List<Recipe>();
         var page = 1;
@@ -381,7 +412,7 @@
         {
             var result = await RecipeService.SearchAsync(
                 null, null, null, null, null, page, PaginationConstants.MaxPageSize,
-                RecipeSortConstants.Name, false);
+                RecipeSortConstants.Name, false, ct: ct);
 
             if (!result.IsSuccess)
             {

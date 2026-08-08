@@ -46,9 +46,15 @@ public static class SourceCatalog
 
         var rows = new List<SourceRow>();
 
+        // Un seul parcours des recettes pour tous les livres, puis pour tous les
+        // commerces : la version naïve rescanne la collection entière une fois par
+        // source, soit un coût produit qui se paie côté client.
+        var byBook = recipes.Where(r => r.BookId.HasValue).ToLookup(r => r.BookId!.Value);
+        var byStore = recipes.Where(r => r.StoreId.HasValue).ToLookup(r => r.StoreId!.Value);
+
         foreach (var book in books)
         {
-            var own = recipes.Where(r => r.BookId == book.Id).ToList();
+            var own = byBook[book.Id].ToList();
             rows.Add(new SourceRow(
                 RecipeSourceKind.Book,
                 $"book:{book.Id}",
@@ -65,7 +71,7 @@ public static class SourceCatalog
 
         foreach (var store in stores)
         {
-            var own = recipes.Where(r => r.StoreId == store.Id).ToList();
+            var own = byStore[store.Id].ToList();
             rows.Add(new SourceRow(
                 RecipeSourceKind.Store,
                 $"store:{store.Id}",
