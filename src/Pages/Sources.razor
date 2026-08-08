@@ -1,0 +1,495 @@
+@page "/sources"
+@using MudBlazor
+@using RecettesIndex.Models
+@using RecettesIndex.Services
+@using RecettesIndex.Services.Abstractions
+@using Microsoft.Extensions.Logging
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject IRecipeService RecipeService
+@inject NavigationManager NavigationManager
+@inject ILogger<Sources> Logger
+@implements IDisposable
+
+@*
+    Sources (bloc 4c).
+
+    Une seule liste à la place de Livres, Magasins et Auteurs — trois tableaux presque
+    identiques. Un auteur n'a pas de contenu propre, c'est un attribut du livre : il
+    devient un filtre ici, plus une page.
+
+    Le but tient dans la colonne de droite : rendre visible ce qu'on n'utilise jamais.
+    Un livre dont rien n'a été tiré occupe une étagère pour rien, et aucune des trois
+    anciennes pages ne le disait.
+*@
+
+<PageTitle>Sources - Mes Recettes</PageTitle>
+
+<div class="src">
+    <header class="src-head">
+        <div class="src-head-main">
+            <h1 class="src-title">Sources</h1>
+            @if (!_loading && !_failed)
+            {
+                <p class="src-sub">@Summary</p>
+            }
+        </div>
+        <RecipeFilterMenu Label="Trié par"
+                          SelectedLabel="@SortLabel"
+                          SelectedValue="@_sort"
+                          IsActive="true"
+                          AlignRight="true"
+                          Options="@SortOptions"
+                          OnSelected="@(v => SetSort(v))" />
+    </header>
+
+    <div class="src-bar">
+        <input type="text"
+               class="src-search"
+               placeholder="Filtrer les sources…"
+               aria-label="Filtrer les sources"
+               value="@_text"
+               @oninput="OnTextInput" />
+
+        <div class="src-pills">
+            @foreach (var pill in KindPills)
+            {
+                <button type="button"
+                        class="@(pill.Kind == _kind ? "src-pill src-pill-on" : "src-pill")"
+                        aria-pressed="@(pill.Kind == _kind)"
+                        @onclick="@(() => SetKind(pill.Kind))">
+                    @if (pill.Icon is not null)
+                    {
+                        <MudIcon Icon="@pill.Icon" Class="@pill.IconClass" />
+                    }
+                    <span>@pill.Label</span>
+                    <span class="src-pill-count">@pill.Count</span>
+                </button>
+            }
+        </div>
+
+        @if (_authorOptions.Count > 1)
+        {
+            <RecipeFilterMenu Label="Auteur"
+                              SelectedLabel="@AuthorLabel"
+                              SelectedValue="@(_authorId?.ToString())"
+                              IsActive="@(_authorId.HasValue)"
+                              Options="@_authorOptions"
+                              OnSelected="@SetAuthor" />
+        }
+
+        @if (_counts.NeverUsed > 0)
+        {
+            <button type="button"
+                    class="@(_neverUsedOnly ? "src-never src-never-on" : "src-never")"
+                    aria-pressed="@_neverUsedOnly"
+                    @onclick="ToggleNeverUsed">
+                Jamais ouvertes <span class="src-never-count">@_counts.NeverUsed</span>
+            </button>
+        }
+    </div>
+
+    @if (_loading)
+    {
+        <div class="src-loading">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
+        </div>
+    }
+    else if (_failed)
+    {
+        <p class="src-failed">Les sources n'ont pas pu être chargées. Réessayez plus tard.</p>
+    }
+    else
+    {
+        <div class="src-body">
+            <div class="src-list">
+                <div class="src-list-head">
+                    <span>Source</span>
+                    <span class="src-right">Recettes</span>
+                    <span class="src-right">Note moy.</span>
+                    <span class="src-right">Dernier usage</span>
+                </div>
+
+                @if (Visible.Count == 0)
+                {
+                    <p class="src-empty">Aucune source ne correspond.</p>
+                }
+                else
+                {
+                    @foreach (var row in Visible)
+                    {
+                        <button type="button"
+                                class="@(row.Key == _selectedKey ? "src-row src-row-on" : "src-row")"
+                                @onclick="@(() => Select(row.Key))">
+                            <span class="src-cell-source">
+                                <MudIcon Icon="@IconFor(row.Kind)" Class="@($"src-row-icon {ToneFor(row.Kind)}")" />
+                                <span class="src-names">
+                                    <span class="src-name">@row.Name</span>
+                                    @if (!string.IsNullOrEmpty(row.Subtitle))
+                                    {
+                                        <span class="src-subtitle">@row.Subtitle</span>
+                                    }
+                                </span>
+                            </span>
+                            <span class="src-right src-count">@row.RecipeCount</span>
+                            <span class="src-right src-rating">@AverageLabel(row.AverageRating)</span>
+                            <span class="@(row.LastUsed is null ? "src-right src-used src-used-never" : "src-right src-used")">
+                                @LastUsedLabel(row.LastUsed)
+                            </span>
+                        </button>
+                    }
+                }
+            </div>
+
+            @if (Selected is not null)
+            {
+                <aside class="src-panel">
+                    <div class="src-panel-head">
+                        <div class="@($"src-panel-icon {ToneFor(Selected.Kind)}")">
+                            <MudIcon Icon="@IconFor(Selected.Kind)" />
+                        </div>
+                        <div class="src-panel-names">
+                            <div class="src-panel-name">@Selected.Name</div>
+                            @if (!string.IsNullOrEmpty(Selected.Subtitle))
+                            {
+                                <div class="src-panel-sub">@Selected.Subtitle</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="src-tiles">
+                        <div class="src-tile">
+                            <div class="src-tile-label">Recettes</div>
+                            <div class="src-tile-value">@Selected.RecipeCount</div>
+                        </div>
+                        <div class="src-tile">
+                            <div class="src-tile-label">Note moy.</div>
+                            <div class="src-tile-value">@AverageLabel(Selected.AverageRating)</div>
+                        </div>
+                    </div>
+
+                    <div class="src-panel-label">Ses recettes</div>
+                    @if (SelectedRecipes.Count == 0)
+                    {
+                        <p class="src-panel-empty">Rien n'en a encore été tiré.</p>
+                    }
+                    else
+                    {
+                        @foreach (var recipe in SelectedRecipes)
+                        {
+                            <a class="src-panel-row" href="@($"/recipes/{recipe.Id}")">
+                                <span class="src-panel-row-name">@recipe.Name</span>
+                                <span class="src-panel-row-meta">@RowMeta(recipe)</span>
+                            </a>
+                        }
+                    }
+
+                    @if (AuthService.IsAuthenticated && Selected.Id.HasValue)
+                    {
+                        <div class="src-panel-actions">
+                            <button type="button" class="src-btn src-btn-filled" @onclick="AddFromSelected">
+                                @(Selected.Kind == RecipeSourceKind.Book ? "Ajouter de ce livre" : "Ajouter de ce commerce")
+                            </button>
+                            <button type="button" class="src-btn src-btn-icon" aria-label="Modifier la source"
+                                    @onclick="EditSelected">
+                                <MudIcon Icon="@Icons.Material.Outlined.Edit" />
+                            </button>
+                        </div>
+                    }
+                </aside>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Recipes listed in the detail panel before it stops being a glance.</summary>
+    private const int PanelRows = 8;
+
+    private sealed record KindPill(RecipeSourceKind? Kind, string Label, int Count, string? Icon, string IconClass);
+
+    private List<Recipe> _recipes = [];
+    private List<SourceRow> _rows = [];
+    private SourceCounts _counts = new(0, 0, 0, 0, 0);
+    private List<RecipeFilterMenu.Option> _authorOptions = [];
+    private List<Author> _authors = [];
+
+    private string _text = string.Empty;
+    private RecipeSourceKind? _kind;
+    private int? _authorId;
+    private bool _neverUsedOnly;
+    private string _sort = SourceSortConstants.RecipeCount;
+    private string? _selectedKey;
+
+    private bool _loading = true;
+    private bool _failed;
+
+    private static readonly List<RecipeFilterMenu.Option> SortOptions =
+    [
+        new(SourceSortConstants.RecipeCount, "Nb de recettes", null),
+        new(SourceSortConstants.Name, "Nom", null),
+        new(SourceSortConstants.Rating, "Note moyenne", null),
+        new(SourceSortConstants.LastUsed, "Dernier usage", null)
+    ];
+
+    private List<SourceRow> Visible =>
+        SourceCatalog.Sort(
+            SourceCatalog.Filter(_rows, _text, _kind, _authorId, _neverUsedOnly),
+            _sort);
+
+    private SourceRow? Selected => _rows.FirstOrDefault(r => r.Key == _selectedKey);
+
+    /// <summary>The recipes of the selected source, best first — the panel is a sample.</summary>
+    private List<Recipe> SelectedRecipes
+    {
+        get
+        {
+            if (Selected is null)
+            {
+                return [];
+            }
+
+            return _recipes
+                .Where(r => Selected.Kind switch
+                {
+                    RecipeSourceKind.Book => r.BookId == Selected.Id,
+                    RecipeSourceKind.Store => r.StoreId == Selected.Id,
+                    _ => RecipeSource.Domain(r.Url) == Selected.Name
+                })
+                .OrderByDescending(r => r.Rating)
+                .ThenBy(r => r.Name)
+                .Take(PanelRows)
+                .ToList();
+        }
+    }
+
+    private List<KindPill> KindPills =>
+    [
+        new(null, "Toutes", _counts.All, null, string.Empty),
+        new(RecipeSourceKind.Book, "Livres", _counts.Books, Icons.Material.Outlined.MenuBook, "src-tone-accent"),
+        new(RecipeSourceKind.Store, "Magasins", _counts.Stores, Icons.Material.Outlined.Storefront, "src-tone-teal"),
+        new(RecipeSourceKind.Web, "Sites", _counts.Sites, Icons.Material.Outlined.Language, "src-tone-neutral")
+    ];
+
+    private string Summary
+    {
+        get
+        {
+            var parts = new List<string>
+            {
+                _counts.All == 1 ? "1 source" : $"{_counts.All} sources",
+                _recipes.Count == 1 ? "1 recette" : $"{_recipes.Count} recettes"
+            };
+
+            if (_counts.NeverUsed > 0)
+            {
+                parts.Add(_counts.NeverUsed == 1 ? "1 jamais ouverte" : $"{_counts.NeverUsed} jamais ouvertes");
+            }
+
+            return string.Join(" · ", parts);
+        }
+    }
+
+    private string SortLabel => SortOptions.FirstOrDefault(o => o.Value == _sort)?.Label ?? "Nb de recettes";
+
+    private string? AuthorLabel => _authorId is null
+        ? null
+        : _authors.FirstOrDefault(a => a.Id == _authorId)?.FullName;
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+
+        // Les anciennes routes /books, /stores et /authors redirigent ici en portant le
+        // type dans l'adresse : le signet qui menait aux livres continue de montrer les
+        // livres, au lieu de déverser toutes les sources d'un coup.
+        var query = System.Web.HttpUtility.ParseQueryString(
+            NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query);
+
+        _kind = query["type"] switch
+        {
+            "book" => RecipeSourceKind.Book,
+            "store" => RecipeSourceKind.Store,
+            "web" => RecipeSourceKind.Web,
+            _ => null
+        };
+    }
+
+    private void OnAuthStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => AuthService.AuthStateChanged -= OnAuthStateChanged;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _failed = false;
+
+        try
+        {
+            var recipes = await LoadAllRecipesAsync();
+            if (recipes is null)
+            {
+                _failed = true;
+                return;
+            }
+
+            _recipes = recipes;
+            var books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
+            var stores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
+            _authors = (await RecipeService.GetAuthorsAsync())?.ToList() ?? [];
+
+            _rows = SourceCatalog.Build(_recipes, books, stores);
+            _counts = SourceCatalog.Count(_rows);
+
+            // Seuls les auteurs qui ont un livre ici : proposer un filtre qui ne peut
+            // rien renvoyer est une ligne de plus à lire pour rien.
+            var used = _rows.SelectMany(r => r.AuthorIds).ToHashSet();
+            _authorOptions =
+            [
+                new RecipeFilterMenu.Option(null, "Tous les auteurs", null),
+                .. _authors
+                    .Where(a => used.Contains(a.Id))
+                    .OrderBy(a => a.FullName)
+                    .Select(a => new RecipeFilterMenu.Option(a.Id.ToString(), a.FullName, null))
+            ];
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading the sources");
+            _failed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    /// <returns>Every recipe, or null when the collection could not be read whole.</returns>
+    /// <remarks>
+    /// SearchAsync caps the page size, so this pages to the end. Third place in the app
+    /// running this loop — the ⌘K palette and the dashboard do the same — which is the
+    /// argument for a shared « all recipes » primitive, once they can be changed together.
+    /// </remarks>
+    private async Task<List<Recipe>?> LoadAllRecipesAsync()
+    {
+        var all = new List<Recipe>();
+        var page = 1;
+
+        while (true)
+        {
+            var result = await RecipeService.SearchAsync(
+                null, null, null, null, null, page, PaginationConstants.MaxPageSize,
+                RecipeSortConstants.Name, false);
+
+            if (!result.IsSuccess)
+            {
+                Logger.LogError("Could not load the recipes for the sources page: {Error}", result.ErrorMessage);
+                return null;
+            }
+
+            all.AddRange(result.Value.Items);
+            if (all.Count >= result.Value.Total || result.Value.Items.Count == 0)
+            {
+                break;
+            }
+            page++;
+        }
+
+        return all;
+    }
+
+    private void OnTextInput(ChangeEventArgs e) => _text = e.Value?.ToString() ?? string.Empty;
+
+    private void SetKind(RecipeSourceKind? kind) => _kind = kind;
+
+    private void SetAuthor(string? value) =>
+        _authorId = int.TryParse(value, out var id) ? id : null;
+
+    private void ToggleNeverUsed() => _neverUsedOnly = !_neverUsedOnly;
+
+    private void SetSort(string? sort) => _sort = sort ?? SourceSortConstants.RecipeCount;
+
+    /// <summary>Clicking the selected row again closes the panel, rather than trapping it open.</summary>
+    private void Select(string key) => _selectedKey = _selectedKey == key ? null : key;
+
+    private async Task AddFromSelected()
+    {
+        if (Selected is null)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters();
+        if (Selected.Kind == RecipeSourceKind.Book)
+        {
+            parameters.Add("PresetBook", new Book { Id = Selected.Id!.Value, Name = Selected.Name });
+        }
+        else
+        {
+            parameters.Add("PresetStore", new Store { Id = Selected.Id!.Value, Name = Selected.Name });
+        }
+
+        var options = new DialogOptions { CloseButton = true, BackdropClick = false, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<AddRecipeDialog>("Ajouter une recette", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task EditSelected()
+    {
+        if (Selected?.Id is not { } id)
+        {
+            return;
+        }
+
+        var options = new DialogOptions { CloseButton = true, BackdropClick = false };
+        var parameters = new DialogParameters();
+        IDialogReference dialog;
+
+        if (Selected.Kind == RecipeSourceKind.Book)
+        {
+            parameters.Add("BookToEdit", new Book { Id = id, Name = Selected.Name });
+            dialog = await DialogService.ShowAsync<EditBookDialog>("Modifier le livre", parameters, options);
+        }
+        else
+        {
+            parameters.Add("StoreToEdit", new Store { Id = id, Name = Selected.Name });
+            dialog = await DialogService.ShowAsync<EditStoreDialog>("Modifier le commerce", parameters, options);
+        }
+
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private static string IconFor(RecipeSourceKind kind) => kind switch
+    {
+        RecipeSourceKind.Book => Icons.Material.Outlined.MenuBook,
+        RecipeSourceKind.Store => Icons.Material.Outlined.Storefront,
+        _ => Icons.Material.Outlined.Language
+    };
+
+    private static string ToneFor(RecipeSourceKind kind) => kind switch
+    {
+        RecipeSourceKind.Book => "src-tone-accent",
+        RecipeSourceKind.Store => "src-tone-teal",
+        _ => "src-tone-neutral"
+    };
+
+    private static string AverageLabel(double average) =>
+        average <= 0 ? "—" : average.ToString("0.#");
+
+    private string LastUsedLabel(DateTime? lastUsed) =>
+        lastUsed is null ? "jamais" : RelativeTime.Since(lastUsed.Value, DateTime.UtcNow);
+
+    private static string RowMeta(Recipe recipe) =>
+        recipe.BookPage.HasValue ? $"p. {recipe.BookPage}" : (recipe.Rating > 0 ? $"{recipe.Rating} / 5" : "—");
+}

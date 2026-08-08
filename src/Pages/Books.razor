@@ -1,202 +1,21 @@
 @page "/books"
-@using Microsoft.Extensions.Logging
-@using MudBlazor
-@using RecettesIndex.Models
-@using RecettesIndex.Services
-@using RecettesIndex.Services.Abstractions
-@using RecettesIndex.Components
-@inject AuthService AuthService
-@inject IDialogService DialogService
-@inject ILogger<Books> Logger
-@inject ISnackbar Snackbar
-@inject IBookService BookService
-@implements IDisposable
+@inject NavigationManager NavigationManager
 
-<PageTitle>Livres</PageTitle>
+@*
+    Redirection vers Sources (bloc 4c).
 
-<MudPaper Class="pa-4 rounded-lg">
-    <MudStack Row AlignItems="AlignItems.Center" Class="mb-1">
-        <MudIcon Icon="@Icons.Material.Filled.LibraryBooks" Color="Color.Secondary" Size="Size.Large" />
-        <div>
-            <MudText Typo="Typo.h4">Livres</MudText>
-            @if (!loading && books.Count > 0)
-            {
-                <MudText Typo="Typo.caption" Color="Color.Secondary">@books.Count livre(s) dans votre bibliothèque</MudText>
-            }
-        </div>
-    </MudStack>
-    <MudBreadcrumbs Items="breadcrumbs" Class="mb-4" />
-    <SearchField Value="@searchTerm" ValueChanged="@OnSearchChanged" Placeholder="Rechercher des livres..." />
-    @if (loading)
-    {
-        <LoadingState Text="Chargement des livres..." />
-    }
-    else if (!string.IsNullOrWhiteSpace(errorMessage))
-    {
-        <ErrorAlert Message="@errorMessage" OnRetry="@LoadBooks" />
-    }
-    else if (books.Count == 0)
-    {
-        <EmptyState Icon="@Icons.Material.Filled.MenuBook"
-                    IconColor="Color.Secondary"
-                    Title="Aucun livre trouvé"
-                    Message="Ajoutez votre premier livre pour organiser vos recettes par source."
-                    ShowAction="@AuthService.IsAuthenticated"
-                    ActionText="Ajouter un livre"
-                    ActionIcon="@Icons.Material.Filled.Add"
-                    OnActionClick="ShowAddDialog" />
-    }
-    else
-    {
-        <MudTable Items="filteredBooks" Hover="true" RowsPerPage="10" Elevation="1" Dense="true">
-            <PagerContent>
-                <MudTablePager InfoFormat="Affichage {first_item}-{last_item} sur {all_items}" 
-                               RowsPerPageString="Lignes par page:" 
-                               PageSizeOptions="[10, 25, 50, 100]" />
-            </PagerContent>
-            <HeaderContent>
-                <MudTh> <MudTableSortLabel SortBy="new Func<Book, object>(x=>x.Name)">Titre</MudTableSortLabel></MudTh>
-                <MudTh>Auteurs</MudTh>
-                @if (AuthService.IsAuthenticated)
-                {
-                    <MudTh>Actions</MudTh>
-                }
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Nom">
-                    <MudLink Href="@($"/books/{context.Id}")" Style="cursor:pointer">@context.Name</MudLink>
-                </MudTd>
-                <MudTd DataLabel="Auteurs">
-                    @if (context.Authors != null && context.Authors.Count > 0)
-                    {
-                        @string.Join(", ", context.Authors.Select(a => a.Name + (string.IsNullOrWhiteSpace(a.LastName) ? "" : $" {a.LastName}")))
-                    }
-                </MudTd>
-                @if (AuthService.IsAuthenticated)
-                {
-                    <MudTd>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditDialog(context)">Modifier</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteBook(context)">Supprimer</MudButton>
-                    </MudTd>
-                }
-            </RowTemplate>
-        </MudTable>
-    }
-    @if (AuthService.IsAuthenticated)
-    {
-        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-                OnClick="ShowAddDialog" Label="Ajouter"
-                Style="position: fixed; bottom: 24px; right: 24px; z-index: 100;" />
-    }
-</MudPaper>
+    Livres, Magasins et Auteurs étaient trois tableaux presque identiques ; ils sont
+    fusionnés dans une seule liste. La route reste pour que les signets et les liens
+    déjà écrits continuent de mener quelque part — elle ouvre Sources filtré sur les
+    livres plutôt que de tomber sur un 404.
+
+    Les pages de détail (/books/{id}) sont conservées : le bandeau de source de la
+    fiche de recette y renvoie.
+*@
+
+<PageTitle>Livres - Mes Recettes</PageTitle>
 
 @code {
-    private List<Book> books = [];
-    private bool loading = true;
-    private List<BreadcrumbItem> breadcrumbs =
-    [
-        new BreadcrumbItem("Accueil", href: "/"),
-        new BreadcrumbItem("Livres", href: "/books", disabled: true)
-    ];
-    private string searchTerm = string.Empty;
-    private string? errorMessage;
-    private IEnumerable<Book> filteredBooks => string.IsNullOrWhiteSpace(searchTerm)
-        ? books
-        : books.Where(b => b.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || (b.Authors != null && b.Authors.Any(a => a.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))));
-    private void OnSearchChanged(string value)
-    {
-        searchTerm = value ?? string.Empty;
-        StateHasChanged();
-    }
-
-    protected override void OnInitialized()
-    {
-        AuthService.AuthStateChanged += OnAuthStateChanged;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadBooks();
-    }
-
-    private async Task LoadBooks()
-    {
-        loading = true;
-        errorMessage = null;
-        try
-        {
-            books = (await BookService.GetAllAsync()).ToList();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading books");
-            books = new List<Book>();
-            errorMessage = "Impossible de charger les livres pour le moment. Veuillez réessayer.";
-        }
-        loading = false;
-    }
-
-    private async Task ShowAddDialog()
-    {
-        var dialog = await DialogService.ShowAsync<AddBookDialog>("Ajouter un livre");
-        var result = await dialog.Result;
-        if (result is not null && !result.Canceled)
-        {
-            await LoadBooks();
-        }
-    }
-
-    private async Task ShowEditDialog(Book bookToEdit)
-    {
-        var parameters = new MudBlazor.DialogParameters { ["BookToEdit"] = bookToEdit };
-        var dialog = await DialogService.ShowAsync<EditBookDialog>("Modifier le livre", parameters);
-        var result = await dialog.Result;
-        if (result is not null && !result.Canceled)
-        {
-            await LoadBooks();
-        }
-    }
-
-    private async Task DeleteBook(Book bookToDelete)
-    {
-        try
-        {
-            // Show confirmation dialog
-            bool? confirm = await DialogService.ShowMessageBoxAsync(
-                "Confirmer la suppression",
-                $"Êtes-vous sûr de vouloir supprimer le livre '{bookToDelete.Name}' ? Cette action est irréversible.",
-                yesText: "Supprimer",
-                cancelText: "Annuler");
-
-            if (confirm != true)
-            {
-                return;
-            }
-
-            var result = await BookService.DeleteAsync(bookToDelete.Id);
-            if (result.IsSuccess)
-            {
-                Snackbar.Add($"Le livre '{bookToDelete.Name}' a été supprimé avec succès.", Severity.Success);
-                await LoadBooks();
-                return;
-            }
-
-            Snackbar.Add(result.ErrorMessage ?? "Suppression impossible pour le moment.", Severity.Warning);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error deleting book {BookId}", bookToDelete.Id);
-            Snackbar.Add("Une erreur s'est produite lors de la suppression du livre. Veuillez réessayer.", Severity.Error);
-        }
-    }
-
-    private void OnAuthStateChanged()
-    {
-        _ = InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        AuthService.AuthStateChanged -= OnAuthStateChanged;
-    }
+    protected override void OnInitialized() =>
+        NavigationManager.NavigateTo("/sources?type=book", replace: true);
 }

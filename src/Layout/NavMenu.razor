@@ -20,20 +20,17 @@
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
         Accueil
     </MudNavLink>
-    <MudNavLink Href="dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">
-        Tableau de Bord
-    </MudNavLink>
     <MudNavLink Href="recipes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook">
         Recettes
     </MudNavLink>
-    <MudNavLink Href="books" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.LibraryBooks">
-        Livres
+    @* Livres, Magasins et Auteurs étaient trois destinations pour trois tableaux
+       presque identiques ; ils sont fusionnés dans Sources. Un auteur n'a pas de
+       contenu propre — c'est un attribut du livre — et devient un filtre là-bas. *@
+    <MudNavLink Href="sources" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.LibraryBooks">
+        Sources
     </MudNavLink>
-    <MudNavLink Href="stores" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Storefront">
-        Magasins
-    </MudNavLink>
-    <MudNavLink Href="authors" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">
-        Auteurs
+    <MudNavLink Href="dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">
+        Tableau de bord
     </MudNavLink>
     
     <!-- Recent Recipes Dropdown -->
