@@ -460,8 +460,10 @@
     }
 }
 
+/* backwards plutôt que both, pour la même raison que .page-enter : un transform
+   retenu après l'animation ferait de la puce un bloc conteneur. */
 .active-filter-chip {
-    animation: chipSlideIn 0.18s ease-out both;
+    animation: chipSlideIn 0.18s ease-out backwards;
 }
 
 /* =============================================

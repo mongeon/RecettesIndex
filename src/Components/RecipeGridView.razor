@@ -13,7 +13,7 @@
         var store = Stores.FirstOrDefault(s => s.Id == recipe.StoreId);
         var delay = cardIndex * 45;
         cardIndex++;
-        <MudItem xs="12" sm="6" md="4" lg="3" Style="@($"animation: fadeInUp 0.35s ease-out both; animation-delay: {delay}ms;")">
+        <MudItem xs="12" sm="6" md="4" lg="3" Style="@($"animation: fadeInUp 0.35s ease-out backwards; animation-delay: {delay}ms;")">
             <RecipeCard Recipe="@recipe"
                        Book="@book"
                        Store="@store"
