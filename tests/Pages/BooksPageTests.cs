@@ -1,51 +1,37 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using NSubstitute;
-using RecettesIndex.Models;
 using RecettesIndex.Pages;
 using RecettesIndex.Services;
-using RecettesIndex.Services.Abstractions;
 
 namespace RecettesIndex.Tests.Pages;
 
+/// <summary>
+/// The books list is now a redirect: Books, Stores and Authors were three near-identical
+/// tables and are merged into Sources. What is worth testing is that the old route still
+/// leads somewhere useful, since bookmarks and written-down links point at it.
+/// </summary>
 public class BooksPageTests : BunitContext
 {
-    private readonly IBookService _bookService = Substitute.For<IBookService>();
-
     public BooksPageTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddMudServices();
-        Services.AddSingleton(_bookService);
-        Services.AddSingleton(Substitute.For<ILogger<Books>>());
 
         var authWrapper = Substitute.For<ISupabaseAuthWrapper>();
         Services.AddSingleton(new AuthService(authWrapper));
     }
 
     [Fact]
-    public void RendersEmptyState_WhenNoBooksAreReturned()
+    public void RedirectsToSources_KeepingTheBookFilter()
     {
-        _bookService.GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<Book>>(Array.Empty<Book>()));
+        // Le signet qui voulait dire « les livres » doit continuer de montrer les livres,
+        // pas déverser toutes les sources d'un coup.
+        Render<Books>();
 
-        var cut = Render<Books>();
-
-        cut.WaitForAssertion(() =>
-            Assert.Contains("Aucun livre trouvé", cut.Markup));
-    }
-
-    [Fact]
-    public void RendersErrorState_WhenLoadingBooksFails()
-    {
-        _bookService.GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns(_ => Task.FromException<IReadOnlyList<Book>>(new Exception("Load failure")));
-
-        var cut = Render<Books>();
-
-        cut.WaitForAssertion(() =>
-            Assert.Contains("Impossible de charger les livres pour le moment", cut.Markup));
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        Assert.EndsWith("/sources?type=book", navigation.Uri);
     }
 }

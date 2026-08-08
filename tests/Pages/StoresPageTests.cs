@@ -9,13 +9,11 @@ using RecettesIndex.Services;
 namespace RecettesIndex.Tests.Pages;
 
 /// <summary>
-/// The authors list is now a redirect, and it is the substantive disappearance of the
-/// redesign: an author has no content of its own — it is an attribute of a book — so it
-/// becomes a filter inside Sources rather than a destination.
+/// The shops list is now a redirect into Sources, like the books and the authors.
 /// </summary>
-public class AuthorsPageTests : BunitContext
+public class StoresPageTests : BunitContext
 {
-    public AuthorsPageTests()
+    public StoresPageTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddMudServices();
@@ -25,11 +23,11 @@ public class AuthorsPageTests : BunitContext
     }
 
     [Fact]
-    public void RedirectsToTheBooksOfSources_WhereTheAuthorFilterLives()
+    public void RedirectsToSources_KeepingTheStoreFilter()
     {
-        Render<Authors>();
+        Render<Stores>();
 
         var navigation = Services.GetRequiredService<NavigationManager>();
-        Assert.EndsWith("/sources?type=book", navigation.Uri);
+        Assert.EndsWith("/sources?type=store", navigation.Uri);
     }
 }
