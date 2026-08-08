@@ -103,7 +103,8 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
             {
                 RecipeSortConstants.Name or
                 RecipeSortConstants.Rating or
-                RecipeSortConstants.CreatedAt => sortLabel.ToLower(),
+                RecipeSortConstants.CreatedAt or
+                RecipeSortConstants.Page => sortLabel.ToLower(),
                 _ => null
             };
 

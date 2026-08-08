@@ -98,4 +98,14 @@ public static class RecipeSortConstants
     /// Sort by recipe creation date.
     /// </summary>
     public const string CreatedAt = "created_at";
+
+    /// <summary>
+    /// Sort by page number in the book.
+    /// </summary>
+    /// <remarks>
+    /// Most useful with a book selected — across the whole collection it interleaves
+    /// books. Recipes with no page at all (maison, commerce, lien) sort last: ascending
+    /// order puts NULLs at the end, which is where « pas dans un livre » belongs.
+    /// </remarks>
+    public const string Page = "page";
 }
