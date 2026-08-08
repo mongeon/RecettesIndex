@@ -126,6 +126,32 @@ public class HomePageTests : BunitContext
     }
 
     [Fact]
+    public void FailedLoad_SaysSoInsteadOfLookingLikeAnEmptyCollection()
+    {
+        // Une panne et une collection vide se ressemblent trop : sans ce mot,
+        // « Rien encore » raconterait l'une comme l'autre.
+        _recipeService.GetRecipeSummariesAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Result<IReadOnlyList<Recipe>>.Failure("Network error")));
+
+        var cut = Render<Home>();
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("n'ont pas pu être chargées", cut.Markup));
+    }
+
+    [Fact]
+    public void SuccessfulLoad_DoesNotClaimAFailure()
+    {
+        var cut = Render<Home>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.DoesNotContain("n'ont pas pu être chargées", cut.Markup);
+            Assert.Contains("Tout est noté.", cut.Markup);
+        });
+    }
+
+    [Fact]
     public void FrequentTags_AreOrderedByUse()
     {
         _etiquetteService.GetAllAsync(Arg.Any<CancellationToken>())

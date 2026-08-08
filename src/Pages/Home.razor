@@ -36,7 +36,8 @@
         @* Un bouton déguisé en champ : la saisie se fait dans la palette, qui sait déjà
            chercher dans les recettes, les livres et les magasins. Deux champs de
            recherche voudraient dire deux recherches à tenir d'accord. *@
-        <button type="button" class="home-search" @onclick="OpenPalette">
+        <button type="button" class="home-search" aria-label="Rechercher une recette, un livre ou un magasin"
+                @onclick="OpenPalette">
             <MudIcon Icon="@Icons.Material.Outlined.Search" Class="home-search-icon" />
             <span class="home-search-hint">Une recette, un livre, un magasin…</span>
             <span class="home-search-badge">@ShortcutLabel</span>
@@ -61,6 +62,13 @@
     }
     else
     {
+        @* Un chargement raté et une collection vide se ressemblent trop : sans ce mot,
+           « Rien encore » raconterait une panne comme une absence. *@
+        @if (_loadFailed)
+        {
+            <p class="home-failed">Les listes n'ont pas pu être chargées. Réessayez plus tard.</p>
+        }
+
         <div class="home-cards">
             <section class="home-card">
                 <div class="home-card-head">
@@ -148,6 +156,7 @@
     private List<Etiquette> _topTags = [];
     private int _unratedTotal;
     private bool _loading = true;
+    private bool _loadFailed;
     private bool _isApplePlatform;
 
     private string ShortcutLabel => _isApplePlatform ? "⌘K" : "Ctrl K";
@@ -172,6 +181,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading the home page");
+            _loadFailed = true;
         }
         finally
         {
@@ -182,6 +192,12 @@
     private async Task LoadAsync()
     {
         var summariesResult = await RecipeService.GetRecipeSummariesAsync();
+        if (!summariesResult.IsSuccess)
+        {
+            Logger.LogError("Could not load the recipe summaries for the home page: {Error}", summariesResult.ErrorMessage);
+            _loadFailed = true;
+        }
+
         // Type explicite : le [] de repli n'a pas de type naturel, var ne lui en donnerait pas.
         IReadOnlyList<Recipe> summaries = summariesResult.IsSuccess ? summariesResult.Value : [];
 
@@ -212,6 +228,11 @@
             {
                 byId = recipesResult.Value.ToDictionary(r => r.Id);
             }
+            else
+            {
+                Logger.LogError("Could not load the home page rows: {Error}", recipesResult.ErrorMessage);
+                _loadFailed = true;
+            }
         }
 
         _recent = recentEntries
@@ -241,8 +262,8 @@
             var all = await EtiquetteService.GetAllAsync();
             var counts = await EtiquetteService.GetRecipeCountsAsync();
 
-            // Les plus utilisées d'abord : une étiquette portée par une seule recette
-            // n'est pas un raccourci, c'est une ligne de plus à lire.
+            // Les plus utilisées d'abord, et celles qui ne sont posées sur aucune recette
+            // sont écartées : elles ne mènent nulle part, ce n'est pas un raccourci.
             _topTags = all
                 .Where(tag => counts.ContainsKey(tag.Id))
                 .OrderByDescending(tag => counts[tag.Id])
@@ -310,6 +331,16 @@
 
         _toRate.RemoveAll(r => r.Id == recipe.Id);
         _unratedTotal = Math.Max(0, _unratedTotal - 1);
+
+        // La même recette peut être listée deux fois : sans ça, la carte des favoris
+        // garderait son « — » jusqu'au prochain chargement.
+        for (var i = 0; i < _favorites.Count; i++)
+        {
+            if (_favorites[i].Id == recipe.Id)
+            {
+                _favorites[i] = _favorites[i] with { Meta = RatingMeta(rating) };
+            }
+        }
         Snackbar.Add($"« {recipe.Name} » notée {rating} / 5.", Severity.Success);
     }
 
