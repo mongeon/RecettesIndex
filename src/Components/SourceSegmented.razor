@@ -10,13 +10,22 @@
     recette maison.
 *@
 
-<div class="rform-seg" role="radiogroup" aria-label="D'où ça vient">
+@*
+    Sémantique : un groupe de boutons à bascule, pas un radiogroup. Le motif radio de
+    l'ARIA impose la navigation aux flèches avec tabindex glissant ; l'annoncer sans le
+    tenir laisse un lecteur d'écran attendre un comportement qui n'arrive pas. Des
+    <button> tabulables font le travail sans mentir.
+
+    L'aria-label est explicite parce que sous 600px le libellé visible est masqué : sans
+    lui, il ne resterait qu'une icône, c'est-à-dire aucun nom accessible.
+*@
+<div class="rform-seg" role="group" aria-label="D'où ça vient">
     @foreach (var kind in RecipeFormModel.SourceOrder)
     {
         <button type="button"
                 class="@(kind == Value ? "rform-seg-btn rform-seg-btn-on" : "rform-seg-btn")"
-                role="radio"
-                aria-checked="@(kind == Value)"
+                aria-pressed="@(kind == Value)"
+                aria-label="@LabelFor(kind)"
                 @onclick="() => Select(kind)">
             <MudIcon Icon="@IconFor(kind)" />
             <span>@LabelFor(kind)</span>
