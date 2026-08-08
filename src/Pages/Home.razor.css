@@ -1,75 +1,229 @@
-/* Hero section — coral gradient.
-   Le dégradé suit maintenant le corail d'action et sa variante foncée : le
-   texte du bandeau tient 4,9:1 et 6,8:1 en clair (contre 2,8:1 et 2,4:1 avec
-   #FF6B6B → #ff8e53), et l'encre foncée tient 5,9:1 et 4,8:1 en sombre. */
-.mud-paper.hero-section {
-    background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%) !important;
-    color: var(--mud-palette-primary-text) !important;
-    min-height: 160px;
+/* Accueil maigre (bloc 3a).
+   Les sélecteurs visant un composant MudBlazor passent par ::deep : la classe posée
+   sur un MudIcon atterrit sur son élément racine, qui ne porte pas l'attribut de
+   portée du composant parent. */
+
+.home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding-top: 12px;
 }
 
-@media (min-width: 768px) {
-    .mud-paper.hero-section {
-        min-height: 200px;
+.home-hero {
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.home-title {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-align: center;
+    color: var(--mud-palette-text-primary);
+}
+
+/* Un bouton, pas un champ : la saisie a lieu dans la palette. Il en a l'apparence
+   parce que c'est ce qu'on cherche des yeux en arrivant. */
+.home-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 52px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.05);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 150ms cubic-bezier(.4, 0, .2, 1);
+}
+
+    .home-search:hover {
+        border-color: var(--app-accent-ink);
     }
+
+    .home-search ::deep .home-search-icon {
+        font-size: 22px;
+        color: var(--app-accent-ink);
+    }
+
+.home-search-hint {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    color: var(--mud-palette-text-disabled);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Horizontal recipe scroll area */
-.recipe-scroll {
-    scrollbar-width: thin;
-    /* Décor, pas du texte : le corail de marque garde ce rôle-là. */
-    scrollbar-color: var(--app-accent) transparent;
-    transition: opacity 0.3s ease-in-out;
-}
-
-.recipe-scroll::-webkit-scrollbar {
-    height: 6px;
-}
-
-.recipe-scroll::-webkit-scrollbar-thumb {
-    background-color: var(--app-accent);
+.home-search-badge {
+    flex-shrink: 0;
+    padding: 3px 7px;
     border-radius: 6px;
+    background-color: var(--app-field);
+    color: var(--mud-palette-text-secondary);
+    font-size: 11.5px;
+    font-weight: 800;
+    white-space: nowrap;
 }
 
-.recipe-scroll::-webkit-scrollbar-track {
-    background: transparent;
+.home-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
 }
 
-/* Refresh fade-out state */
-.fading-out {
-    opacity: 0.3;
-    pointer-events: none;
+.home-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid var(--mud-palette-lines-default);
+    color: var(--mud-palette-text-secondary);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-decoration: none;
 }
 
-/* Fade-in for newly loaded content */
-.fade-in {
-    animation: homeFadeIn 0.5s ease-in-out;
-}
-
-@keyframes homeFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
+    .home-tag:hover {
+        border-color: var(--app-accent-ink);
+        color: var(--app-accent-ink);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+.home-loading {
+    display: flex;
+    justify-content: center;
+    padding: 32px 0;
+}
+
+.home-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.home-card {
+    padding: 16px 18px;
+    border-radius: 12px;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+}
+
+.home-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-disabled);
+}
+
+    .home-card-head ::deep .home-card-icon {
+        font-size: 18px;
+    }
+
+    .home-card-head ::deep .home-card-icon-accent {
+        color: var(--app-accent-ink);
+    }
+
+    .home-card-head ::deep .home-card-icon-teal {
+        color: var(--app-teal-ink);
+    }
+
+.home-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--app-line-soft);
+    text-decoration: none;
+    color: inherit;
+}
+
+    .home-row:last-child {
+        border-bottom: none;
+    }
+
+.home-row-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--mud-palette-text-primary);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-row:hover .home-row-name,
+.home-row-name:hover {
+    color: var(--app-accent-ink);
+}
+
+.home-row-meta {
+    font-size: 12.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--mud-palette-text-disabled);
+}
+
+/* Le numéro de page est ce qu'on vient chercher : il porte l'encre corail. */
+.home-row-meta-accent {
+    color: var(--app-accent-ink);
+}
+
+/* La rangée de notation n'est pas un lien : seul le nom en est un, pour que cliquer
+   une pizza note au lieu de naviguer. */
+.home-row-rate {
+    cursor: default;
+}
+
+    .home-row-rate ::deep .mud-rating-item {
+        padding: 1px;
+    }
+
+.home-card-empty {
+    margin: 8px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--mud-palette-text-disabled);
+}
+
+/* Trois colonnes deviennent une seule bien avant le téléphone : à 900px, une carte de
+   liste fait déjà moins de 300px et les noms se coupent tous. */
+@media (max-width: 959px) {
+    .home-cards {
+        grid-template-columns: 1fr;
+        max-width: 760px;
     }
 }
 
-/* Refresh button spin */
-.refresh-rotate {
-    animation: homeRotate 0.5s ease-in-out;
-}
+@media (max-width: 599px) {
+    .home-title {
+        font-size: 22px;
+    }
 
-@keyframes homeRotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* Mobile adjustments */
-@media (max-width: 767px) {
-    ::deep .hero-section {
-        min-height: 250px !important;
+    .home-search-hint {
+        font-size: 15px;
     }
 }

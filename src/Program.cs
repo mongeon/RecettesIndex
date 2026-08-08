@@ -50,6 +50,8 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IEtiquetteService, EtiquetteService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddScoped<IErrorLoggingService, ErrorLoggingService>();
+// Le lien entre les pages et la palette ⌘K, qui vit dans la mise en page.
+builder.Services.AddScoped<PaletteLauncher>();
 
 var host = builder.Build();
 
