@@ -1014,8 +1014,15 @@
     right: 0;
     bottom: 0;
     z-index: 1401;
+    /* dvh plutôt que vh : sur mobile, vh mesure la fenêtre barre d'adresse masquée, donc
+       une feuille dimensionnée en vh dépasse le bas de ce qu'on voit réellement. dvh suit
+       la hauteur visible. Le vh reste en repli pour les navigateurs qui ignorent dvh. */
     max-height: 85vh;
+    max-height: 85dvh;
     overflow-y: auto;
+    /* Le défilement s'arrête à la feuille : arrivé en bas de sa liste d'étiquettes, le
+       geste ne doit pas se propager à la page derrière. */
+    overscroll-behavior: contain;
     padding: 14px 16px 22px;
     border-radius: 20px 20px 0 0;
     background-color: var(--mud-palette-surface);
