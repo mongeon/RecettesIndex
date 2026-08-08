@@ -212,6 +212,14 @@
         try
         {
             var recipes = await LoadAllRecipesAsync();
+            if (recipes is null)
+            {
+                // Un tableau de bord bâti sur une collection tronquée compte faux sans
+                // le dire : mieux vaut ne rien montrer que des chiffres inventés.
+                _view = null;
+                return;
+            }
+
             var books = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
             var stores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
 
@@ -220,6 +228,10 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading the dashboard");
+            // Sans cette remise à zéro, un rechargement raté laisserait la vue précédente
+            // à l'écran — y compris la recette qu'on vient de noter, toujours listée comme
+            // en attente de note.
+            _view = null;
         }
         finally
         {
@@ -231,11 +243,16 @@
     /// Every recipe, tags and book embedded — the four cards each need a different cut of
     /// the same data, and cutting it here beats four queries that could disagree.
     /// </summary>
+    /// <returns>
+    /// Every recipe, or null when the collection could not be read whole. Half a
+    /// collection would produce a dashboard whose every figure is wrong and says so
+    /// nowhere.
+    /// </returns>
     /// <remarks>
     /// SearchAsync caps the page size, so this pages to the end rather than silently
     /// truncating the collection at that limit — the same loop the ⌘K palette runs.
     /// </remarks>
-    private async Task<List<Recipe>> LoadAllRecipesAsync()
+    private async Task<List<Recipe>?> LoadAllRecipesAsync()
     {
         var all = new List<Recipe>();
         var page = 1;
@@ -249,7 +266,7 @@
             if (!result.IsSuccess)
             {
                 Logger.LogError("Could not load the recipes for the dashboard: {Error}", result.ErrorMessage);
-                break;
+                return null;
             }
 
             all.AddRange(result.Value.Items);
