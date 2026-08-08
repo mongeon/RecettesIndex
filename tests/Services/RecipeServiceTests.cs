@@ -321,6 +321,47 @@ public class RecipeServiceTests
 
     #endregion
 
+    #region Sorting
+
+    [Theory]
+    [InlineData(RecipeSortConstants.Page, "page")]
+    [InlineData(RecipeSortConstants.Name, "name")]
+    [InlineData(RecipeSortConstants.Rating, "rating")]
+    [InlineData(RecipeSortConstants.CreatedAt, "created_at")]
+    public async Task SearchAsync_PassesTheKnownSortColumnToTheDatabase(string sortLabel, string expectedColumn)
+    {
+        // Arrange
+        _query.GetAllRecipeIdsAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>())
+            .Returns(new List<int> { 1 });
+
+        // Act
+        await _service.SearchAsync(null, null, null, null, null, 1, 20, sortLabel);
+
+        // Assert : le tri est fait par la base, pas en mémoire — c'est la colonne
+        // transmise qui décide, et une étiquette inconnue ne doit rien trier du tout.
+        await _query.Received(1).GetRecipesByIdsAsync(
+            Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>(),
+            expectedColumn, Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>());
+    }
+
+    [Fact]
+    public async Task SearchAsync_UnknownSortLabel_SortsByNothing()
+    {
+        // Arrange : une étiquette libre ne doit pas se retrouver dans un ORDER BY.
+        _query.GetAllRecipeIdsAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>())
+            .Returns(new List<int> { 1 });
+
+        // Act
+        await _service.SearchAsync(null, null, null, null, null, 1, 20, "colonne inventée");
+
+        // Assert
+        await _query.Received(1).GetRecipesByIdsAsync(
+            Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>(),
+            null, Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>());
+    }
+
+    #endregion
+
     #region GetByIdAsync Tests
 
     [Fact]

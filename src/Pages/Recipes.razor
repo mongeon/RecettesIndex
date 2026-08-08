@@ -168,13 +168,15 @@
     {
         new(RecipeSortConstants.CreatedAt, "Ajout récent", null),
         new(RecipeSortConstants.Name, "Nom", null),
-        new(RecipeSortConstants.Rating, "Note", null)
+        new(RecipeSortConstants.Rating, "Note", null),
+        new(RecipeSortConstants.Page, "Page", null)
     };
 
     private string SortLabelText => sortColumn switch
     {
         RecipeSortConstants.Name => "Nom",
         RecipeSortConstants.Rating => "Note",
+        RecipeSortConstants.Page => "Page",
         _ => "Ajout récent"
     };
 
@@ -186,8 +188,10 @@
         }
 
         sortColumn = column;
-        // Le nom se lit de A à Z ; une date ou une note se lisent du plus fort au plus faible.
-        sortDescending = column != RecipeSortConstants.Name;
+        // Le nom se lit de A à Z et un numéro de page en montant ; une date ou une note
+        // se lisent du plus fort au plus faible. La règle est énumérée plutôt que niée :
+        // « tout sauf le nom descend » se serait trompée dès la deuxième colonne montante.
+        sortDescending = column is not (RecipeSortConstants.Name or RecipeSortConstants.Page);
         currentPage = 1;
         await LoadCardViewData();
     }
