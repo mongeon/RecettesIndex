@@ -20,17 +20,24 @@
            placeholder="@Placeholder"
            autocomplete="off"
            aria-label="@Placeholder"
+           aria-expanded="@_open"
            @oninput="OnInput"
            @onfocus="Open" />
 
+    @*
+        Pas de role="listbox" : ce motif ARIA impose la navigation aux flèches et le
+        focus délégué, et la liste porte de toute façon des éléments qui ne sont pas des
+        options — l'entrée de création, le message de liste vide. Des <button> tabulables
+        portent l'accessibilité nativement, sans annoncer un comportement absent.
+    *@
     @if (_open)
     {
         <div class="rform-pick-scrim" @onclick="Close"></div>
-        <div class="rform-pick-list" role="listbox">
+        <div class="rform-pick-list">
             @foreach (var option in Matches)
             {
-                <button type="button" class="rform-pick-option" role="option"
-                        aria-selected="@(option.Id == SelectedId)"
+                <button type="button" class="rform-pick-option"
+                        aria-current="@(option.Id == SelectedId)"
                         @onclick="() => Select(option)">
                     <span class="rform-pick-name">@option.Name</span>
                     @if (!string.IsNullOrEmpty(option.Meta))

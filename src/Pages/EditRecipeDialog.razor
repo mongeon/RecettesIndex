@@ -101,6 +101,13 @@
 
     private async Task SaveAsync()
     {
+        // Le raccourci clavier n'a pas de bouton à griser : sans ce garde-fou, maintenir
+        // ⌘⏎ enfoncé enverrait plusieurs enregistrements en parallèle.
+        if (_saving)
+        {
+            return;
+        }
+
         _error = _model.Validate();
         if (_error is not null)
         {
