@@ -1010,6 +1010,11 @@
     z-index: 1400;
 }
 
+/* Pas de @media qui masque la feuille au-delà de 767px, même si la puce qui l'ouvre y
+   disparaît : le verrou de défilement suit _sheetOpen, pas la largeur. Une feuille
+   masquée en CSS laisserait la page verrouillée sans rien à refermer — la tablette qui
+   pivote en paysage serait bloquée. Telle quelle, la feuille reste visible et le
+   voile la referme. */
 .sheet {
     position: fixed;
     left: 0;
