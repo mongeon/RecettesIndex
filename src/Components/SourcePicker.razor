@@ -1,0 +1,167 @@
+@using MudBlazor
+@using RecettesIndex.Services
+
+@*
+    L'autocomplétion de source du formulaire (bloc 4b).
+
+    Sa raison d'être est la dernière entrée de la liste : « Créer le livre "…" ». Sans
+    elle, saisir une recette d'un livre absent de la collection oblige à annuler, aller
+    créer le livre ailleurs, revenir et tout ressaisir — et c'est exactement là que la
+    collection cesse de grossir.
+
+    Le filtrage passe par SearchText, comme la palette ⌘K : « creme » trouve « Crème »,
+    et une lettre en moins ne fait pas disparaître le livre qu'on a sous les yeux.
+*@
+
+<div class="rform-pick">
+    <input type="text"
+           class="rform-input"
+           value="@_text"
+           placeholder="@Placeholder"
+           autocomplete="off"
+           aria-label="@Placeholder"
+           @oninput="OnInput"
+           @onfocus="Open" />
+
+    @if (_open)
+    {
+        <div class="rform-pick-scrim" @onclick="Close"></div>
+        <div class="rform-pick-list" role="listbox">
+            @foreach (var option in Matches)
+            {
+                <button type="button" class="rform-pick-option" role="option"
+                        aria-selected="@(option.Id == SelectedId)"
+                        @onclick="() => Select(option)">
+                    <span class="rform-pick-name">@option.Name</span>
+                    @if (!string.IsNullOrEmpty(option.Meta))
+                    {
+                        <span class="rform-pick-meta">@option.Meta</span>
+                    }
+                </button>
+            }
+
+            @if (CanCreate)
+            {
+                <button type="button" class="rform-pick-option rform-pick-create" @onclick="CreateAsync">
+                    <MudIcon Icon="@Icons.Material.Outlined.AddCircle" />
+                    <span class="rform-pick-name">@CreateLabel « @_text.Trim() »</span>
+                </button>
+            }
+            else if (Matches.Count == 0)
+            {
+                <div class="rform-pick-empty">Rien de tel pour l'instant.</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>One selectable source.</summary>
+    /// <param name="Id">Database identifier handed back on selection.</param>
+    /// <param name="Name">What the user reads and types against.</param>
+    /// <param name="Meta">Right-aligned detail — the author, or a recipe count.</param>
+    public record Option(int Id, string Name, string Meta);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Option> Options { get; set; } = [];
+
+    /// <summary>Currently chosen source, or null while nothing is picked.</summary>
+    [Parameter] public int? SelectedId { get; set; }
+
+    /// <summary>Text shown when a source is already chosen, so reopening does not blank it.</summary>
+    [Parameter] public string? SelectedName { get; set; }
+
+    [Parameter] public string Placeholder { get; set; } = string.Empty;
+
+    /// <summary>Wording of the create entry — « Créer le livre », « Créer le commerce ».</summary>
+    [Parameter, EditorRequired] public string CreateLabel { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public EventCallback<Option> OnSelected { get; set; }
+
+    /// <summary>
+    /// Asked to create the typed name. The parent does the writing and is expected to come
+    /// back with a fresh <see cref="Options"/> containing it.
+    /// </summary>
+    [Parameter, EditorRequired] public EventCallback<string> OnCreate { get; set; }
+
+    private bool _open;
+    private string _text = string.Empty;
+    private bool _typed;
+
+    protected override void OnParametersSet()
+    {
+        // Tant que l'utilisateur n'a rien tapé, le champ affiche la sélection courante :
+        // rouvrir le formulaire d'une recette existante doit montrer son livre.
+        if (!_typed)
+        {
+            _text = SelectedName ?? string.Empty;
+        }
+    }
+
+    private IReadOnlyList<Option> Matches
+    {
+        get
+        {
+            var query = SearchText.Normalize(_text);
+            if (query.Length == 0 || _text == SelectedName)
+            {
+                return Options;
+            }
+
+            var terms = SearchText.Terms(query);
+            return Options
+                .Where(o => terms.All(t => SearchText.ContainsTerm(SearchText.Normalize(o.Name), t)))
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// The create entry only appears once the typed name is not already in the list —
+    /// offering to create a book that exists is how duplicates get made.
+    /// </summary>
+    private bool CanCreate
+    {
+        get
+        {
+            var typed = _text.Trim();
+            if (typed.Length == 0 || typed == SelectedName)
+            {
+                return false;
+            }
+
+            var normalized = SearchText.Normalize(typed);
+            return !Options.Any(o => SearchText.Normalize(o.Name) == normalized);
+        }
+    }
+
+    private void Open() => _open = true;
+
+    private void Close()
+    {
+        _open = false;
+        _typed = false;
+        _text = SelectedName ?? string.Empty;
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _text = e.Value?.ToString() ?? string.Empty;
+        _typed = true;
+        _open = true;
+    }
+
+    private async Task Select(Option option)
+    {
+        _open = false;
+        _typed = false;
+        _text = option.Name;
+        await OnSelected.InvokeAsync(option);
+    }
+
+    private async Task CreateAsync()
+    {
+        var typed = _text.Trim();
+        _open = false;
+        _typed = false;
+        await OnCreate.InvokeAsync(typed);
+    }
+}
