@@ -1,5 +1,9 @@
 @using MudBlazor
 @using RecettesIndex.Models
+@using Microsoft.Extensions.Logging
+@inject IJSRuntime JSRuntime
+@inject ILogger<RecipeFilterBar> Logger
+@implements IAsyncDisposable
 
 @*
     Barre de filtres unique (bloc 1a du handoff).
@@ -82,7 +86,7 @@
     sur 390px pousserait la liste hors de l'écran avant qu'on ait vu une recette.
 *@
 <div class="filter-mobile">
-    <button type="button" class="filter-sheet-open" @onclick="() => _sheetOpen = true">
+    <button type="button" class="filter-sheet-open" @onclick="OpenSheetAsync">
         <MudIcon Icon="@Icons.Material.Outlined.Tune" Class="filter-sheet-open-icon" />
         <span>Filtres</span>
         @if (ActiveCount > 0)
@@ -105,7 +109,7 @@
 
 @if (_sheetOpen)
 {
-    <div class="sheet-scrim" @onclick="() => _sheetOpen = false"></div>
+    <div class="sheet-scrim" @onclick="CloseSheetAsync"></div>
     <div class="sheet" role="dialog" aria-modal="true" aria-label="Filtres">
         <div class="sheet-handle"></div>
 
@@ -162,7 +166,7 @@
 
         @* Le compteur suit la sélection en direct : le bouton confirme ce qu'on obtiendra
            avant de refermer, il ne déclenche pas le filtrage. *@
-        <button type="button" class="sheet-apply" @onclick="() => _sheetOpen = false">
+        <button type="button" class="sheet-apply" @onclick="CloseSheetAsync">
             Voir @(ResultCount == 1 ? "la recette" : $"les {ResultCount} recettes")
         </button>
     </div>
@@ -202,6 +206,51 @@
     [Parameter, EditorRequired] public EventCallback OnClearAllFilters { get; set; }
 
     private bool _sheetOpen;
+
+    /// <summary>
+    /// Ouvre la feuille et immobilise la page derrière elle.
+    /// </summary>
+    /// <remarks>
+    /// Sans le verrou, la liste continue de défiler sous le doigt pendant qu'on choisit un
+    /// filtre — d'autant plus déroutant que la collection est longue, puisqu'on revient sur
+    /// une position qu'on n'a pas choisie. Le verrou mémorise la position et la restitue à
+    /// la fermeture.
+    /// </remarks>
+    private async Task OpenSheetAsync()
+    {
+        _sheetOpen = true;
+        await SetScrollLockAsync(true);
+    }
+
+    private async Task CloseSheetAsync()
+    {
+        _sheetOpen = false;
+        await SetScrollLockAsync(false);
+    }
+
+    private async Task SetScrollLockAsync(bool locked)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("recettesShortcuts.lockScroll", locked);
+        }
+        catch (Exception ex)
+        {
+            // Le verrou est un confort : la feuille reste utilisable sans lui.
+            Logger.LogWarning(ex, "Could not toggle the scroll lock for the filter sheet");
+        }
+    }
+
+    /// <summary>
+    /// Quitter la page avec la feuille ouverte ne doit pas laisser le document verrouillé.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_sheetOpen)
+        {
+            await SetScrollLockAsync(false);
+        }
+    }
 
     private string ResultCountLabel => ResultCount == 1 ? "1 résultat" : $"{ResultCount} résultats";
 

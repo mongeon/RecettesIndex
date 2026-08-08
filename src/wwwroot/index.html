@@ -92,6 +92,22 @@
                     }
                 });
             },
+            // Une feuille du bas doit immobiliser la page derrière elle. Sans ça, la
+            // liste continue de défiler sous le doigt, et sur une longue collection on
+            // perd de vue ce qu'on filtrait. position: fixed ne suffit pas : c'est le
+            // défilement du document qu'il faut suspendre.
+            lockScroll: function (locked) {
+                var body = document.body;
+                if (locked) {
+                    body.dataset.scrollLockTop = String(window.scrollY);
+                    body.style.overflow = 'hidden';
+                } else {
+                    body.style.overflow = '';
+                    var top = parseInt(body.dataset.scrollLockTop || '0', 10);
+                    delete body.dataset.scrollLockTop;
+                    window.scrollTo(0, top);
+                }
+            },
             // Windows et Linux pressent Ctrl : afficher ⌘ leur montre un symbole
             // qu'ils n'ont pas sur leur clavier, quand il ne s'affiche pas en carré.
             isApple: function () {
