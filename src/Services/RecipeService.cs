@@ -99,12 +99,22 @@ public class RecipeService(IRecipesQuery q, ICacheService cache, Supabase.Client
             var total = ids.Count;
 
             // Map sort label to a known DB column name; null means no ORDER BY.
-            var dbSortColumn = sortLabel?.ToLower() switch
+            //
+            // Invariant plutôt que la culture courante : c'est un identifiant de colonne
+            // SQL, pas du texte à lire. En turc, « Rating ».ToLower() donne « ratıng » —
+            // i sans point — qui ne correspond à aucune colonne connue, et le tri
+            // disparaîtrait sans un mot. La culture n'est pas fixée dans cette app :
+            // elle vient du navigateur.
+            //
+            // Normalisé une seule fois : la valeur testée et la valeur retenue doivent
+            // être la même, pas deux appels qu'on espère d'accord.
+            var normalizedSort = sortLabel?.ToLowerInvariant();
+            var dbSortColumn = normalizedSort switch
             {
                 RecipeSortConstants.Name or
                 RecipeSortConstants.Rating or
                 RecipeSortConstants.CreatedAt or
-                RecipeSortConstants.Page => sortLabel.ToLower(),
+                RecipeSortConstants.Page => normalizedSort,
                 _ => null
             };
 

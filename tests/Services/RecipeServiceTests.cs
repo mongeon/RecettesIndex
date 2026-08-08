@@ -1,6 +1,7 @@
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using System.Globalization;
 using RecettesIndex.Models;
 using RecettesIndex.Services;
 using RecettesIndex.Services.Abstractions;
@@ -342,6 +343,32 @@ public class RecipeServiceTests
         await _query.Received(1).GetRecipesByIdsAsync(
             Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>(),
             expectedColumn, Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>());
+    }
+
+    [Fact]
+    public async Task SearchAsync_SortColumnSurvivesATurkishLocale()
+    {
+        // Le mode de défaillance que ToLowerInvariant ferme : en turc, « Rating ».ToLower()
+        // donne « ratıng » — i sans point — qui ne correspond à aucune colonne connue. Le
+        // tri disparaîtrait alors sans un mot, et la culture vient du navigateur.
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("tr-TR");
+
+            _query.GetAllRecipeIdsAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>())
+                .Returns(new List<int> { 1 });
+
+            await _service.SearchAsync(null, null, null, null, null, 1, 20, "Rating");
+
+            await _query.Received(1).GetRecipesByIdsAsync(
+                Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>(),
+                "rating", Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<int>());
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
     }
 
     [Fact]
