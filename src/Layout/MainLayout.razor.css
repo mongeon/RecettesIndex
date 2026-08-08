@@ -1,8 +1,20 @@
 /* MainLayout scoped styles */
 
 /* Page transition — fades in new content on each route change */
+/* backwards, et surtout pas both.
+
+   « both » retient l'état final de l'animation indéfiniment — ici transform:
+   translateY(0). Un transform autre que none, même sans effet visible, fait de
+   l'élément un bloc conteneur pour ses descendants en position: fixed. Comme ce div
+   enveloppe @Body, toute superposition fixée d'une page se retrouvait ancrée à la
+   hauteur du contenu et non à la fenêtre : la feuille de filtres mobile atterrissait
+   au bas de la page, d'autant plus loin que la liste était longue.
+
+   « backwards » garde ce qui servait vraiment — l'état de départ appliqué avant le
+   premier rendu, qui évite le sursaut — et laisse l'élément sans transform une fois
+   les 220 ms écoulées. */
 .page-enter {
-    animation: pageEnter 0.22s ease-out both;
+    animation: pageEnter 0.22s ease-out backwards;
 }
 
 @keyframes pageEnter {
