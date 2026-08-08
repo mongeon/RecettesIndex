@@ -25,11 +25,32 @@ public class Recipe : BaseModel
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the rating of the recipe (1-5 stars, 0 = not rated).
+    /// The rating column as the database actually holds it: nullable.
     /// </summary>
+    /// <remarks>
+    /// Mapping it straight onto a non-nullable <see cref="int"/> made every read of the
+    /// table throw the moment one row held a NULL — and it is one deserialisation for the
+    /// whole response, so a single unrated recipe took down every list at once. The app's
+    /// own forms never produced one, since they write 0 for « pas encore notée », but the
+    /// column has always allowed it and a plain SQL insert produces it.
+    /// </remarks>
     [Column("rating")]
+    public int? RatingValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the rating of the recipe (1-5 pizzas, 0 = not rated).
+    /// </summary>
+    /// <remarks>
+    /// NULL and 0 mean the same thing here — nobody has given an opinion — so the absent
+    /// value reads as 0 rather than as an error. Writing back always stores a number.
+    /// </remarks>
+    [JsonIgnore]
     [Range(0, 5, ErrorMessage = "Rating must be between 0 and 5")]
-    public int Rating { get; set; }
+    public int Rating
+    {
+        get => RatingValue ?? 0;
+        set => RatingValue = value;
+    }
 
     /// <summary>
     /// Gets or sets the creation date of the recipe.
