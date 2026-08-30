@@ -1,0 +1,27 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Toutes les 3 jours, bien en deçà de la fenêtre d'inactivité de 7 jours de Supabase
+    - cron: '0 12 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    name: Ping Supabase REST API
+    steps:
+      - name: Ping Supabase
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${SUPABASE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_KEY}")
+          echo "Supabase REST API a répondu avec le code $status"
+          if [ "$status" -ge 400 ]; then
+            echo "::error::Le ping Supabase a échoué avec le code $status"
+            exit 1
+          fi
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
