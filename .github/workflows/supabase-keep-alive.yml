@@ -17,8 +17,13 @@ jobs:
       - name: Ping Supabase
         run: |
           set -o pipefail
-          status=$(curl -sS -o /dev/null -w "%{http_code}" \
-            "${SUPABASE_URL}/rest/v1/" \
+          # Une vraie lecture de table : la racine PostgREST (/rest/v1/) est refusée
+          # avec la clé anon (401) et ne constitue pas une requête sur la base, alors
+          # que Supabase mesure l'inactivité sur les requêtes utilisateur.
+          # `recettes` est lisible publiquement (policy SELECT pour le rôle public).
+          body=$(mktemp)
+          status=$(curl -sS -o "$body" -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/recettes?select=id&limit=1" \
             -H "apikey: ${SUPABASE_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_KEY}") || {
               echo "::error::La requête curl vers Supabase a échoué (erreur réseau/SSL)"
@@ -26,6 +31,7 @@ jobs:
             }
           echo "Supabase REST API a répondu avec le code $status"
           if [ "$status" -lt 200 ] || [ "$status" -ge 400 ]; then
+            echo "Réponse : $(cat "$body")"
             echo "::error::Le ping Supabase a échoué avec le code $status"
             exit 1
           fi
