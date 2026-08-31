@@ -22,6 +22,7 @@ jobs:
           # que Supabase mesure l'inactivité sur les requêtes utilisateur.
           # `recettes` est lisible publiquement (policy SELECT pour le rôle public).
           body=$(mktemp)
+          trap 'rm -f "$body"' EXIT
           status=$(curl -sS -o "$body" -w "%{http_code}" \
             "${SUPABASE_URL}/rest/v1/recettes?select=id&limit=1" \
             -H "apikey: ${SUPABASE_KEY}" \
@@ -31,7 +32,12 @@ jobs:
             }
           echo "Supabase REST API a répondu avec le code $status"
           if [ "$status" -lt 200 ] || [ "$status" -ge 400 ]; then
-            echo "Réponse : $(cat "$body")"
+            echo "Réponse :"
+            cat "$body"
+            # Termine la ligne : sans ça, une réponse sans saut de ligne final
+            # collerait le ::error:: en fin de ligne et GitHub ne le lirait plus
+            # comme une commande de workflow.
+            echo
             echo "::error::Le ping Supabase a échoué avec le code $status"
             exit 1
           fi
