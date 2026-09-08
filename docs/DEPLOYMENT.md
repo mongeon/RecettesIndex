@@ -85,8 +85,8 @@ Three things matter here:
 - **`globalHeaders` and `routes`** make the default no-store, then re-enable
   long caching for the content-hashed `/_framework/*` files.
 
-The file lives in `wwwroot/`, so `dotnet publish` copies it to the root of the
-published output where Static Web Apps expects it.
+The file lives at `src/wwwroot/staticwebapp.config.json`, so `dotnet publish`
+copies it to the root of the published output where Static Web Apps expects it.
 
 ## 🔧 CI/CD Pipeline
 

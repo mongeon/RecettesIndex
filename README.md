@@ -46,14 +46,14 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 3. **Configure Supabase**
    - Create a new project at [supabase.com](https://supabase.com)
    - Update `src/wwwroot/appsettings.json`:
-    ```json
-    {
-       "supabase": {
-          "Url": "YOUR_SUPABASE_URL",
-          "Key": "YOUR_SUPABASE_ANON_KEY"
-       }
-    }
-    ```
+     ```json
+     {
+        "supabase": {
+           "Url": "YOUR_SUPABASE_URL",
+           "Key": "YOUR_SUPABASE_ANON_KEY"
+        }
+     }
+     ```
 
 4. **Set up the database**
    Run this SQL in your Supabase SQL editor. It mirrors the live schema: eight
