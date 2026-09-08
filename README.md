@@ -2,6 +2,13 @@
 
 A modern, personal recipe management application built with Blazor WebAssembly and Supabase. Organize your favorite recipes, associate them with cookbooks and authors, and never lose track of your culinary treasures again!
 
+**Live demo: [recettes.gabrielmongeon.ca](https://recettes.gabrielmongeon.ca)**
+
+> The demo runs on Supabase's free tier, which pauses a project after a period
+> of inactivity. A scheduled workflow reads one row every three days to keep it
+> awake, but if the project has been paused the demo can be unavailable until it
+> is resumed from the Supabase dashboard.
+
 ## ✨ Features
 
 - 📝 **Recipe Management**: Create, edit, and organize your favorite recipes
@@ -240,6 +247,7 @@ For detailed information, visit our comprehensive documentation:
 - 🔌 **[API Reference](docs/API.md)** - Data models and service documentation
 - 🏗️ **[Architecture Guide](docs/ARCHITECTURE.md)** - System design and technical decisions
 - 🚀 **[Deployment Guide](docs/DEPLOYMENT.md)** - Hosting and CI/CD setup
+- 🔒 **[Security Model](docs/SECURITY.md)** - Public anon key, RLS as the authorization layer, verification steps
 
 ## 🛠️ Development
 

@@ -779,3 +779,4 @@ For more information, see:
 - [Main Documentation](README.md)
 - [Development Guide](DEVELOPMENT.md)
 - [API Reference](API.md)
+- [Security Model](SECURITY.md)
