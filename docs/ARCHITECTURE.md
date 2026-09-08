@@ -234,7 +234,6 @@ graph LR
 
     subgraph "Testing Framework"
         XUnit[xUnit]
-        UnitTests[533 Unit Tests]
         BUnit[bUnit Component Tests]
         Coverage[Test Coverage]
     end
@@ -303,7 +302,8 @@ list view mode across sessions.
 
 ### Test Structure Overview
 
-Our testing architecture ensures comprehensive coverage of business logic, validation rules, data relationships, and component behavior with **533 unit tests** organized across multiple test files and categories (counted via `dotnet test --list-tests | Measure-Object`).
+The test suite covers business logic, validation rules, data relationships and
+component behaviour, organised by category across the files below.
 
 ```mermaid
 graph TB
