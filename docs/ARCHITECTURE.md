@@ -42,7 +42,6 @@ graph TB
         Rest[Supabase PostgREST API]
         GoTrue[Supabase Auth]
         Postgres[PostgreSQL Database]
-        Realtime[Real-time Engine]
     end
 
     subgraph "Infrastructure"
@@ -71,7 +70,6 @@ graph TB
 
     Rest --> Postgres
     GoTrue --> Postgres
-    Rest --> Realtime
 
     Swa --> BlazorApp
 ```
@@ -250,7 +248,6 @@ graph LR
     Net[.NET 10.0] --> Wasm[Blazor WebAssembly]
     Wasm --> Mud[MudBlazor]
     Mud --> Material[Material Design]
-    Wasm --> Signalr[SignalR Client]
     Wasm --> Http[HTTP Client]
     Wasm --> Annotations[DataAnnotations Validation]
 
@@ -281,14 +278,6 @@ graph LR
     A[Supabase] --> B[PostgreSQL]
     A --> C[PostgREST API]
     A --> D[GoTrue Auth]
-    A --> E[Realtime Engine]
-    A --> F[Edge Functions]
-    
-    subgraph "Infrastructure"
-        G[Docker]
-        H[Kubernetes]
-        I[Load Balancers]
-    end
 ```
 
 ### Technology Decisions
@@ -299,7 +288,7 @@ graph LR
 | **UI Library** | MudBlazor | Material Design, rich components, good documentation |
 | **Validation** | DataAnnotations | Built-in .NET validation, model-level constraints |
 | **Testing Framework** | xUnit | Modern .NET testing, rich assertion library, parallel execution |
-| **Backend** | Supabase | BaaS solution, PostgreSQL, auth included, real-time |
+| **Backend** | Supabase | BaaS solution, PostgreSQL, auth included |
 | **Database** | PostgreSQL | Relational data, ACID compliance, rich query capabilities |
 | **Hosting** | Azure Static Web Apps | Cost-effective, global CDN, simple deployment, CI/CD integration |
 | **CI/CD** | GitHub Actions | Integrated with repository, free tier, automated testing |
@@ -427,17 +416,12 @@ graph TD
     B -->|Miss| D[Fetch from Supabase]
     D --> E[Update Cache]
     E --> F[Return Data]
-    
-    subgraph "Cache Layers"
-        G[Browser Memory]
-        H[Local Storage]
-        I[Session Storage]
-    end
-    
-    B --> G
-    G --> H
-    H --> I
 ```
+
+`CacheService` is a single in-memory layer: a `ConcurrentDictionary` of entries
+with a TTL, discarded on reload. `LocalStorageService` is separate and is not a
+cache tier — it persists favourites, recently viewed recipes and the recipe
+list view mode across sessions.
 
 ## 🧪 Testing Architecture
 
