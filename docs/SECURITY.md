@@ -6,7 +6,7 @@ it is the part most Blazor + Supabase examples skip.
 
 ## The anon key is public. On purpose.
 
-The Supabase URL and anon key live in `wwwroot/appsettings.json`, which is
+The Supabase URL and anon key live in `src/wwwroot/appsettings.json`, which is
 served as a static file and shipped inside the WASM bundle. Anyone can open
 devtools, read them, and issue their own PostgREST or GraphQL calls against this
 database from curl. There is no way around this in a client-only app — no
