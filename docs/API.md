@@ -328,16 +328,27 @@ book; `BookService.GetAllAsync` uses it to avoid N+1 query patterns.
 ### Configuration
 
 ```csharp
-public class SupabaseConfig
+// In Program.cs: read from wwwroot/appsettings.json
+var supabaseConfig = new SupabaseConfigDto
 {
-    public string Url { get; set; } = string.Empty;
-    public string Key { get; set; } = string.Empty;
-}
+    Url = builder.Configuration["supabase:Url"] ?? string.Empty,
+    Key = builder.Configuration["supabase:Key"] ?? string.Empty
+};
 
-// In Program.cs
-var supabaseConfig = builder.Configuration.GetSection("Supabase").Get<SupabaseConfig>();
-builder.Services.AddScoped(_ => new SupabaseClient(supabaseConfig.Url, supabaseConfig.Key));
+builder.Services.AddSingleton(sp => new Client(
+    supabaseConfig.Url,
+    supabaseConfig.Key,
+    new SupabaseOptions
+    {
+        AutoRefreshToken = true,
+        AutoConnectRealtime = false,
+        SessionHandler = new BrowserSupabaseSessionHandler(sp.GetRequiredService<IJSRuntime>())
+    }));
 ```
+
+The `Key` is the anon key and is public: it ships inside the WASM bundle, and
+Row Level Security is what actually restricts access. See
+[SECURITY.md](SECURITY.md).
 
 ### Query Patterns
 
@@ -369,3 +380,4 @@ For more information, see:
 - [Main Documentation](README.md)
 - [Development Guide](DEVELOPMENT.md)
 - [Architecture Guide](ARCHITECTURE.md)
+- [Security Model](SECURITY.md)
