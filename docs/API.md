@@ -329,7 +329,7 @@ book; `BookService.GetAllAsync` uses it to avoid N+1 query patterns.
 ### Configuration
 
 ```csharp
-// In Program.cs: read from wwwroot/appsettings.json
+// In Program.cs: read from src/wwwroot/appsettings.json
 var supabaseConfig = new SupabaseConfigDto
 {
     Url = builder.Configuration["supabase:Url"] ?? string.Empty,
