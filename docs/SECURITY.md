@@ -39,8 +39,8 @@ policies:
 | `DELETE` | `authenticated` | `using (true)` |
 
 Applied to: `recettes`, `authors`, `books`, `books_authors`, `stores`,
-`etiquettes`, `recettes_etiquettes`. The eighth table, `app_logs`, is
-authenticated-only for both `SELECT` and `INSERT`, and has no `DELETE` policy.
+`etiquettes`, `recettes_etiquettes`. The eighth table, `app_logs`, has RLS
+policies that restrict `SELECT` and `INSERT` to `authenticated`, and has no `DELETE` policy.
 
 ```sql
 alter table public.recettes enable row level security;
