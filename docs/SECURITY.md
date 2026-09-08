@@ -26,7 +26,7 @@ this repository.
 Read is public. Write requires an authenticated session.
 
 The recipe collection is meant to be browsable by anyone who visits the site —
-no login wall. Editing is mine.
+no login wall. Editing is restricted to the site owner.
 
 RLS is enabled on all eight tables in `public`. Every content table carries four
 policies:
