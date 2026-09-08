@@ -214,7 +214,8 @@ A modern, personal recipe management application built with Blazor WebAssembly a
 
 ## 🧪 Testing
 
-This project maintains comprehensive unit test coverage with **559 tests** across all business logic (as reported by `dotnet test`):
+Business logic, services, models and components are covered by the xUnit suite
+in `tests/`. Run it with:
 
 ```bash
 # Run all tests
@@ -305,7 +306,7 @@ RecettesIndex/
 │   │   └── staticwebapp.config.json # Azure Static Web Apps config
 │   ├── 📄 Program.cs    # App entry point
 │   └── 📄 _Imports.razor # Global imports
-├── 📁 tests/           # Unit test project (559 tests)
+├── 📁 tests/           # Unit test project
 │   ├── � Integration/  # Integration tests
 │   ├── � Models/       # Model tests
 │   ├── � Pages/        # Component tests
