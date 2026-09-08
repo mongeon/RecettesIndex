@@ -22,51 +22,58 @@ Mes Recettes is built as a Single Page Application (SPA) using Blazor WebAssembl
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        A[Blazor WebAssembly]
-        B[MudBlazor Components]
-        C[Browser Storage]
+        BlazorApp[Blazor WebAssembly]
+        Mud[MudBlazor Components]
+        Storage[Browser localStorage]
     end
-    
+
     subgraph "Service Layer"
-        D[Recipe Service]
-        E[BookAuthor Service]
-        F[Auth Service]
-        G[Cache Service]
-        H[SupabaseRecipesQuery]
+        RecipeSvc[RecipeService]
+        CrudSvc[BookService / AuthorService<br/>StoreService / EtiquetteService]
+        BookAuthorSvc[BookAuthorService]
+        AuthSvc[AuthService]
+        CacheSvc[CacheService]
+        Query[SupabaseRecipesQuery]
+        LocalSvc[LocalStorageService]
+        ErrorSvc[ErrorLoggingService]
     end
-    
+
     subgraph "Backend Services"
-        H[Supabase API]
-        I[Supabase Auth]
-        J[PostgreSQL Database]
-        K[Real-time Engine]
+        Rest[Supabase PostgREST API]
+        GoTrue[Supabase Auth]
+        Postgres[PostgreSQL Database]
+        Realtime[Real-time Engine]
     end
-    
+
     subgraph "Infrastructure"
-        L[Static Web Host]
-        M[CDN]
-        N[SSL/TLS]
+        Swa[Azure Static Web Apps]
     end
-    
-    A --> B
-    A --> C
-    A --> D
-    A --> E
-    A --> F
-    A --> G
-    
-    D --> H
-    E --> H
-    F --> H
-    G --> I
-    
-    H --> J
-    I --> J
-    H --> K
-    
-    L --> A
-    M --> L
-    N --> M
+
+    BlazorApp --> Mud
+    BlazorApp --> RecipeSvc
+    BlazorApp --> CrudSvc
+    BlazorApp --> BookAuthorSvc
+    BlazorApp --> AuthSvc
+    BlazorApp --> LocalSvc
+    LocalSvc --> Storage
+
+    RecipeSvc --> Query
+    RecipeSvc --> CacheSvc
+    CrudSvc --> CacheSvc
+    BookAuthorSvc --> CacheSvc
+
+    Query --> Rest
+    RecipeSvc --> Rest
+    CrudSvc --> Rest
+    BookAuthorSvc --> Rest
+    ErrorSvc --> Rest
+    AuthSvc --> GoTrue
+
+    Rest --> Postgres
+    GoTrue --> Postgres
+    Rest --> Realtime
+
+    Swa --> BlazorApp
 ```
 
 ### Application Flow
@@ -240,30 +247,30 @@ This Unidirectional Data Flow ensures predictability and easier debugging.
 
 ```mermaid
 graph LR
-    A[.NET 10.0] --> B[Blazor WebAssembly]
-    B --> C[MudBlazor]
-    C --> D[Material Design]
-    B --> E[SignalR Client]
-    B --> F[HTTP Client]
-    B --> G[DataAnnotations Validation]
-    
+    Net[.NET 10.0] --> Wasm[Blazor WebAssembly]
+    Wasm --> Mud[MudBlazor]
+    Mud --> Material[Material Design]
+    Wasm --> Signalr[SignalR Client]
+    Wasm --> Http[HTTP Client]
+    Wasm --> Annotations[DataAnnotations Validation]
+
     subgraph "Testing Framework"
-        H[xUnit]
-        I[533 Unit Tests]
-        J[bUnit Component Tests]
-        K[Test Coverage]
+        XUnit[xUnit]
+        UnitTests[533 Unit Tests]
+        BUnit[bUnit Component Tests]
+        Coverage[Test Coverage]
     end
-    
+
     subgraph "Build Tools"
-        K[MSBuild]
-        L[NuGet]
-        M[GitHub Actions CI/CD]
+        MsBuild[MSBuild]
+        NuGet[NuGet]
+        Actions[GitHub Actions CI/CD]
     end
-    
+
     subgraph "Development Tools"
-        N[VS Code]
-        O[C# Dev Kit]
-        P[GitHub Copilot]
+        VsCode[VS Code]
+        DevKit[C# Dev Kit]
+        Copilot[GitHub Copilot]
     end
 ```
 
