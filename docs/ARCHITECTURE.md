@@ -109,109 +109,91 @@ sequenceDiagram
 
 ## 🎯 Architecture Patterns
 
-### Clean Architecture Principles
+### Layering
 
-The application follows Clean Architecture principles with clear separation of concerns:
+The project is a single Blazor WebAssembly assembly, organised by folder rather
+than split into projects:
 
 ```mermaid
 graph TD
-    subgraph "Presentation Layer"
-        A[Blazor Pages]
-        B[Blazor Components]
-        C[Layout Components]
+    subgraph "Presentation — src/Pages, src/Components, src/Layout"
+        Pages[Blazor Pages]
+        Components[Reusable Components]
+        LayoutC[Layout Components]
     end
-    
-    subgraph "Application Layer"
-        D[Services]
-        E[ViewModels]
-        F[DTOs]
+
+    subgraph "Services — src/Services"
+        Services[Service Implementations]
+        Interfaces[Abstractions: I*Service, IRecipesQuery]
+        Errors[Exceptions and Result&lt;T&gt;]
     end
-    
-    subgraph "Domain Layer"
-        G[Models/Entities]
-        H[Business Logic]
-        I[Interfaces]
+
+    subgraph "Models — src/Models"
+        Models[Postgrest BaseModel types]
     end
-    
-    subgraph "Infrastructure Layer"
-        J[Supabase Client]
-        K[External APIs]
-        L[Browser APIs]
+
+    subgraph "Infrastructure"
+        Client[Supabase Client]
+        Js[JS interop: localStorage]
     end
-    
-    A --> D
-    B --> D
-    C --> D
-    D --> G
-    E --> G
-    F --> G
-    D --> J
-    D --> K
-    D --> L
+
+    Pages --> Interfaces
+    Components --> Interfaces
+    LayoutC --> Interfaces
+    Interfaces --> Services
+    Services --> Errors
+    Services --> Models
+    Services --> Client
+    Services --> Js
 ```
+
+Pages depend on interfaces, never on concrete services; the container in
+`src/Program.cs` supplies the implementations, which is what makes the services
+substitutable with NSubstitute in the test project.
 
 ### Component-Based Architecture
 
 ```mermaid
 graph TD
-    A[App.razor] --> B[MainLayout.razor]
-    B --> C[NavMenu.razor]
-    B --> D[Page Components]
-    
-    D --> E[Home.razor]
-    D --> F[Recipes.razor]
-    D --> G[Books.razor]
-    D --> H[Authors.razor]
-    
-    F --> I[RecipeCard.razor]
-    F --> J[AddRecipeDialog.razor]
-    F --> K[EditRecipeDialog.razor]
-    
-    G --> L[BookCard.razor]
-    G --> M[AddBookDialog.razor]
-    
-    H --> N[AuthorCard.razor]
-    H --> O[AddAuthorDialog.razor]
-    
-    subgraph "Shared Components"
-        P[PizzaRating.razor]
-        Q[ConfirmDialog.razor]
-        R[LoadingSpinner.razor]
-    end
-    
-    I --> P
-    J --> P
-    K --> P
+    App[App.razor] --> Layout[MainLayout.razor]
+    Layout --> Nav[NavMenu.razor]
+    Layout --> Palette[CommandPalette.razor]
+    Layout --> Pages[Page Components]
+
+    Pages --> Home[Home.razor]
+    Pages --> Recipes[Recipes.razor]
+    Pages --> Books[Books.razor]
+    Pages --> Authors[Authors.razor]
+    Pages --> Stores[Stores.razor]
+    Pages --> Dashboard[Dashboard.razor]
+
+    Recipes --> FilterBar[RecipeFilterBar.razor]
+    Recipes --> FilterMenu[RecipeFilterMenu.razor]
+    Recipes --> Grid[RecipeGridView.razor]
+    Recipes --> ListView[RecipeListView.razor]
+    Recipes --> Loading[RecipeLoadingState.razor]
+    Recipes --> EditDialog[EditRecipeDialog.razor]
+
+    Grid --> Card[RecipeCard.razor]
+    Card --> Rating[PizzaRating.razor]
+    EditDialog --> Form[RecipeForm.razor]
+    Form --> Rating
+    Form --> Etiquettes[EtiquettePicker.razor]
+
+    Grid --> Empty[EmptyState.razor]
+    ListView --> Empty
 ```
+
 
 ### Service-Oriented Design
 
-```csharp
-// Service Interface Pattern
-public interface IRecipeService
-{
-    Task<List<Recipe>> GetRecipesAsync();
-    Task<Recipe?> GetRecipeByIdAsync(int id);
-    Task<Recipe> CreateRecipeAsync(Recipe recipe);
-    Task<Recipe> UpdateRecipeAsync(Recipe recipe);
-    Task<bool> DeleteRecipeAsync(int id);
-}
-
-// Service Implementation Pattern
-public class RecipeService : IRecipeService
-{
-    private readonly SupabaseClient _supabaseClient;
-    private readonly ILogger<RecipeService> _logger;
-    
-    public RecipeService(SupabaseClient supabaseClient, ILogger<RecipeService> logger)
-    {
-        _supabaseClient = supabaseClient;
-        _logger = logger;
-    }
-    
-    // Implementation methods...
-}
-```
+Every service sits behind an interface in `src/Services/Abstractions/`, is
+registered in `src/Program.cs`, and returns a `Result<T>` rather than throwing
+for expected failures. `BookService`, `AuthorService`, `StoreService` and
+`EtiquetteService` derive from `CrudServiceBase<TModel, TService>`, which
+centralises logging, error mapping and `CancellationToken` propagation.
+`RecipeService` composes `IRecipesQuery` and `ICacheService` instead. The full
+interfaces are in [API.md](API.md).
 
 ### Component Architecture Example: Recipes Page Refactoring
 
@@ -225,11 +207,10 @@ The `Recipes.razor` page demonstrates our preferred component architecture, movi
 #### After Refactoring
 - **Parent Component (`Recipes.razor`)**: Handles state management, data loading orchestration, and business logic.
 - **Child Components**:
-    - `RecipeQuickFilters`: Quick chips, filter counts.
-    - `RecipeAdvancedFilters`: Search input, dropdowns.
-    - `RecipeActiveFilters`: Active chips, remove buttons.
-    - `RecipeLoadingState`: Skeletons.
-    - `RecipeGridView` / `RecipeTableView`: Data display.
+    - `RecipeFilterBar`: Search field, quick filter chips.
+    - `RecipeFilterMenu`: Dropdown filters and the mobile filter sheet.
+    - `RecipeLoadingState` / `RecipeCardSkeleton`: Skeletons.
+    - `RecipeGridView` / `RecipeListView`: Data display.
     - `EmptyState`: Reused empty state.
 
 #### Data Flow
@@ -297,115 +278,10 @@ graph LR
 
 ### Database Schema
 
-```mermaid
-erDiagram
-    AUTHORS {
-        int id PK
-        varchar name
-        timestamp creation_date
-        timestamp updated_date
-    }
-    
-    BOOKS {
-        int id PK
-        varchar title
-        int author_id FK
-        timestamp creation_date
-        timestamp updated_date
-    }
-    
-    RECIPES {
-        int id PK
-        varchar name
-        text notes
-        int rating "1-5 stars with validation"
-        int book_id FK
-        int page_number
-        timestamp creation_date
-        timestamp updated_date
-    }
-    
-    AUTHORS ||--o{ BOOKS : "writes"
-    BOOKS ||--o{ RECIPES : "contains"
-```
-
-### Data Access Patterns
-
-#### Repository Pattern (Alternative Implementation)
-
-```csharp
-public interface IRepository<T> where T : class
-{
-    Task<List<T>> GetAllAsync();
-    Task<T?> GetByIdAsync(int id);
-    Task<T> CreateAsync(T entity);
-    Task<T> UpdateAsync(T entity);
-    Task<bool> DeleteAsync(int id);
-}
-
-public class SupabaseRepository<T> : IRepository<T> where T : BaseModel, new()
-{
-    private readonly SupabaseClient _client;
-    
-    public SupabaseRepository(SupabaseClient client)
-    {
-        _client = client;
-    }
-    
-    public async Task<List<T>> GetAllAsync()
-    {
-        var response = await _client.From<T>().Get();
-        return response.Models ?? new List<T>();
-    }
-    
-    // Other implementations...
-}
-```
-
-#### Unit of Work Pattern
-
-```csharp
-public interface IUnitOfWork : IDisposable
-{
-    IRepository<Recipe> Recipes { get; }
-    IRepository<Book> Books { get; }
-    IRepository<Author> Authors { get; }
-    Task<bool> SaveChangesAsync();
-}
-
-public class SupabaseUnitOfWork : IUnitOfWork
-{
-    private readonly SupabaseClient _client;
-    private IRepository<Recipe>? _recipes;
-    private IRepository<Book>? _books;
-    private IRepository<Author>? _authors;
-    
-    public SupabaseUnitOfWork(SupabaseClient client)
-    {
-        _client = client;
-    }
-    
-    public IRepository<Recipe> Recipes => 
-        _recipes ??= new SupabaseRepository<Recipe>(_client);
-    
-    public IRepository<Book> Books => 
-        _books ??= new SupabaseRepository<Book>(_client);
-    
-    public IRepository<Author> Authors => 
-        _authors ??= new SupabaseRepository<Author>(_client);
-    
-    public async Task<bool> SaveChangesAsync()
-    {
-        // Supabase handles transactions internally
-        return true;
-    }
-    
-    public void Dispose()
-    {
-        // Cleanup if needed
-    }
-}
-```
+Eight tables in `public`: `recettes`, `authors`, `books`, `books_authors`,
+`stores`, `etiquettes`, `recettes_etiquettes` and `app_logs`. The authoritative
+definition is the setup script in the [README](../README.md), generated from the
+live schema; [API.md](API.md) maps those tables onto the C# models.
 
 ### Caching Strategy
 
@@ -506,20 +382,30 @@ graph TB
 
 ### Validation Testing Strategy
 
+Validation is tested through the data annotations on the models, with separate
+theories for accepted and rejected values. From
+`tests/RecipeRatingValidationTests.cs`:
+
 ```csharp
-// Example: Comprehensive rating validation testing
 [Theory]
-[InlineData(1, true)]   // Valid: minimum
-[InlineData(3, true)]   // Valid: middle
-[InlineData(5, true)]   // Valid: maximum
-[InlineData(0, false)]  // Invalid: below range
-[InlineData(6, false)]  // Invalid: above range
-[InlineData(-1, false)] // Invalid: negative
-public void Rating_ShouldValidateRange_ForAllValues(int rating, bool isValid)
-{
-    // Comprehensive validation testing with expected outcomes
-}
+[InlineData(1)]
+[InlineData(2)]
+[InlineData(3)]
+[InlineData(4)]
+[InlineData(5)]
+public void Recipe_ValidRating_ShouldBeAccepted(int validRating)
+
+[Theory]
+[InlineData(-5)]
+[InlineData(-1)]
+[InlineData(6)]
+[InlineData(10)]
+[InlineData(100)]
+public void Recipe_InvalidRating_ModelStillAcceptsButValidationWillFail(int invalidRating)
 ```
+
+`Recipe.Rating` carries `[Range(0, 5)]`, so 0 is a valid value meaning "not
+rated"; the database column defaults to it.
 
 ### CI/CD Testing Pipeline
 
@@ -551,229 +437,31 @@ documented in **[SECURITY.md](SECURITY.md)**.
 
 ## 🚀 Performance & Scalability
 
-### Performance Optimization Strategies
+Recipes are never loaded as a whole table. `IRecipesQuery.SearchAsync` pushes
+filtering, sorting and pagination into PostgREST, and `RecipeService` exposes
+`GetRecipeSummariesAsync` for the dashboard and store counts, which selects only
+`id`, `book_id`, `store_id`, `rating` and `created_at` instead of full recipes.
+`BookAuthorService.LoadAuthorsForBooksAsync` loads the authors of many books in
+two queries rather than one pair per book. See [API.md](API.md) for the service
+signatures.
 
-#### Lazy Loading
-
-```csharp
-// Lazy load components
-@page "/recipes"
-@using Microsoft.AspNetCore.Components.Web.Virtualization
-
-<Virtualize Items="recipes" Context="recipe">
-    <RecipeCard Recipe="recipe" />
-</Virtualize>
-```
-
-#### Data Pagination
-
-```csharp
-public async Task<PagedResult<Recipe>> GetRecipesPagedAsync(int page, int pageSize)
-{
-    var offset = (page - 1) * pageSize;
-    
-    var response = await _supabaseClient
-        .From<Recipe>()
-        .Range(offset, offset + pageSize - 1)
-        .Get();
-    
-    return new PagedResult<Recipe>
-    {
-        Items = response.Models ?? new List<Recipe>(),
-        CurrentPage = page,
-        PageSize = pageSize,
-        TotalCount = await GetTotalRecipeCountAsync()
-    };
-}
-```
-
-#### Caching Implementation
-
-```csharp
-public class CachedRecipeService : IRecipeService
-{
-    private readonly IRecipeService _recipeService;
-    private readonly IMemoryCache _cache;
-    private readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(10);
-    
-    public async Task<List<Recipe>> GetRecipesAsync()
-    {
-        const string cacheKey = "all_recipes";
-        
-        if (_cache.TryGetValue(cacheKey, out List<Recipe>? cachedRecipes))
-        {
-            return cachedRecipes!;
-        }
-        
-        var recipes = await _recipeService.GetRecipesAsync();
-        _cache.Set(cacheKey, recipes, _cacheExpiry);
-        
-        return recipes;
-    }
-}
-```
-
-### Scalability Considerations
-
-#### Database Optimization
-
-```sql
--- Indexes for common queries
-CREATE INDEX idx_recipes_rating ON recipes(rating);
-CREATE INDEX idx_recipes_book_id ON recipes(book_id);
-CREATE INDEX idx_recipes_creation_date ON recipes(creation_date);
-CREATE INDEX idx_recipes_name_gin ON recipes USING gin(to_tsvector('english', name));
-
--- Full-text search index
-CREATE INDEX idx_recipes_search ON recipes USING gin(
-    to_tsvector('english', name || ' ' || coalesce(notes, ''))
-);
-```
-
-#### API Rate Limiting
-
-```csharp
-public class RateLimitingService
-{
-    private readonly Dictionary<string, List<DateTime>> _requests = new();
-    private readonly int _maxRequestsPerMinute = 100;
-    
-    public bool CanMakeRequest(string clientId)
-    {
-        var now = DateTime.UtcNow;
-        var oneMinuteAgo = now.AddMinutes(-1);
-        
-        if (!_requests.ContainsKey(clientId))
-        {
-            _requests[clientId] = new List<DateTime>();
-        }
-        
-        var clientRequests = _requests[clientId];
-        clientRequests.RemoveAll(r => r < oneMinuteAgo);
-        
-        if (clientRequests.Count >= _maxRequestsPerMinute)
-        {
-            return false;
-        }
-        
-        clientRequests.Add(now);
-        return true;
-    }
-}
-```
+On the database side, the indexes backing these queries — including the French
+full-text index on `name` and `notes` — are created by the setup script in the
+[README](../README.md) and by `database/migrations/add_indexes.sql`.
 
 ## 🚀 Deployment Architecture
 
-### Deployment Pipeline
+Pushes to `main` are built, tested and deployed to Azure Static Web Apps by
+`.github/workflows/azure-static-web-apps-green-pond-067ed2010.yml`, with the
+test job gating the deploy job. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
-```mermaid
-graph LR
-    A[GitHub Repository] --> B[GitHub Actions]
-    B --> C[Build & Test]
-    C --> D[Security Scan]
-    D --> E[Build Artifacts]
-    E --> F[Deploy to Staging]
-    F --> G[Integration Tests]
-    G --> H[Deploy to Production]
-    
-    subgraph "Environments"
-        I[Development]
-        J[Staging]
-        K[Production]
-    end
-    
-    B --> I
-    F --> J
-    H --> K
-```
+### Error Logging
 
-### Infrastructure as Code
+`ErrorLoggingService` writes caught exceptions to the `app_logs` table through
+PostgREST, recording level, message, context and stack trace. Its policies only
+admit an authenticated session, so logging from the anonymous read path is
+dropped — see [SECURITY.md](SECURITY.md).
 
-```yaml
-# GitHub Actions deployment workflow
-name: Deploy to Production
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v7
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: '10.0.x'
-    
-    - name: Restore dependencies
-      run: dotnet restore
-    
-    - name: Build
-      run: dotnet build --no-restore
-    
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-    
-    - name: Publish
-      run: dotnet publish -c Release -o ./publish
-    
-    - name: Deploy to hosting
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./publish/wwwroot
-```
-
-### Monitoring & Observability
-
-```mermaid
-graph TD
-    A[Application] --> B[Logs]
-    A --> C[Metrics]
-    A --> D[Traces]
-    
-    B --> E[Log Aggregation]
-    C --> F[Metrics Dashboard]
-    D --> G[Distributed Tracing]
-    
-    E --> H[Alerting]
-    F --> H
-    G --> H
-    
-    H --> I[Notification Channels]
-```
-
-#### Logging Strategy
-
-```csharp
-public class RecipeService
-{
-    private readonly ILogger<RecipeService> _logger;
-    
-    public async Task<Recipe> CreateRecipeAsync(Recipe recipe)
-    {
-        _logger.LogInformation("Creating recipe: {RecipeName}", recipe.Name);
-        
-        try
-        {
-            var result = await _supabaseClient.From<Recipe>().Insert(recipe);
-            _logger.LogInformation("Recipe created successfully: {RecipeId}", result.Model?.Id);
-            return result.Model!;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create recipe: {RecipeName}", recipe.Name);
-            throw;
-        }
-    }
-}
-```
-
----
 
 For more information, see:
 - [Main Documentation](README.md)
