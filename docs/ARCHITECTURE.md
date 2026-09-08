@@ -548,109 +548,15 @@ flowchart LR
 
 ## 🔒 Security Considerations
 
-### Authentication Flow
+The application is a Blazor WebAssembly client talking straight to Supabase,
+with no server of our own in between. The anon key ships inside the WASM bundle
+and is public by design; Row Level Security is therefore the only authorization
+layer. Read access is public, writes require an authenticated session, and
+there is no per-row ownership.
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant B as Blazor App
-    participant S as Supabase Auth
-    participant DB as Database
-    
-    U->>B: Login Request
-    B->>S: Authenticate
-    S->>DB: Verify Credentials
-    DB-->>S: User Data
-    S-->>B: JWT Token
-    B->>B: Store Token
-    B-->>U: Login Success
-    
-    Note over B: For subsequent requests
-    B->>S: API Call + JWT
-    S->>S: Validate Token
-    S->>DB: Execute Query
-    DB-->>S: Data
-    S-->>B: Response
-```
-
-### Security Measures
-
-#### Row Level Security (RLS)
-
-```sql
--- Example RLS policies for Supabase
-ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
-
--- Users can only see their own recipes
-CREATE POLICY "Users can view own recipes" ON recipes
-    FOR SELECT USING (auth.uid() = user_id);
-
--- Users can only insert their own recipes
-CREATE POLICY "Users can insert own recipes" ON recipes
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Users can only update their own recipes
-CREATE POLICY "Users can update own recipes" ON recipes
-    FOR UPDATE USING (auth.uid() = user_id);
-```
-
-#### Client-Side Security
-
-```csharp
-public class AuthService
-{
-    private readonly SupabaseClient _supabase;
-    private User? _currentUser;
-    
-    public bool IsAuthenticated => _currentUser != null;
-    public User? CurrentUser => _currentUser;
-    
-    public async Task<bool> SignInAsync(string email, string password)
-    {
-        try
-        {
-            var response = await _supabase.Auth.SignIn(email, password);
-            _currentUser = response.User;
-            return response.User != null;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-    
-    public async Task SignOutAsync()
-    {
-        await _supabase.Auth.SignOut();
-        _currentUser = null;
-    }
-}
-```
-
-#### Input Validation & Sanitization
-
-```csharp
-public static class ValidationExtensions
-{
-    public static bool IsValidRecipeName(this string name)
-    {
-        return !string.IsNullOrWhiteSpace(name) && 
-               name.Length <= 255 && 
-               !name.Contains("<") && 
-               !name.Contains(">");
-    }
-    
-    public static bool IsValidRating(this int rating)
-    {
-        return rating >= 1 && rating <= 5;
-    }
-    
-    public static string SanitizeInput(this string input)
-    {
-        return WebUtility.HtmlEncode(input?.Trim() ?? string.Empty);
-    }
-}
-```
+The access model, the policies in force on all eight tables, the `authenticated`
+role's limits and the procedure for verifying RLS from outside the app are
+documented in **[SECURITY.md](SECURITY.md)**.
 
 ## 🚀 Performance & Scalability
 
