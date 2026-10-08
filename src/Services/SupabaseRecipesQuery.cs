@@ -144,6 +144,10 @@ public class SupabaseRecipesQuery(Client supabaseClient, ILogger<SupabaseRecipes
 
             if (take > 0)
             {
+                // Départage stable : sans clé unique, deux recettes de même nom (ou même
+                // note, même page) peuvent changer d'ordre d'une requête à l'autre, et la
+                // pagination par OFFSET répète alors une ligne et en saute une autre.
+                q = q.Order("id", Ordering.Ascending);
                 q = q.Range(skip, skip + take - 1);
             }
 

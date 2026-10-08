@@ -127,7 +127,7 @@
     private List<Recipe> _allRecipes = [];
     private List<Book> _allBooks = [];
     private List<Store> _allStores = [];
-    private bool _loaded;
+    private Task? _loading;
 
     private int _hitCount => _recipes.Count + _books.Count;
 
@@ -172,16 +172,18 @@
     /// Loads the collections once per session. They are small and already cached by the
     /// services, so the palette filters in memory instead of querying on each keystroke.
     /// </summary>
-    private async Task EnsureLoadedAsync()
-    {
-        if (_loaded)
-        {
-            return;
-        }
+    /// <remarks>
+    /// Deux ouvertures rapprochées (⌘K puis un clic, un double tap) appelaient le
+    /// chargement deux fois en parallèle : les deux boucles remplissaient la même liste
+    /// et chaque recette apparaissait en double. On partage donc une seule tâche.
+    /// </remarks>
+    private Task EnsureLoadedAsync() => _loading ??= LoadAsync();
 
+    private async Task LoadAsync()
+    {
         // SearchAsync plafonne la taille de page à MaxPageSize : on pagine jusqu'au bout
         // plutôt que de tronquer silencieusement la recherche au-delà de cette limite.
-        _allRecipes = [];
+        var recipes = new List<Recipe>();
         var page = 1;
         while (true)
         {
@@ -191,19 +193,23 @@
 
             if (!result.IsSuccess)
             {
+                // Un échec ne doit pas figer la palette vide : la prochaine ouverture réessaie.
+                _loading = null;
                 break;
             }
 
-            _allRecipes.AddRange(result.Value.Items);
-            if (_allRecipes.Count >= result.Value.Total || result.Value.Items.Count == 0)
+            recipes.AddRange(result.Value.Items);
+            if (recipes.Count >= result.Value.Total || result.Value.Items.Count == 0)
             {
                 break;
             }
             page++;
         }
+
+        // Filet de sécurité : une même recette ne doit jamais sortir deux fois.
+        _allRecipes = recipes.DistinctBy(r => r.Id).ToList();
         _allBooks = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
         _allStores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
-        _loaded = true;
     }
 
     private void OnInput(ChangeEventArgs e)
