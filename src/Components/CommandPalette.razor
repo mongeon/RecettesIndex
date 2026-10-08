@@ -93,7 +93,11 @@
                 </button>
             }
 
-            @if (_hitCount == 0 && !string.IsNullOrWhiteSpace(_query))
+            @if (_isLoading && !string.IsNullOrWhiteSpace(_query))
+            {
+                <div class="palette-empty">Chargement…</div>
+            }
+            else if (_hitCount == 0 && !string.IsNullOrWhiteSpace(_query))
             {
                 <div class="palette-empty">Aucun résultat pour «&nbsp;@_query&nbsp;»</div>
             }
@@ -129,6 +133,8 @@
     private List<Store> _allStores = [];
     private Task? _loading;
 
+    private bool _isLoading => _loading is { IsCompleted: false };
+
     private int _hitCount => _recipes.Count + _books.Count;
 
     /// <summary>Total rows including the "Créer …" action, which is always last.</summary>
@@ -144,7 +150,18 @@
         _selected = 0;
         _focusPending = true;
 
-        await EnsureLoadedAsync();
+        // On affiche la palette tout de suite : on peut taper pendant le chargement,
+        // et la recherche est relancée avec la saisie courante dès que les données arrivent.
+        var loading = EnsureLoadedAsync();
+        Rank();
+        StateHasChanged();
+
+        await loading;
+        if (!_open)
+        {
+            return;
+        }
+
         Rank();
         StateHasChanged();
     }
