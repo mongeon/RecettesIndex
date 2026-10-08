@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @inject IRecipeService RecipeService
 @inject NavigationManager NavigationManager
+@inject AuthService AuthService
 
 @*
     Palette de recherche instantanée (bloc 1c du handoff).
@@ -80,8 +81,9 @@
             }
 
             @* Le groupe ACTIONS évite le cul-de-sac : une recherche sans résultat
-               devient le point de départ d'un ajout, sans quitter la palette. *@
-            @if (!string.IsNullOrWhiteSpace(_query))
+               devient le point de départ d'un ajout, sans quitter la palette.
+               Réservé aux personnes connectées : les autres ne peuvent pas ajouter. *@
+            @if (_canCreate)
             {
                 <div class="palette-group">Actions</div>
                 <button type="button"
@@ -93,7 +95,11 @@
                 </button>
             }
 
-            @if (_hitCount == 0 && !string.IsNullOrWhiteSpace(_query))
+            @if (_isLoading && !string.IsNullOrWhiteSpace(_query))
+            {
+                <div class="palette-empty">Chargement…</div>
+            }
+            else if (_hitCount == 0 && !string.IsNullOrWhiteSpace(_query))
             {
                 <div class="palette-empty">Aucun résultat pour «&nbsp;@_query&nbsp;»</div>
             }
@@ -127,12 +133,17 @@
     private List<Recipe> _allRecipes = [];
     private List<Book> _allBooks = [];
     private List<Store> _allStores = [];
-    private bool _loaded;
+    private Task? _loading;
+
+    private bool _isLoading => _loading is { IsCompleted: false };
 
     private int _hitCount => _recipes.Count + _books.Count;
 
+    /// <summary>The "Créer …" action needs a query and a signed-in user.</summary>
+    private bool _canCreate => !string.IsNullOrWhiteSpace(_query) && AuthService.IsAuthenticated;
+
     /// <summary>Total rows including the "Créer …" action, which is always last.</summary>
-    private int _rowCount => _hitCount + (string.IsNullOrWhiteSpace(_query) ? 0 : 1);
+    private int _rowCount => _hitCount + (_canCreate ? 1 : 0);
 
     /// <summary>
     /// Opens the palette, optionally seeded with a query already typed elsewhere.
@@ -144,7 +155,18 @@
         _selected = 0;
         _focusPending = true;
 
-        await EnsureLoadedAsync();
+        // On affiche la palette tout de suite : on peut taper pendant le chargement,
+        // et la recherche est relancée avec la saisie courante dès que les données arrivent.
+        var loading = EnsureLoadedAsync();
+        Rank();
+        StateHasChanged();
+
+        await loading;
+        if (!_open)
+        {
+            return;
+        }
+
         Rank();
         StateHasChanged();
     }
@@ -172,16 +194,18 @@
     /// Loads the collections once per session. They are small and already cached by the
     /// services, so the palette filters in memory instead of querying on each keystroke.
     /// </summary>
-    private async Task EnsureLoadedAsync()
-    {
-        if (_loaded)
-        {
-            return;
-        }
+    /// <remarks>
+    /// Deux ouvertures rapprochées (⌘K puis un clic, un double tap) appelaient le
+    /// chargement deux fois en parallèle : les deux boucles remplissaient la même liste
+    /// et chaque recette apparaissait en double. On partage donc une seule tâche.
+    /// </remarks>
+    private Task EnsureLoadedAsync() => _loading ??= LoadAsync();
 
+    private async Task LoadAsync()
+    {
         // SearchAsync plafonne la taille de page à MaxPageSize : on pagine jusqu'au bout
         // plutôt que de tronquer silencieusement la recherche au-delà de cette limite.
-        _allRecipes = [];
+        var recipes = new List<Recipe>();
         var page = 1;
         while (true)
         {
@@ -191,19 +215,23 @@
 
             if (!result.IsSuccess)
             {
+                // Un échec ne doit pas figer la palette vide : la prochaine ouverture réessaie.
+                _loading = null;
                 break;
             }
 
-            _allRecipes.AddRange(result.Value.Items);
-            if (_allRecipes.Count >= result.Value.Total || result.Value.Items.Count == 0)
+            recipes.AddRange(result.Value.Items);
+            if (recipes.Count >= result.Value.Total || result.Value.Items.Count == 0)
             {
                 break;
             }
             page++;
         }
+
+        // Filet de sécurité : une même recette ne doit jamais sortir deux fois.
+        _allRecipes = recipes.DistinctBy(r => r.Id).ToList();
         _allBooks = (await RecipeService.GetBooksAsync())?.ToList() ?? [];
         _allStores = (await RecipeService.GetStoresAsync())?.ToList() ?? [];
-        _loaded = true;
     }
 
     private void OnInput(ChangeEventArgs e)
@@ -255,7 +283,7 @@
         {
             Activate(_books[_selected - _recipes.Count]);
         }
-        else if (!string.IsNullOrWhiteSpace(_query))
+        else if (_canCreate)
         {
             await CreateFromQuery();
         }
