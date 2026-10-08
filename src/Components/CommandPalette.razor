@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @inject IRecipeService RecipeService
 @inject NavigationManager NavigationManager
+@inject AuthService AuthService
 
 @*
     Palette de recherche instantanée (bloc 1c du handoff).
@@ -80,8 +81,9 @@
             }
 
             @* Le groupe ACTIONS évite le cul-de-sac : une recherche sans résultat
-               devient le point de départ d'un ajout, sans quitter la palette. *@
-            @if (!string.IsNullOrWhiteSpace(_query))
+               devient le point de départ d'un ajout, sans quitter la palette.
+               Réservé aux personnes connectées : les autres ne peuvent pas ajouter. *@
+            @if (_canCreate)
             {
                 <div class="palette-group">Actions</div>
                 <button type="button"
@@ -137,8 +139,11 @@
 
     private int _hitCount => _recipes.Count + _books.Count;
 
+    /// <summary>The "Créer …" action needs a query and a signed-in user.</summary>
+    private bool _canCreate => !string.IsNullOrWhiteSpace(_query) && AuthService.IsAuthenticated;
+
     /// <summary>Total rows including the "Créer …" action, which is always last.</summary>
-    private int _rowCount => _hitCount + (string.IsNullOrWhiteSpace(_query) ? 0 : 1);
+    private int _rowCount => _hitCount + (_canCreate ? 1 : 0);
 
     /// <summary>
     /// Opens the palette, optionally seeded with a query already typed elsewhere.
@@ -278,7 +283,7 @@
         {
             Activate(_books[_selected - _recipes.Count]);
         }
-        else if (!string.IsNullOrWhiteSpace(_query))
+        else if (_canCreate)
         {
             await CreateFromQuery();
         }
